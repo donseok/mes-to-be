@@ -1,0 +1,326 @@
+/* ============================================================
+   MES To-Be Portal — shell styles
+   프로토타입(Q-SPEC)과 같은 팔레트: cobalt #1D5FBF + steel neutrals,
+   IBM Plex Sans KR. 사이드바는 프로토타입 탑바와 같은 다크 네이비.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap');
+
+:root{
+  --bg:#F4F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EDF1F6;
+  --border:#D9E0E8;
+  --border-strong:#B9C4D0;
+  --ink:#18222F;
+  --ink-2:#4C5A6B;
+  --ink-3:#7C8798;
+  --accent:#1D5FBF;
+  --accent-strong:#174C99;
+  --accent-on:#FFFFFF;
+  --accent-soft:#E4EDFA;
+  --accent-soft-ink:#174C99;
+  --scrim:rgba(16,24,34,.44);
+  --shadow:0 8px 28px rgba(23,42,68,.14);
+  --side-bg:#14202E;
+  --side-bg-2:#0F1926;
+  --side-ink:#D8E1EC;
+  --side-dim:#8DA0B5;
+  --side-line:rgba(216,225,236,.14);
+  --side-active:#1D5FBF;
+  --side-active-ink:#FFFFFF;
+  --focus:#1D5FBF;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+[hidden]{ display:none !important; }
+
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family:'IBM Plex Sans KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  color:var(--ink);
+  background:var(--bg);
+}
+
+button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+a{ color:inherit; }
+
+:is(a,button):focus-visible{
+  outline:2px solid var(--focus);
+  outline-offset:2px;
+  border-radius:6px;
+}
+
+/* ---------- skip link ---------- */
+.skip-link{
+  position:absolute; left:12px; top:-48px; z-index:60;
+  padding:8px 14px; border-radius:8px;
+  background:var(--accent); color:var(--accent-on);
+  text-decoration:none; font-weight:500;
+  transition:top .15s ease;
+}
+.skip-link:focus{ top:12px; }
+
+/* ---------- shell layout ---------- */
+.app-shell{
+  display:flex;
+  height:100vh;
+  height:100dvh;
+  overflow:hidden;
+}
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  flex:0 0 248px;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(180deg,var(--side-bg) 0%,var(--side-bg-2) 100%);
+  color:var(--side-ink);
+  overflow-y:auto;
+}
+
+.sidebar-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 16px 16px;
+  border-bottom:1px solid var(--side-line);
+}
+
+.portal-brand{
+  display:flex; align-items:center; gap:10px;
+  text-decoration:none; color:inherit;
+}
+.brand-mark{
+  display:grid; place-items:center;
+  width:34px; height:34px; border-radius:9px;
+  background:var(--accent); color:#FFFFFF;
+  font-weight:700; font-size:17px;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+.portal-brand b{ display:block; font-size:15px; letter-spacing:.04em; line-height:1.2; }
+.portal-brand small{
+  display:block; font-size:10px; letter-spacing:.18em;
+  color:var(--side-dim); line-height:1.4;
+}
+
+.sidebar-close{
+  display:none;
+  width:32px; height:32px; border-radius:8px;
+  color:var(--side-dim); font-size:14px;
+}
+.sidebar-close:hover{ background:var(--side-line); color:var(--side-ink); }
+
+.sidebar-collapse{
+  display:none;
+  width:32px; height:32px; border-radius:8px;
+  color:var(--side-dim); font-size:16px; line-height:1;
+}
+.sidebar-collapse:hover{ background:var(--side-line); color:var(--side-ink); }
+
+.menu-caption{
+  padding:18px 16px 6px;
+  font-size:11px; font-weight:500; letter-spacing:.14em;
+  color:var(--side-dim);
+}
+
+/* ---------- nav ---------- */
+.portal-nav{ padding:0 10px; flex:1; }
+
+.nav-parent,.nav-subparent{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; text-align:left;
+  padding:9px 10px; border-radius:8px;
+  font-weight:500; color:var(--side-ink);
+}
+.nav-subparent{ font-weight:400; color:var(--side-dim); font-size:13px; }
+.nav-parent:hover,.nav-subparent:hover{ background:var(--side-line); }
+
+.chevron{
+  font-size:12px; line-height:1; color:var(--side-dim);
+  transition:transform .18s ease;
+}
+[aria-expanded="false"] > .chevron{ transform:rotate(-90deg); }
+
+.nav-tree{
+  display:none;
+  margin:2px 0 4px;
+  padding-left:10px;
+}
+.nav-tree.open{ display:block; }
+.nav-tree-inner{
+  margin-left:8px; padding-left:10px;
+  border-left:1px solid var(--side-line);
+}
+
+.nav-link{
+  display:block;
+  padding:8px 10px; border-radius:8px;
+  font-size:13px; text-decoration:none;
+  color:var(--side-dim);
+}
+.nav-link:hover{ background:var(--side-line); color:var(--side-ink); }
+.nav-link.active{
+  background:var(--side-active); color:var(--side-active-ink);
+  font-weight:500;
+}
+.nav-root-link{ margin-top:2px; font-size:14px; color:var(--side-ink); }
+.nav-root-link.active{ color:var(--side-active-ink); }
+
+/* ---------- sidebar foot ---------- */
+.sidebar-foot{
+  display:flex; align-items:center; gap:8px;
+  padding:14px 16px;
+  border-top:1px solid var(--side-line);
+  font-size:11px; color:var(--side-dim);
+}
+.mock-badge{
+  white-space:nowrap;
+  padding:2px 8px; border-radius:999px;
+  background:rgba(228,237,250,.12);
+  border:1px solid rgba(228,237,250,.25);
+  font-size:10px; font-weight:500; letter-spacing:.08em;
+  color:var(--side-ink);
+}
+
+/* ---------- scrim (mobile) ---------- */
+.sidebar-scrim{
+  display:none;
+  position:fixed; inset:0; z-index:40;
+  background:var(--scrim);
+  border:0; padding:0;
+}
+
+/* ---------- workspace ---------- */
+.workspace{
+  flex:1;
+  display:flex; flex-direction:column;
+  min-width:0;
+}
+
+.portal-header{
+  display:flex; align-items:center; gap:14px;
+  padding:7px 20px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+
+.menu-toggle{
+  display:none;
+  width:38px; height:38px; border-radius:9px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  font-size:16px; color:var(--ink-2);
+}
+.menu-toggle:hover{ background:var(--surface-2); }
+
+.page-context{
+  min-width:0;
+  display:flex; align-items:baseline; gap:7px;
+  overflow:hidden;
+}
+
+.breadcrumb{
+  display:flex; align-items:center; gap:6px;
+  font-size:12.5px; color:var(--ink-3);
+  white-space:nowrap;
+}
+.breadcrumb:empty{ display:none; }
+
+#page-title{
+  margin:0;
+  font-size:14.5px; font-weight:700; line-height:1.4;
+  color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ---------- main / routes ---------- */
+.main-content{
+  flex:1;
+  display:flex; flex-direction:column;
+  min-height:0;
+}
+
+.route-view{ display:none; }
+.route-view.active{
+  display:flex; flex-direction:column;
+  flex:1; min-height:0;
+}
+
+#module-frame{
+  flex:1; width:100%; border:0;
+  background:var(--bg);
+}
+
+/* ---------- placeholder (품질판정 등) ---------- */
+.placeholder-view.active{ align-items:center; justify-content:center; }
+.placeholder-copy{
+  max-width:420px; margin:24px; padding:36px 32px;
+  text-align:center;
+  background:var(--surface);
+  border:1px dashed var(--border-strong);
+  border-radius:16px;
+  color:var(--ink-2);
+}
+.placeholder-copy .eyebrow{
+  margin:0 0 8px;
+  font-size:11px; font-weight:500; letter-spacing:.18em;
+  color:var(--accent);
+}
+.placeholder-copy h2{
+  margin:0 0 10px;
+  font-size:20px; color:var(--ink);
+}
+.placeholder-copy p{ margin:0; font-size:13px; }
+.placeholder-copy .eyebrow + h2 + p{ line-height:1.6; }
+
+noscript{
+  display:block; padding:12px 20px;
+  color:var(--ink-2);
+}
+
+/* ---------- desktop: 사이드바 접기(레일) ---------- */
+@media (min-width: 901px){
+  .portal-header{ display:none; } /* 경로 줄 제거 — 모바일에서만 ☰ 용도로 유지 */
+  .sidebar-collapse{ display:grid; place-items:center; }
+  .sidebar{ transition:flex-basis .2s ease; overflow-x:hidden; }
+  .app-shell.sidebar-collapsed .sidebar{ flex-basis:56px; }
+  .app-shell.sidebar-collapsed .sidebar-head{
+    flex-direction:column; align-items:center; gap:12px;
+    padding:14px 8px 12px;
+  }
+  .app-shell.sidebar-collapsed .portal-brand span:not(.brand-mark){ display:none; }
+  .app-shell.sidebar-collapsed .menu-caption,
+  .app-shell.sidebar-collapsed .portal-nav,
+  .app-shell.sidebar-collapsed .sidebar-foot{ display:none; }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 900px){
+  .sidebar{
+    position:fixed; z-index:50;
+    top:0; bottom:0; left:0;
+    width:min(280px, 84vw);
+    transform:translateX(-100%);
+    transition:transform .2s ease;
+    box-shadow:none;
+  }
+  .app-shell.sidebar-open .sidebar{
+    transform:translateX(0);
+    box-shadow:var(--shadow);
+  }
+  .app-shell.sidebar-open .sidebar-scrim{ display:block; }
+  .sidebar-close{ display:grid; place-items:center; }
+  .menu-toggle{ display:grid; place-items:center; }
+  .portal-header{ padding:7px 14px; }
+}
+
+@media (max-width: 640px){
+  .breadcrumb{ display:none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .sidebar,.app-shell.sidebar-collapsed .sidebar,.chevron,.skip-link{ transition:none; }
+}
