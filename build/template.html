@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MES To-Be 설계를 위한 품질 모듈 포털 목업">
+  <title>MES To-Be Portal</title>
+  <link rel="stylesheet" href="./assets/portal.css">
+  <script src="./assets/portal.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="MES 모듈 메뉴">
+      <div class="sidebar-head">
+        <a class="portal-brand" href="#/quality-design/module-management/quality-spec" aria-label="MES 포털 홈">
+          <span class="brand-mark">M</span>
+          <span><b>MES</b><small>TO-BE PORTAL</small></span>
+        </a>
+        <button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="메뉴 접기" aria-expanded="true">«</button>
+        <button class="sidebar-close" id="sidebar-close" type="button" aria-label="메뉴 닫기">✕</button>
+      </div>
+
+      <div class="menu-caption">품질 업무</div>
+      <nav class="portal-nav" aria-label="품질 모듈">
+        <button class="nav-parent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
+          <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="nav-tree open" id="quality-design-tree">
+          <button class="nav-subparent" type="button" data-tree-toggle="module-management-tree" aria-expanded="true" aria-controls="module-management-tree">
+            <span>모듈관리</span><span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-tree nav-tree-inner open" id="module-management-tree">
+            <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
+              품질사양 관리
+            </a>
+          </div>
+        </div>
+
+        <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
+          품질판정
+        </a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <span class="mock-badge">MOCK-UP</span>
+        <span>TO-BE 설계용 · 로그인 없음</span>
+      </div>
+    </aside>
+
+    <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="메뉴 닫기" tabindex="-1"></button>
+
+    <div class="workspace">
+      <header class="portal-header">
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="sidebar" aria-expanded="false">
+          <span aria-hidden="true">☰</span>
+        </button>
+        <div class="page-context">
+          <div class="breadcrumb" id="breadcrumb" aria-label="현재 위치">
+            <span>품질설계</span><span aria-hidden="true">›</span><span>모듈관리</span><span aria-hidden="true">›</span>
+          </div>
+          <h1 id="page-title">품질사양 관리</h1>
+        </div>
+      </header>
+
+      <main class="main-content" id="main-content">
+        <section class="route-view active" id="quality-spec-view" aria-labelledby="page-title">
+          <iframe
+            id="module-frame"
+            title="품질사양 관리 목업"
+            src="./modules/quality-spec.html?embed=1"
+            loading="eager">
+          </iframe>
+        </section>
+
+        <section class="route-view placeholder-view" id="quality-judgment-view" aria-labelledby="judgment-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">QUALITY JUDGMENT</p>
+            <h2 id="judgment-title">품질판정</h2>
+            <p>품질판정 하위 프로그램을 설계하면 이 메뉴 아래에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <noscript>이 포털의 메뉴 전환을 사용하려면 JavaScript를 활성화해 주세요.</noscript>
+</body>
+</html>
