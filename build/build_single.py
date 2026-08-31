@@ -87,6 +87,21 @@ index = index.replace(
     '          <iframe id="module-frame-owe" title="주문단중에러관리 목업" '
     'loading="lazy" srcdoc="' + escaped_owe + '"></iframe>', 1)
 
+# --- 2d. 생산가부관리 모듈도 iframe srcdoc으로 내장 --------------------------
+module_pf = open(path('modules', 'production-feasibility.html'), encoding='utf-8').read()
+old_iframe_pf = '''          <iframe
+            id="module-frame-pf"
+            title="생산가부관리 목업"
+            src="./modules/production-feasibility.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_pf in index, 'pf iframe block not found'
+escaped_pf = module_pf.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_pf,
+    '          <iframe id="module-frame-pf" title="생산가부관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_pf + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')
