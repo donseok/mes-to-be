@@ -363,7 +363,13 @@ noscript{
             <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
               품질사양 관리
             </a>
-            <a class="nav-link" href="#/quality-design/module-management/quality-design-result" data-route="quality-design-result">
+          </div>
+
+          <button class="nav-subparent" type="button" data-tree-toggle="result-management-tree" aria-expanded="true" aria-controls="result-management-tree">
+            <span>결과관리</span><span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-tree nav-tree-inner open" id="result-management-tree">
+            <a class="nav-link" href="#/quality-design/result-management/quality-design-result" data-route="quality-design-result">
               품질설계결과
             </a>
           </div>
@@ -2949,8 +2955,17 @@ select.inp{padding-right:24px}
 /* ---------- split layout ---------- */
 .split{display:flex;height:calc(100vh - 52px);min-height:0}
 .embedded .split{height:100vh}
-.lpane{width:512px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface);min-height:0}
+.lpane{width:var(--lp-w,512px);flex:none;display:flex;flex-direction:column;background:var(--surface);min-height:0}
 .rpane{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+
+/* ----- 좌우 분할 리사이저 ----- */
+.splitter{flex:none;width:7px;cursor:col-resize;background:transparent;position:relative;touch-action:none}
+.splitter::before{content:'';position:absolute;inset:0;border-left:1px solid var(--border);left:3px}
+.splitter::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:36px;border-radius:3px;background:var(--border-strong)}
+.splitter:hover,.splitter:focus-visible{background:var(--accent-soft)}
+.splitter:hover::after,.splitter:focus-visible::after,body.resizing .splitter::after{background:var(--accent)}
+body.resizing{user-select:none;cursor:col-resize}
+body.resizing .lp-scroll,body.resizing .rp-scroll{pointer-events:none}
 
 /* ----- 좌: 의뢰현황 ----- */
 .lp-head{padding:12px 14px 0}
@@ -2965,7 +2980,7 @@ select.inp{padding-right:24px}
 .lp-filter input[type=date].inp{width:118px}
 .lp-actions{display:flex;gap:6px;margin-left:auto}
 .lp-scroll{flex:1;overflow:auto;min-height:0}
-table.list{width:100%;border-collapse:collapse;font-size:12.5px}
+table.list{width:100%;min-width:470px;border-collapse:collapse;font-size:12.5px}
 .list th{position:sticky;top:0;z-index:2;text-align:left;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-3);background:var(--surface-2);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;box-shadow:0 1px 0 var(--border)}
 .list td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
 .list .buyer{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
@@ -3054,7 +3069,8 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
 @media (max-width:960px){
   .split{flex-direction:column;height:auto}
   .embedded .split{height:auto}
-  .lpane{width:100%;border-right:none;border-bottom:1px solid var(--border)}
+  .lpane{width:100%!important;border-bottom:1px solid var(--border)}
+  .splitter{display:none}
   .lp-scroll{max-height:44vh}
   .rp-scroll{overflow:visible}
   .sec-nav{top:0}
@@ -3065,7 +3081,7 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
 
 <header class=&quot;topbar&quot;>
   <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>MES · Q-DESIGN</span></div>
-  <div class=&quot;crumb&quot;>품질설계 › 모듈관리 › <b>품질설계결과</b></div>
+  <div class=&quot;crumb&quot;>품질설계 › 결과관리 › <b>품질설계결과</b></div>
   <div class=&quot;topbar-right&quot;><span class=&quot;mock-flag&quot;>MOCK-UP</span></div>
 </header>
 
@@ -3110,6 +3126,10 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
     </div>
     <div class=&quot;lp-msg&quot;>MESSAGE <b id=&quot;q-msg&quot;>0건의 Data가 조회되었습니다.</b><span class=&quot;pgm-id&quot;>C104000010</span></div>
   </aside>
+
+  <div class=&quot;splitter&quot; id=&quot;splitter&quot; role=&quot;separator&quot; aria-orientation=&quot;vertical&quot; tabindex=&quot;0&quot;
+       aria-label=&quot;의뢰현황 폭 조절 — 드래그 또는 ←/→ 키, 더블클릭 시 기본 폭&quot;
+       title=&quot;드래그해서 목록 폭 조절 · ←/→ 키 · 더블클릭 초기화&quot;></div>
 
   <!-- ================= 우: 품질설계결과 ================= -->
   <main class=&quot;rpane&quot; aria-label=&quot;품질설계결과&quot;>
@@ -3559,6 +3579,49 @@ let deb;document.addEventListener('input',e=>{
   if(e.target.id==='qf-q'){clearTimeout(deb);deb=setTimeout(()=>{ui.fQ=e.target.value;renderList();},140);}
 });
 
+/* ---------- 좌우 분할 리사이저 ---------- */
+const LPW_KEY='qdesign-lpane-w', LPW_DEF=512, LPW_MIN=380;
+const lpMax=()=>Math.max(LPW_MIN,Math.min(Math.round(window.innerWidth*0.55),820));
+function setLpW(w,save){
+  w=Math.max(LPW_MIN,Math.min(lpMax(),Math.round(w)));
+  document.documentElement.style.setProperty('--lp-w',w+'px');
+  const sp=$('#splitter');
+  if(sp){sp.setAttribute('aria-valuemin',LPW_MIN);sp.setAttribute('aria-valuemax',lpMax());sp.setAttribute('aria-valuenow',w);}
+  if(save)try{localStorage.setItem(LPW_KEY,String(w));}catch(e){}
+  return w;
+}
+try{const s=parseInt(localStorage.getItem(LPW_KEY),10);if(s)setLpW(s);}catch(e){}
+(()=>{
+  const sp=$('#splitter');if(!sp)return;
+  let sx=0,sw=0;
+  sp.addEventListener('pointerdown',e=>{
+    sx=e.clientX;sw=$('.lpane').getBoundingClientRect().width;
+    document.body.classList.add('resizing');
+    sp.setPointerCapture(e.pointerId);
+  });
+  sp.addEventListener('pointermove',e=>{
+    if(!document.body.classList.contains('resizing'))return;
+    setLpW(sw+(e.clientX-sx));
+  });
+  const end=()=>{
+    if(!document.body.classList.contains('resizing'))return;
+    document.body.classList.remove('resizing');
+    setLpW($('.lpane').getBoundingClientRect().width,true);
+  };
+  sp.addEventListener('pointerup',end);sp.addEventListener('pointercancel',end);
+  sp.addEventListener('dblclick',()=>{setLpW(LPW_DEF,true);toast('목록 폭을 기본값(512px)으로 되돌렸습니다');});
+  sp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+      e.preventDefault();
+      setLpW($('.lpane').getBoundingClientRect().width+(e.key==='ArrowRight'?24:-24),true);
+    }else if(e.key==='Home'){e.preventDefault();setLpW(LPW_DEF,true);}
+  });
+  window.addEventListener('resize',()=>{
+    const cur=$('.lpane').getBoundingClientRect().width;
+    if(cur>lpMax())setLpW(lpMax());
+  });
+})();
+
 /* ---------- init ---------- */
 renderList();
 select('D260831014-010');
@@ -3597,10 +3660,10 @@ select('D260831014-010');
       openLink: true
     },
     'quality-design-result': {
-      hash: '#/quality-design/module-management/quality-design-result',
+      hash: '#/quality-design/result-management/quality-design-result',
       viewId: 'quality-design-result-view',
       title: '품질설계결과',
-      crumbs: ['품질설계', '모듈관리'],
+      crumbs: ['품질설계', '결과관리'],
       openLink: true
     },
     'quality-judgment': {

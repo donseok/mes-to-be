@@ -14,10 +14,10 @@
       openLink: true
     },
     'quality-design-result': {
-      hash: '#/quality-design/module-management/quality-design-result',
+      hash: '#/quality-design/result-management/quality-design-result',
       viewId: 'quality-design-result-view',
       title: '품질설계결과',
-      crumbs: ['품질설계', '모듈관리'],
+      crumbs: ['품질설계', '결과관리'],
       openLink: true
     },
     'quality-judgment': {
