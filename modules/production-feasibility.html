@@ -539,7 +539,7 @@ function editedCount(){
 
 /* ---------- ui 상태 ---------- */
 var ui={
-  edit:false,
+  edit:false,lookup:null, // lookup: {w,t} — 간편조회 중인 좌표
   histFrom:'',histTo:'',histKind:'',histQ:''
 };
 
@@ -569,17 +569,21 @@ function buildGroups(){ // 뼈대 1회 생성
       +'</table></div></div>';
   }).join('');
 }
-function renderGroups(){ // 상태·색만 갱신
+function renderGroups(){ // 상태·색만 갱신 (hl 등 무관한 클래스는 보존)
   $$('#mgroups td').forEach(function(td){
     var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
     var st=cellState(g,w,t),edited=isEdited(g,w,t);
-    td.className=STATES[st].cls+(edited?' edited':'');
+    td.classList.toggle('p',st==='P');
+    td.classList.toggle('c',st==='C');
+    td.classList.toggle('x',st==='X');
+    td.classList.toggle('edited',edited);
     var label=cellLabel(g,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
     td.title=label;td.setAttribute('aria-label',label);
   });
   var ed=editedCount();
   $('#range-info').textContent='재질 그룹 '+GROUPS.length+'종 · 폭 '+WIDTHS.length+'단 × 두께 '+THICKS.length+'단 · 수정 '+ed+'셀';
   $('#cnt-hist').textContent=state.changelog.length;
+  renderLookupChips(); // 조회 중이면 chip도 최신 상태로 갱신
 }
 
 /* ---------- 가부 간편조회 ---------- */
@@ -590,20 +594,26 @@ function buildLookup(){
 function stateColor(st){
   return st==='P'?'var(--xl-ok)':st==='C'?'var(--xl-cond)':st==='X'?'var(--xl-no-verified)':'var(--surface)';
 }
-function runLookup(){
-  var w=Number($('#lk-width').value),t=Number($('#lk-thick').value);
+function renderLookupChips(){
+  if(!ui.lookup){$('#lookup-chips').innerHTML='';return;}
+  var w=ui.lookup.w,t=ui.lookup.t;
   $('#lookup-chips').innerHTML=GROUPS.map(function(g){
     var st=cellState(g.key,w,t);
     return '<span class="lchip"><span class="dot" style="background:'+stateColor(st)+'"></span>'
       +esc(g.name)+' : <b>'+esc(STATES[st].name)+'</b></span>';
   }).join('');
+}
+function runLookup(){
+  ui.lookup={w:Number($('#lk-width').value),t:Number($('#lk-thick').value)};
+  renderLookupChips();
   $$('#mgroups td').forEach(function(td){
     td.classList.toggle('hl',
-      Number(td.getAttribute('data-w'))===w&&Number(td.getAttribute('data-t'))===t);
+      Number(td.getAttribute('data-w'))===ui.lookup.w&&Number(td.getAttribute('data-t'))===ui.lookup.t);
   });
 }
 function clearLookup(){
-  $('#lookup-chips').innerHTML='';
+  ui.lookup=null;
+  renderLookupChips();
   $$('#mgroups td.hl').forEach(function(td){td.classList.remove('hl');});
 }
 
