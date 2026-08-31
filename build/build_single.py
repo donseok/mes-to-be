@@ -72,6 +72,21 @@ index = index.replace(
     '          <iframe id="module-frame-qd" title="품질설계결과 목업" '
     'loading="lazy" srcdoc="' + escaped_qd + '"></iframe>', 1)
 
+# --- 2c. 주문단중에러관리 모듈도 iframe srcdoc으로 내장 ----------------------
+module_owe = open(path('modules', 'order-weight-error.html'), encoding='utf-8').read()
+old_iframe_owe = '''          <iframe
+            id="module-frame-owe"
+            title="주문단중에러관리 목업"
+            src="./modules/order-weight-error.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_owe in index, 'owe iframe block not found'
+escaped_owe = module_owe.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_owe,
+    '          <iframe id="module-frame-owe" title="주문단중에러관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_owe + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')

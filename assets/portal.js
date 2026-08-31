@@ -18,7 +18,7 @@
       viewId: 'order-unit-weight-error-view',
       title: '주문단중에러관리',
       crumbs: ['품질설계', '생산가부관리'],
-      openLink: false
+      openLink: true
     },
     'order-consistency': {
       hash: '#/quality-design/feasibility-management/order-consistency',

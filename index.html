@@ -258,7 +258,7 @@ a{ color:inherit; }
   flex:1; min-height:0;
 }
 
-#module-frame, #module-frame-qd{
+#module-frame, #module-frame-qd, #module-frame-owe{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }
@@ -3646,12 +3646,687 @@ select('D260831014-010');
 "></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="order-unit-weight-error-view" aria-labelledby="order-unit-weight-error-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">ORDER UNIT WEIGHT ERROR</p>
-            <h2 id="order-unit-weight-error-title">주문단중에러관리</h2>
-            <p>주문단중에러관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="order-unit-weight-error-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-owe" title="주문단중에러관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>W-ERR 주문단중에러관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   W-ERR — MES 생산가부관리 주문단중에러관리 목업
+   행: 주문단중(MT) 15.0~35.0 · 열: 분할 수 2~10 · 셀: 분할 단중.
+   Min~Max 범위 내 셀은 참조 화면(엑셀)과 같은 시안색 강조.
+   palette·타입은 Q-SPEC 모듈과 동일한 디자인 시스템 사용.
+   ============================================================ */
+:root{
+  --bg:#F4F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EDF1F6;
+  --surface-3:#E3E9F0;
+  --border:#D9E0E8;
+  --border-strong:#B9C4D0;
+  --ink:#18222F;
+  --ink-2:#4C5A6B;
+  --ink-3:#7C8798;
+  --accent:#1D5FBF;
+  --accent-strong:#174C99;
+  --accent-on:#FFFFFF;
+  --accent-soft:#E4EDFA;
+  --accent-soft-ink:#174C99;
+  --result:#B45309;
+  --result-soft:#F9EFE0;
+  --danger:#B91C1C;
+  --danger-bg:#FBE4E4;
+  --code-bg:#EEF2F7;
+  --scrim:rgba(16,24,34,.44);
+  --shadow:0 8px 28px rgba(23,42,68,.14);
+  --topbar-bg:#14202E;
+  --topbar-ink:#D8E1EC;
+  --topbar-dim:#8DA0B5;
+  --focus:#1D5FBF;
+  /* 참조 엑셀 화면 색 */
+  --xl-head:#FFF200;         /* 헤더(분할·열번호·Min/Max 라벨) 노랑 */
+  --xl-head-ink:#111111;
+  --xl-ok:#C6EFF1;           /* 허용범위 내 셀 배경 (시안) */
+  --xl-ok-ink:#14489E;       /* 허용범위 내 값 (파랑 굵은 이탤릭) */
+  --xl-grid:#9AA5B1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-size:14px;line-height:1.55;min-height:100vh;
+}
+body.modal-open{overflow:hidden}
+.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+::placeholder{color:var(--ink-3)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* ---------- top bar ---------- */
+.topbar{
+  background:var(--topbar-bg);color:var(--topbar-ink);
+  display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
+  position:sticky;top:0;z-index:30;
+}
+.embedded .topbar{display:none}
+.embedded .tabs{top:0}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{
+  width:22px;height:22px;border-radius:5px;
+  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+}
+.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
+.crumb b{color:var(--topbar-ink);font-weight:500}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.mock-flag{
+  font-size:10.5px;letter-spacing:.14em;font-weight:700;color:#0E1622;
+  background:#E2A05B;border-radius:4px;padding:2px 7px;
+}
+@media (max-width:920px){.crumb{display:none}}
+
+/* ---------- tabs ---------- */
+.tabs{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;gap:2px;padding:0 20px;overflow-x:auto;
+  position:sticky;top:52px;z-index:29;scrollbar-width:thin;
+}
+.tab{
+  padding:11px 14px 9px;font-size:13.5px;font-weight:500;color:var(--ink-2);
+  border-bottom:2px solid transparent;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.tab .cnt{
+  font-size:11px;font-weight:600;padding:0 6px;border-radius:99px;min-width:20px;text-align:center;
+  background:var(--surface-2);color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+/* ---------- layout ---------- */
+.wrap{padding:16px 20px 60px;max-width:1180px;margin:0 auto}
+.screen{display:none}
+.screen.on{display:block}
+.panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;
+}
+.panel+.panel{margin-top:14px}
+
+/* ---------- filter bar ---------- */
+.fbar{
+  display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin-bottom:14px;
+}
+.f-field{display:flex;flex-direction:column;gap:4px}
+.f-field label{font-size:11.5px;font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.inp{
+  border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);
+  padding:7px 10px;font-size:13.5px;min-height:36px;
+}
+.inp:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{
+  border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);
+  padding:0 14px;min-height:36px;font-size:13.5px;font-weight:600;color:var(--ink);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-danger{color:var(--danger);border-color:#E2B4B4}
+.btn-danger:hover{background:var(--danger-bg)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-soft-ink)}
+.fbar-meta{margin-left:auto;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fbar-meta b{color:var(--ink)}
+.f-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
+
+/* Min/Max 입력 — 참조 화면의 노랑 라벨 박스 느낌 */
+.mm-box{display:flex;align-items:stretch;border:1.5px solid var(--xl-grid);border-radius:7px;overflow:hidden}
+.mm-box+.mm-box{margin-left:2px}
+.mm-box .mm-label{
+  background:var(--xl-head);color:var(--xl-head-ink);
+  font-weight:700;font-size:13px;display:flex;align-items:center;padding:0 12px;
+  border-right:1.5px solid var(--xl-grid);min-width:52px;justify-content:center;
+}
+.mm-box input{
+  border:none;width:84px;padding:7px 10px;text-align:right;
+  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
+}
+.mm-box input:focus{outline:none;background:var(--accent-soft)}
+
+/* ---------- 범례 ---------- */
+.legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg .sw{
+  width:26px;height:16px;border:1px solid var(--xl-grid);border-radius:3px;display:inline-block;
+  background:var(--surface);
+}
+.lg .sw.ok{background:var(--xl-ok)}
+.lg .sw.edited{position:relative;background:var(--surface)}
+.lg .sw.edited::after{
+  content:'';position:absolute;right:0;top:0;
+  border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--result) transparent transparent;
+}
+
+/* ---------- 매트릭스 그리드 ---------- */
+.tbl-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:260px}
+table.matrix{
+  border-collapse:separate;border-spacing:0;
+  font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+  font-size:13px;min-width:760px;width:100%;
+}
+.matrix th,.matrix td{
+  border-right:1px solid var(--xl-grid);border-bottom:1px solid var(--xl-grid);
+  padding:4px 10px;text-align:right;white-space:nowrap;
+}
+.matrix thead th{
+  background:var(--xl-head);color:var(--xl-head-ink);
+  font-weight:700;text-align:center;position:sticky;top:0;z-index:3;
+  border-top:1px solid var(--xl-grid);
+}
+.matrix thead th:first-child{left:0;z-index:4;text-align:center}
+.matrix th:first-child,.matrix td:first-child{border-left:1px solid var(--xl-grid)}
+.matrix tbody th{
+  background:var(--surface);font-weight:700;text-align:right;
+  position:sticky;left:0;z-index:2;font-family:'IBM Plex Sans KR',sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.matrix td{background:var(--surface);color:var(--ink);cursor:default}
+.matrix td.ok{
+  background:var(--xl-ok);color:var(--xl-ok-ink);
+  font-weight:700;font-style:italic;
+}
+.matrix td.edited{position:relative}
+.matrix td.edited::after{
+  content:'';position:absolute;right:0;top:0;
+  border-style:solid;border-width:0 8px 8px 0;border-color:transparent var(--result) transparent transparent;
+}
+.edit-on .matrix td{cursor:cell}
+.edit-on .matrix td:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.matrix td.editing{padding:0;outline:2px solid var(--accent);outline-offset:-2px}
+.matrix td.editing input{
+  width:100%;min-width:64px;border:none;background:var(--accent-soft);
+  padding:4px 10px;text-align:right;font:inherit;
+}
+.matrix td.editing input:focus{outline:none}
+
+.panel-note{
+  padding:9px 14px;border-top:1px solid var(--border);
+  font-size:12px;color:var(--ink-2);background:var(--surface-2);
+  display:flex;gap:14px;flex-wrap:wrap;
+}
+.panel-note b{color:var(--ink)}
+
+/* ---------- 이력 테이블 ---------- */
+table.grid{border-collapse:collapse;width:100%;font-size:13px}
+.grid th,.grid td{border-bottom:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+.grid thead th{
+  background:var(--surface-2);font-size:12px;font-weight:700;color:var(--ink-2);
+  position:sticky;top:0;z-index:2;white-space:nowrap;
+}
+.grid td.c,.grid th.c{text-align:center}
+.grid tbody tr:hover td{background:var(--accent-soft)}
+.cell-sub{color:var(--ink-3);font-size:12px}
+.chip{
+  display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:1px 9px;white-space:nowrap;
+}
+.chip.cell{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.range{background:var(--result-soft);color:var(--result)}
+.chip.reset{background:var(--danger-bg);color:var(--danger)}
+.h-scroll{overflow:auto;max-height:calc(100vh - 290px)}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
+.empty .big{font-size:15px;font-weight:700;color:var(--ink-2);margin-bottom:4px}
+.search-wrap{position:relative;display:flex}
+.search-wrap .inp{width:100%;padding-right:30px}
+.search-clear{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border-radius:6px;color:var(--ink-3);display:none;
+  align-items:center;justify-content:center;font-size:12px;
+}
+.search-clear.on{display:inline-flex}
+.search-clear:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- 모달 ---------- */
+.modal-back{
+  position:fixed;inset:0;background:var(--scrim);z-index:60;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-back.on{display:flex}
+.modal{
+  background:var(--surface);border-radius:12px;box-shadow:var(--shadow);
+  width:min(480px,100%);max-height:86vh;display:flex;flex-direction:column;
+}
+.modal-h{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px}
+.modal-b{padding:16px 18px;overflow:auto;font-size:13.5px;color:var(--ink-2)}
+.modal-b b{color:var(--ink)}
+.modal-f{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#203042;color:#EAF1F8;
+  border-radius:9px;padding:10px 16px;font-size:13.5px;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:80;max-width:90vw;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background-color:#7C1D1D}
+</style>
+</head>
+<body>
+
+<!-- ================= top bar ================= -->
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>MES · W-ERR</span></div>
+  <div class=&quot;crumb&quot;>품질설계 › 생산가부관리 › <b>주문단중에러관리</b></div>
+  <div class=&quot;topbar-right&quot;><span class=&quot;mock-flag&quot;>MOCK-UP</span></div>
+</header>
+
+<!-- ================= tabs ================= -->
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; id=&quot;tab-grid&quot; data-tab=&quot;grid&quot; role=&quot;tab&quot; aria-selected=&quot;true&quot; aria-controls=&quot;sc-grid&quot; tabindex=&quot;0&quot;>단중에러 기준 <span class=&quot;cnt&quot; id=&quot;cnt-ok&quot;>0</span></button>
+  <button class=&quot;tab&quot; id=&quot;tab-hist&quot; data-tab=&quot;hist&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot; aria-controls=&quot;sc-hist&quot; tabindex=&quot;-1&quot;>수정 이력 <span class=&quot;cnt&quot; id=&quot;cnt-hist&quot;>0</span></button>
+</nav>
+
+<main class=&quot;wrap&quot; id=&quot;main-content&quot;>
+
+  <!-- ================= 단중에러 기준 (조회/수정) ================= -->
+  <section class=&quot;screen on&quot; id=&quot;sc-grid&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;tab-grid&quot;>
+    <div class=&quot;fbar&quot;>
+      <div class=&quot;f-field&quot;><label for=&quot;mm-min&quot;>허용 단중 범위 (MT/개)</label>
+        <div style=&quot;display:flex;gap:6px&quot;>
+          <div class=&quot;mm-box&quot;><span class=&quot;mm-label&quot;>Min</span><input id=&quot;mm-min&quot; type=&quot;number&quot; step=&quot;0.1&quot; min=&quot;0&quot; aria-label=&quot;허용 단중 최솟값&quot;></div>
+          <div class=&quot;mm-box&quot;><span class=&quot;mm-label&quot;>Max</span><input id=&quot;mm-max&quot; type=&quot;number&quot; step=&quot;0.1&quot; min=&quot;0&quot; aria-label=&quot;허용 단중 최댓값&quot;></div>
+        </div>
+      </div>
+      <div class=&quot;f-sep&quot; aria-hidden=&quot;true&quot;></div>
+      <button class=&quot;btn&quot; id=&quot;btn-edit&quot; data-action=&quot;toggle-edit&quot; aria-pressed=&quot;false&quot;>✎ 수정 모드</button>
+      <button class=&quot;btn btn-danger&quot; data-action=&quot;reset-overrides&quot;>수정값 전체 초기화</button>
+      <div class=&quot;fbar-meta&quot;>
+        <span class=&quot;legend&quot; aria-hidden=&quot;false&quot;>
+          <span class=&quot;lg&quot;><span class=&quot;sw ok&quot;></span>범위 내 (생산 가능)</span>
+          <span class=&quot;lg&quot;><span class=&quot;sw edited&quot;></span>수정된 값</span>
+        </span>
+        <b id=&quot;grid-info&quot;>—</b>
+      </div>
+    </div>
+
+    <div class=&quot;panel&quot;>
+      <div class=&quot;tbl-scroll&quot; id=&quot;matrix-scroll&quot;>
+        <table class=&quot;matrix&quot; id=&quot;matrix&quot; aria-label=&quot;주문단중 × 분할 수 분할 단중표&quot;>
+          <thead><tr id=&quot;matrix-head&quot;></tr></thead>
+          <tbody id=&quot;matrix-body&quot;></tbody>
+        </table>
+      </div>
+      <div class=&quot;panel-note&quot;>
+        <span>행: <b>주문단중(MT)</b> 15.0 ~ 35.0 · 열: <b>분할 수</b> 2 ~ 10 · 셀: <b>분할 단중 = 주문단중 ÷ 분할 수</b></span>
+        <span>Min~Max 범위 내 값은 <b>생산 가능 분할</b>로 표시됩니다.</span>
+        <span id=&quot;edit-hint&quot; hidden>수정 모드: 셀을 클릭해 값을 변경하세요 (Enter 저장 · Esc 취소 · 빈 값 저장 시 기본값 복원)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 수정 이력 ================= -->
+  <section class=&quot;screen&quot; id=&quot;sc-hist&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;tab-hist&quot;>
+    <div class=&quot;fbar&quot;>
+      <div class=&quot;f-field&quot;><label for=&quot;h-from&quot;>변경기간</label><input type=&quot;date&quot; class=&quot;inp&quot; id=&quot;h-from&quot;></div>
+      <span class=&quot;cell-sub&quot; style=&quot;align-self:center&quot;>~</span>
+      <div class=&quot;f-field&quot;><input type=&quot;date&quot; class=&quot;inp&quot; id=&quot;h-to&quot; aria-label=&quot;변경기간 종료일&quot;></div>
+      <div class=&quot;f-field&quot;><label for=&quot;h-kind&quot;>구분</label>
+        <select class=&quot;inp&quot; id=&quot;h-kind&quot;>
+          <option value=&quot;&quot;>전체</option><option>셀 수정</option><option>범위 변경</option><option>초기화</option>
+        </select></div>
+      <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label for=&quot;h-q&quot;>키워드</label>
+        <div class=&quot;search-wrap&quot;><input class=&quot;inp&quot; id=&quot;h-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;항목·작업자 검색&quot;>
+          <button class=&quot;search-clear&quot; id=&quot;h-q-clear&quot; data-action=&quot;h-search-clear&quot; aria-label=&quot;검색어 지우기&quot;>✕</button></div></div>
+      <button class=&quot;btn btn-pri&quot; data-action=&quot;h-search&quot;>조회</button>
+      <button class=&quot;btn&quot; data-action=&quot;h-reset&quot;>초기화</button>
+      <div class=&quot;fbar-meta&quot; aria-live=&quot;polite&quot;><b id=&quot;h-result-info&quot;>0건 표시</b></div>
+    </div>
+    <div class=&quot;panel&quot;>
+      <div class=&quot;h-scroll&quot;>
+        <table class=&quot;grid&quot; aria-label=&quot;수정 이력 목록&quot;>
+          <thead><tr>
+            <th style=&quot;width:150px&quot;>일시</th><th class=&quot;c&quot; style=&quot;width:92px&quot;>구분</th>
+            <th>항목</th><th style=&quot;width:110px&quot;>변경 전</th><th style=&quot;width:110px&quot;>변경 후</th>
+            <th style=&quot;width:100px&quot;>작업자</th>
+          </tr></thead>
+          <tbody id=&quot;h-tbody&quot;></tbody>
+        </table>
+        <div id=&quot;h-empty&quot; class=&quot;empty&quot; style=&quot;display:none&quot;><div class=&quot;big&quot;>조건에 맞는 이력이 없습니다</div>기간·구분·키워드를 조정해 보세요.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= 확인 모달 ================= -->
+<div class=&quot;modal-back&quot; id=&quot;modal-back&quot; role=&quot;presentation&quot;>
+  <div class=&quot;modal&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-labelledby=&quot;modal-title&quot;>
+    <div class=&quot;modal-h&quot; id=&quot;modal-title&quot;>수정값 전체 초기화</div>
+    <div class=&quot;modal-b&quot; id=&quot;modal-body&quot;></div>
+    <div class=&quot;modal-f&quot;>
+      <button class=&quot;btn&quot; data-action=&quot;modal-close&quot;>취소</button>
+      <button class=&quot;btn btn-danger&quot; data-action=&quot;modal-ok&quot;>초기화</button>
+    </div>
+  </div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;></div>
+
+<script>
+'use strict';
+/* ============================================================
+   상태 — localStorage에만 저장 (LS_KEY 버전을 올리면 시드로 초기화)
+   changelog: {id, ts, by, kind, item, before, after}
+   overrides: {'행단중-열분할': 값}  (기본값 = 행 ÷ 열 반올림 2자리)
+   ============================================================ */
+var LS_KEY='owe-mock-v1';
+var CUR_USER='주인';               // 목업 공통: 화면에서 직접 수정하는 사용자
+var ROW_MIN=15.0,ROW_MAX=35.0,ROW_STEP=0.5;
+var COL_MIN=2,COL_MAX=10;
+
+var $=function(s){return document.querySelector(s);};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+function esc(s){return String(s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+function pad2(n){return String(n).padStart(2,'0');}
+function now(){return Date.now();}
+function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function dateStr(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function fmt2(v){return Number(v).toFixed(2);}
+function fmt1(v){return Number(v).toFixed(1);}
+function baseVal(row,col){return Math.round(row/col*100)/100;}
+function cellKey(row,col){return fmt1(row)+'-'+col;}
+function cellLabel(row,col){return '단중 '+fmt1(row)+' × '+col+'분할';}
+
+var toastTimer=null;
+function toast(msg,type){
+  var t=$('#toast');t.textContent=msg;
+  t.className='toast on'+(type==='err'?' err':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2600);
+}
+
+/* ---------- seed ---------- */
+function ago(days,hours){return now()-((days||0)*24+(hours||0))*60*60*1000;}
+function seedState(){
+  var st={v:LS_KEY,seq:1,min:4.0,max:5.0,overrides:{},changelog:[]};
+  function log(ts,by,kind,item,before,after){
+    st.changelog.push({id:'c'+(st.seq++),ts:ts,by:by,kind:kind,item:item,before:before,after:after});
+  }
+  // 시드: 실제 화면이 살아 있도록 최근 수정 이력 + 수정 셀 두 개
+  log(ago(6,2),'김민석','범위 변경','허용 단중 Min','3.5','4.0');
+  st.overrides[cellKey(24.0,6)]=4.05;
+  log(ago(2,5),'박서연','셀 수정',cellLabel(24.0,6),'4.00','4.05');
+  st.overrides[cellKey(30.0,7)]=4.30;
+  log(ago(1,3),'이도현','셀 수정',cellLabel(30.0,7),'4.29','4.30');
+  return st;
+}
+var state=null;
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function loadState(){
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(raw){var st=JSON.parse(raw);if(st&amp;&amp;st.v===LS_KEY)return st;}
+  }catch(e){}
+  return seedState();
+}
+state=loadState();saveState();
+function addLog(kind,item,before,after,by){
+  state.changelog.push({id:'c'+(state.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before,after:after});
+}
+
+/* ---------- ui 상태 ---------- */
+var ui={
+  edit:false,editingKey:null,
+  histFrom:'',histTo:'',histKind:'',histQ:''
+};
+
+/* ============================================================
+   단중에러 기준 매트릭스
+   ============================================================ */
+function rows(){var a=[];for(var r=ROW_MIN;r<=ROW_MAX+1e-9;r+=ROW_STEP)a.push(Math.round(r*10)/10);return a;}
+function cols(){var a=[];for(var c=COL_MIN;c<=COL_MAX;c++)a.push(c);return a;}
+function cellVal(row,col){
+  var o=state.overrides[cellKey(row,col)];
+  return typeof o==='number'?o:baseVal(row,col);
+}
+function inRange(v){
+  var lo=Number(state.min),hi=Number(state.max);
+  if(!isFinite(lo)||!isFinite(hi))return false;
+  return v>=lo-1e-9&amp;&amp;v<=hi+1e-9;
+}
+function buildMatrix(){ // 뼈대 1회 생성
+  $('#matrix-head').innerHTML='<th scope=&quot;col&quot;>분할</th>'+cols().map(function(c){
+    return '<th scope=&quot;col&quot;>'+c+'</th>';}).join('');
+  $('#matrix-body').innerHTML=rows().map(function(r){
+    return '<tr><th scope=&quot;row&quot;>'+fmt1(r)+'</th>'+cols().map(function(c){
+      return '<td data-key=&quot;'+cellKey(r,c)+'&quot; data-row=&quot;'+fmt1(r)+'&quot; data-col=&quot;'+c+'&quot;></td>';
+    }).join('')+'</tr>';
+  }).join('');
+}
+function renderMatrix(){ // 값·색만 갱신
+  var okCnt=0,edCnt=0;
+  $$('#matrix-body td').forEach(function(td){
+    if(td.classList.contains('editing'))return;
+    var r=Number(td.getAttribute('data-row')),c=Number(td.getAttribute('data-col'));
+    var v=cellVal(r,c),edited=typeof state.overrides[cellKey(r,c)]==='number';
+    td.textContent=fmt2(v);
+    td.classList.toggle('ok',inRange(v));
+    td.classList.toggle('edited',edited);
+    td.title=edited?cellLabel(r,c)+' — 수정값 (기본값 '+fmt2(baseVal(r,c))+')':'';
+    if(inRange(v))okCnt++;if(edited)edCnt++;
+  });
+  $('#mm-min').value=state.min;$('#mm-max').value=state.max;
+  $('#cnt-ok').textContent=okCnt;
+  $('#grid-info').textContent='허용범위 '+state.min+' ~ '+state.max+' · 범위 내 '+okCnt+'셀 · 수정 '+edCnt+'셀';
+  $('#cnt-hist').textContent=state.changelog.length;
+}
+
+/* ---------- Min/Max 수정 (항상 가능 · 이력 기록) ---------- */
+function commitRange(which,inputEl){
+  var prev=which==='min'?state.min:state.max;
+  var v=parseFloat(inputEl.value);
+  if(!isFinite(v)||v<0){inputEl.value=prev;toast('0 이상의 숫자를 입력하세요','err');return;}
+  v=Math.round(v*100)/100;
+  var lo=which==='min'?v:Number(state.min);
+  var hi=which==='max'?v:Number(state.max);
+  if(lo>hi){inputEl.value=prev;toast('Min은 Max보다 클 수 없습니다','err');return;}
+  if(v===prev){inputEl.value=prev;return;}
+  if(which==='min')state.min=v;else state.max=v;
+  addLog('범위 변경','허용 단중 '+(which==='min'?'Min':'Max'),String(prev),String(v));
+  saveState();renderMatrix();renderHist();
+  toast('허용 단중 '+(which==='min'?'Min':'Max')+' '+prev+' → '+v+' 저장 · 이력에 기록되었습니다');
+}
+$('#mm-min').addEventListener('change',function(){commitRange('min',this);});
+$('#mm-max').addEventListener('change',function(){commitRange('max',this);});
+['mm-min','mm-max'].forEach(function(id){ // 입력 중 실시간 색 미리보기 (저장은 change 시)
+  document.getElementById(id).addEventListener('input',function(){
+    var lo=parseFloat($('#mm-min').value),hi=parseFloat($('#mm-max').value);
+    if(!isFinite(lo)||!isFinite(hi)||lo>hi)return;
+    $$('#matrix-body td').forEach(function(td){
+      if(td.classList.contains('editing'))return;
+      var v=cellVal(Number(td.getAttribute('data-row')),Number(td.getAttribute('data-col')));
+      td.classList.toggle('ok',v>=lo-1e-9&amp;&amp;v<=hi+1e-9);
+    });
+  });
+});
+
+/* ---------- 셀 수정 (수정 모드에서 클릭) ---------- */
+function setEditMode(on){
+  ui.edit=on;
+  document.body.classList.toggle('edit-on',on);
+  var b=$('#btn-edit');
+  b.classList.toggle('on',on);
+  b.setAttribute('aria-pressed',on?'true':'false');
+  b.textContent=on?'✓ 수정 모드 종료':'✎ 수정 모드';
+  $('#edit-hint').hidden=!on;
+  if(!on)closeEditor(false);
+}
+function closeEditor(commit){
+  var td=$('#matrix .editing');if(!td)return;
+  var inputEl=td.querySelector('input');
+  var key=td.getAttribute('data-key');
+  var r=Number(td.getAttribute('data-row')),c=Number(td.getAttribute('data-col'));
+  var prev=cellVal(r,c);
+  td.classList.remove('editing');ui.editingKey=null;
+  if(commit&amp;&amp;inputEl){
+    var raw=inputEl.value.trim();
+    if(raw===''){ // 빈 값 = 기본값 복원
+      if(typeof state.overrides[key]==='number'){
+        delete state.overrides[key];
+        addLog('셀 수정',cellLabel(r,c),fmt2(prev),fmt2(baseVal(r,c))+' (기본값 복원)');
+        saveState();toast(cellLabel(r,c)+' 기본값으로 복원 · 이력에 기록되었습니다');
+      }
+    }else{
+      var v=parseFloat(raw);
+      if(!isFinite(v)||v<=0){toast('0보다 큰 숫자를 입력하세요','err');renderMatrix();renderHist();return;}
+      v=Math.round(v*100)/100;
+      if(v!==prev){
+        if(v===baseVal(r,c))delete state.overrides[key];
+        else state.overrides[key]=v;
+        addLog('셀 수정',cellLabel(r,c),fmt2(prev),fmt2(v));
+        saveState();toast(cellLabel(r,c)+' '+fmt2(prev)+' → '+fmt2(v)+' 저장 · 이력에 기록되었습니다');
+      }
+    }
+  }
+  renderMatrix();renderHist();
+}
+$('#matrix').addEventListener('click',function(e){
+  if(!ui.edit)return;
+  var td=e.target.closest('td');
+  if(!td||!td.hasAttribute('data-key')||td.classList.contains('editing'))return;
+  closeEditor(true);
+  var r=Number(td.getAttribute('data-row')),c=Number(td.getAttribute('data-col'));
+  ui.editingKey=td.getAttribute('data-key');
+  td.classList.add('editing');
+  td.innerHTML='<input type=&quot;number&quot; step=&quot;0.01&quot; min=&quot;0&quot; value=&quot;'+fmt2(cellVal(r,c))+'&quot; aria-label=&quot;'+esc(cellLabel(r,c))+' 값 수정&quot;>';
+  var inp=td.querySelector('input');inp.focus();inp.select();
+  inp.addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();closeEditor(true);}
+    else if(ev.key==='Escape'){ev.preventDefault();closeEditor(false);}
+  });
+  inp.addEventListener('blur',function(){setTimeout(function(){
+    if(ui.editingKey&amp;&amp;$('#matrix .editing'))closeEditor(true);
+  },0);});
+});
+
+/* ---------- 수정값 전체 초기화 ---------- */
+function openResetModal(){
+  var n=Object.keys(state.overrides).length;
+  if(!n){toast('수정된 셀이 없습니다');return;}
+  $('#modal-body').innerHTML='수정된 셀 <b>'+n+'개</b>를 모두 기본값(주문단중 ÷ 분할 수)으로 되돌립니다.<br>'
+    +'초기화 내역도 <b>수정 이력</b>에 기록됩니다. 계속할까요?';
+  $('#modal-back').classList.add('on');document.body.classList.add('modal-open');
+}
+function closeModal(){$('#modal-back').classList.remove('on');document.body.classList.remove('modal-open');}
+function doReset(){
+  var keys=Object.keys(state.overrides);
+  keys.forEach(function(key){
+    var m=key.split('-');var r=Number(m[0]),c=Number(m[1]);
+    addLog('초기화',cellLabel(r,c),fmt2(state.overrides[key]),fmt2(baseVal(r,c)));
+  });
+  state.overrides={};
+  saveState();renderMatrix();renderHist();closeModal();
+  toast('수정된 셀 '+keys.length+'개를 기본값으로 초기화했습니다 · 이력에 기록되었습니다');
+}
+
+/* ============================================================
+   수정 이력
+   ============================================================ */
+function histDefaults(){
+  ui.histFrom=dateStr(now()-7*24*60*60*1000);
+  ui.histTo=dateStr(now());
+  ui.histKind='';ui.histQ='';
+  $('#h-from').value=ui.histFrom;$('#h-to').value=ui.histTo;
+  $('#h-kind').value='';$('#h-q').value='';
+}
+function histRunQuery(){
+  ui.histFrom=$('#h-from').value;ui.histTo=$('#h-to').value;
+  ui.histKind=$('#h-kind').value;ui.histQ=$('#h-q').value;
+  renderHist();
+}
+function kindChip(kind){
+  var cls=kind==='셀 수정'?'cell':kind==='범위 변경'?'range':'reset';
+  return '<span class=&quot;chip '+cls+'&quot;>'+esc(kind)+'</span>';
+}
+function renderHist(){
+  var from=ui.histFrom?new Date(ui.histFrom+'T00:00:00').getTime():-Infinity;
+  var to=ui.histTo?new Date(ui.histTo+'T23:59:59').getTime():Infinity;
+  var q=(ui.histQ||'').trim().toLowerCase();
+  var arr=state.changelog.filter(function(r){
+    return r.ts>=from&amp;&amp;r.ts<=to
+      &amp;&amp;(!ui.histKind||r.kind===ui.histKind)
+      &amp;&amp;(!q||(r.item+' '+r.by+' '+r.kind).toLowerCase().indexOf(q)>=0);
+  }).sort(function(a,b){return b.ts-a.ts;});
+  $('#h-q-clear').classList.toggle('on',!!ui.histQ);
+  $('#h-result-info').textContent=arr.length+'건 표시';
+  $('#h-tbody').innerHTML=arr.map(function(r){
+    return '<tr>'
+      +'<td class=&quot;num mono&quot;>'+fmtDT(r.ts)+'</td>'
+      +'<td class=&quot;c&quot;>'+kindChip(r.kind)+'</td>'
+      +'<td>'+esc(r.item)+'</td>'
+      +'<td class=&quot;num mono&quot;>'+esc(r.before)+'</td>'
+      +'<td class=&quot;num mono&quot;><b>'+esc(r.after)+'</b></td>'
+      +'<td>'+esc(r.by)+'</td></tr>';
+  }).join('');
+  $('#h-empty').style.display=arr.length?'none':'block';
+  $('#cnt-hist').textContent=state.changelog.length;
+}
+
+/* ============================================================
+   탭 · 이벤트 위임
+   ============================================================ */
+function setTab(name){
+  $$('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===name;
+    t.classList.toggle('on',on);
+    t.setAttribute('aria-selected',on?'true':'false');
+    t.tabIndex=on?0:-1;
+  });
+  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
+  if(name==='hist')renderHist();
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-action]');if(!el)return;
+  switch(el.getAttribute('data-action')){
+    case 'toggle-edit':setEditMode(!ui.edit);break;
+    case 'reset-overrides':openResetModal();break;
+    case 'modal-close':closeModal();break;
+    case 'modal-ok':doReset();break;
+    case 'h-search':histRunQuery();break;
+    case 'h-reset':histDefaults();renderHist();break;
+    case 'h-search-clear':$('#h-q').value='';histRunQuery();break;
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&amp;&amp;$('#modal-back').classList.contains('on'))closeModal();
+});
+$('#h-q').addEventListener('keydown',function(e){if(e.key==='Enter')histRunQuery();});
+
+/* ---------- init ---------- */
+buildMatrix();
+renderMatrix();
+histDefaults();
+renderHist();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
         <section class="route-view placeholder-view" id="order-consistency-view" aria-labelledby="order-consistency-title" hidden>
@@ -3703,7 +4378,7 @@ select('D260831014-010');
       viewId: 'order-unit-weight-error-view',
       title: '주문단중에러관리',
       crumbs: ['품질설계', '생산가부관리'],
-      openLink: false
+      openLink: true
     },
     'order-consistency': {
       hash: '#/quality-design/feasibility-management/order-consistency',
