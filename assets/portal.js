@@ -51,14 +51,14 @@
     'color-submaterial': {
       hash: '#/quality-design/master-data-management/color-submaterial',
       viewId: 'color-submaterial-view',
-      title: '칼라 부재료 관리',
+      title: '칼라부재료관리',
       crumbs: ['품질설계', '기준정보관리'],
       openLink: false
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
-      title: '칼라 BOM 관리',
+      title: '칼라BOM관리',
       crumbs: ['품질설계', '기준정보관리'],
       openLink: false
     },
