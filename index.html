@@ -258,7 +258,7 @@ a{ color:inherit; }
   flex:1; min-height:0;
 }
 
-#module-frame{
+#module-frame, #module-frame-qd{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }
@@ -362,6 +362,9 @@ noscript{
           <div class="nav-tree nav-tree-inner open" id="module-management-tree">
             <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
               품질사양 관리
+            </a>
+            <a class="nav-link" href="#/quality-design/module-management/quality-design-result" data-route="quality-design-result">
+              품질설계결과
             </a>
           </div>
         </div>
@@ -2864,6 +2867,707 @@ if(hadDraft)toast('작성 중이던 사양을 자동으로 복원했습니다');
 "></iframe>
         </section>
 
+        <section class="route-view" id="quality-design-result-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-qd" title="품질설계결과 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>Q-DESIGN 품질설계</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   Q-DESIGN — 품질설계 의뢰현황 + 설계결과 통합 목업
+   좌: 의뢰현황 목록 / 우: 설계결과(구 탭 9종 → 접기/펼치기 섹션)
+   palette·타입은 Q-SPEC 모듈과 동일한 디자인 시스템 사용.
+   ============================================================ */
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EDF1F6; --surface-3:#E3E9F0;
+  --border:#D9E0E8; --border-strong:#B9C4D0;
+  --ink:#18222F; --ink-2:#4C5A6B; --ink-3:#7C8798;
+  --accent:#1D5FBF; --accent-strong:#174C99; --accent-on:#FFFFFF;
+  --accent-soft:#E4EDFA; --accent-soft-ink:#174C99;
+  --result:#B45309; --result-soft:#F9EFE0; --result-soft-ink:#8F4408;
+  --st-draft:#5B6774; --st-draft-bg:#E8ECF1;
+  --st-conf:#0E7490;  --st-conf-bg:#DFF2F7;
+  --st-sent:#15803D;  --st-sent-bg:#DFF2E5;
+  --st-fail:#B91C1C;  --st-fail-bg:#FBE4E4;
+  --edit-bg:#FFF9E8; --edit-bd:#EAD9A8;
+  --code-bg:#EEF2F7; --shadow:0 8px 28px rgba(23,42,68,.14);
+  --topbar-bg:#14202E; --topbar-ink:#D8E1EC; --topbar-dim:#8DA0B5; --focus:#1D5FBF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;line-height:1.5;min-height:100vh}
+.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+::placeholder{color:var(--ink-3)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- top bar (단독 실행 시) ---------- */
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px;display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden}
+.crumb b{color:var(--topbar-ink);font-weight:500}
+.topbar-right{margin-left:auto}
+.mock-flag{font-size:10.5px;letter-spacing:.14em;font-weight:700;color:#0E1622;background:#E2A05B;border-radius:4px;padding:2px 7px}
+
+/* ---------- buttons / inputs / pills ---------- */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);padding:6px 12px;font-size:12.5px;font-weight:500;transition:background .12s,border-color .12s;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.btn-sm{padding:3px 9px;font-size:12px;border-radius:6px}
+.inp,select.inp{background:var(--surface);border:1px solid var(--border-strong);border-radius:7px;padding:5px 9px;font-size:12.5px;min-width:0}
+select.inp{padding-right:24px}
+.inp:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
+.f-field{display:flex;flex-direction:column;gap:3px}
+.f-field label{font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--ink-3)}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-wrap .inp{width:100%;padding-right:30px}
+.search-clear{position:absolute;right:4px;width:24px;height:24px;border-radius:5px;color:var(--ink-3);display:none;align-items:center;justify-content:center}
+.search-clear.on{display:inline-flex}
+.search-clear:hover{background:var(--surface-2);color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:99px;padding:1.5px 8px;white-space:nowrap}
+.pill .pdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.wait{color:var(--st-draft);background:var(--st-draft-bg)}
+.pill.ing{color:var(--accent-soft-ink);background:var(--accent-soft)}
+.pill.conf{color:var(--st-sent);background:var(--st-sent-bg)}
+.pill.hold{color:var(--result-soft-ink);background:var(--result-soft)}
+.code-badge{font-family:'IBM Plex Mono',monospace;font-size:11.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--ink-2);white-space:nowrap}
+.urgent-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--st-fail);margin-right:5px;vertical-align:1px}
+
+/* ---------- split layout ---------- */
+.split{display:flex;height:calc(100vh - 52px);min-height:0}
+.embedded .split{height:100vh}
+.lpane{width:512px;flex:none;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface);min-height:0}
+.rpane{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+
+/* ----- 좌: 의뢰현황 ----- */
+.lp-head{padding:12px 14px 0}
+.lp-title{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.lp-title h2{font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+.lp-title .cnt{font-size:11.5px;font-weight:600;color:var(--accent-soft-ink);background:var(--accent-soft);border-radius:99px;padding:1px 8px}
+.lp-title .as-of{margin-left:auto;font-size:11px;color:var(--ink-3)}
+.lp-filter{display:flex;flex-wrap:wrap;gap:6px 8px;padding:9px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;margin-bottom:9px}
+.lp-filter .f-field{flex-direction:row;align-items:center;gap:5px}
+.lp-filter .f-field label{white-space:nowrap}
+.lp-filter .inp{padding:4px 8px;font-size:12px}
+.lp-filter input[type=date].inp{width:118px}
+.lp-actions{display:flex;gap:6px;margin-left:auto}
+.lp-scroll{flex:1;overflow:auto;min-height:0}
+table.list{width:100%;border-collapse:collapse;font-size:12.5px}
+.list th{position:sticky;top:0;z-index:2;text-align:left;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-3);background:var(--surface-2);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;box-shadow:0 1px 0 var(--border)}
+.list td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.list .buyer{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.list tbody tr{cursor:pointer;transition:background .1s}
+.list tbody tr:hover{background:var(--surface-2)}
+.list tbody tr:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.list tbody tr.sel{background:var(--accent-soft)}
+.list tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.list .ord{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);font-size:12.5px;white-space:nowrap}
+.list .sub{display:block;font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap}
+.list td.r{text-align:right}.list td.c,.list th.c{text-align:center}
+.lp-msg{border-top:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);font-size:11.5px;padding:6px 14px;display:flex;gap:8px;align-items:center}
+.lp-msg b{color:var(--accent-soft-ink)}
+.lp-msg .pgm-id{margin-left:auto;font-family:'IBM Plex Mono',monospace;color:var(--ink-3);font-size:10.5px}
+
+/* ----- 우: 설계결과 ----- */
+.rp-scroll{flex:1;overflow:auto;min-height:0;padding:14px 18px 26px}
+.rp-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-3);text-align:center;padding:30px}
+.rp-empty .big{font-size:15px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.ord-head{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px 16px;margin-bottom:10px}
+.oh-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.oh-no{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;letter-spacing:.01em}
+.oh-no small{font-size:12px;color:var(--ink-3);font-weight:500}
+.oh-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.oh-kv{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.oh-kv .kvi{font-size:12px;color:var(--ink-2);display:inline-flex;gap:6px;align-items:baseline;min-width:0}
+.oh-kv .kvi b{font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:.03em;flex:none}
+.oh-kv .kvi span{font-weight:500;color:var(--ink)}
+
+/* 섹션 내비게이션 (sticky) */
+.sec-nav{position:sticky;top:-14px;z-index:20;display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:var(--bg);padding:8px 0 8px;margin:0 0 4px}
+.sec-chip{font-size:11.5px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--border-strong);border-radius:99px;padding:3px 11px;white-space:nowrap}
+.sec-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.sec-nav .gap{flex:1}
+.sec-nav .btn{background:var(--surface)}
+
+/* 아코디언 섹션 */
+.acc{background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:10px;overflow:hidden}
+.acc-h{width:100%;display:flex;align-items:center;gap:9px;padding:10px 14px;text-align:left;background:var(--surface)}
+.acc-h:hover{background:var(--surface-2)}
+.acc-h .chev{flex:none;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:11px;transition:transform .15s}
+.acc.open .acc-h .chev{transform:rotate(90deg)}
+.acc-h .t{font-size:13.5px;font-weight:700}
+.acc-h .sum{font-size:11.5px;color:var(--ink-3);font-weight:400;margin-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-h .state{margin-left:auto;font-size:11px;color:var(--ink-3);flex:none}
+.acc-b{display:none;border-top:1px solid var(--border);padding:13px 14px 14px}
+.acc.open .acc-b{display:block}
+.acc-save{display:flex;justify-content:flex-end;margin-top:10px}
+
+/* kv 필드 그리드 (공통 섹션 등) */
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:7px 14px}
+.kv{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv>label{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-3)}
+.vbox{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:4px 8px;font-size:12.5px;min-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbox:empty::before{content:'—';color:var(--ink-3)}
+.vbox.edit{background:var(--edit-bg);border-color:var(--edit-bd)}
+.vbox.b{font-weight:600}
+.kv.wide{grid-column:span 2}
+@media (max-width:1500px){.kv.wide{grid-column:span 1}}
+
+/* 밴드 테이블 (사양구분 × 항목) */
+.tbl-wrap{overflow-x:auto}
+table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
+.band th{background:var(--surface-2);color:var(--ink-3);font-size:11px;font-weight:600;border:1px solid var(--border);padding:5px 8px;text-align:center;white-space:nowrap}
+.band td{border:1px solid var(--border);padding:4px 8px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.band td.l{text-align:left}
+.band td.rowh{background:var(--surface-2);color:var(--ink-2);font-weight:600;font-size:11.5px;text-align:left;white-space:nowrap}
+.band tr.edit td{background:var(--edit-bg)}
+.band tr.edit td.rowh{background:#F4E9C8;color:var(--result-soft-ink)}
+.band-title{font-size:12px;font-weight:700;color:var(--ink-2);margin:12px 0 6px;display:flex;align-items:center;gap:8px}
+.band-title:first-child{margin-top:0}
+.band-title .note{font-weight:400;color:var(--ink-3);font-size:11px}
+.subtle-note{font-size:11.5px;color:var(--ink-3);margin-top:8px}
+.sec-empty{border:1px dashed var(--border-strong);border-radius:9px;padding:18px;text-align:center;color:var(--ink-3);font-size:12.5px}
+.sec-empty b{color:var(--ink-2)}
+
+/* ---------- toast ---------- */
+.toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--topbar-bg);color:var(--topbar-ink);border-radius:9px;padding:9px 18px;font-size:13px;font-weight:500;box-shadow:var(--shadow);display:flex;gap:8px;align-items:center;animation:toast-in .18s ease;max-width:min(560px,90vw)}
+.toast.ok::before{content:&quot;✓&quot;;color:#54D183;font-weight:700}
+.toast.err::before{content:&quot;!&quot;;color:#F08A8A;font-weight:700}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- 반응형 ---------- */
+@media (max-width:1180px){.lpane{width:440px}}
+@media (max-width:960px){
+  .split{flex-direction:column;height:auto}
+  .embedded .split{height:auto}
+  .lpane{width:100%;border-right:none;border-bottom:1px solid var(--border)}
+  .lp-scroll{max-height:44vh}
+  .rp-scroll{overflow:visible}
+  .sec-nav{top:0}
+}
+</style>
+</head>
+<body>
+
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>MES · Q-DESIGN</span></div>
+  <div class=&quot;crumb&quot;>품질설계 › 모듈관리 › <b>품질설계결과</b></div>
+  <div class=&quot;topbar-right&quot;><span class=&quot;mock-flag&quot;>MOCK-UP</span></div>
+</header>
+
+<div class=&quot;split&quot;>
+
+  <!-- ================= 좌: 품질설계 의뢰현황 ================= -->
+  <aside class=&quot;lpane&quot; aria-label=&quot;품질설계 의뢰현황&quot;>
+    <div class=&quot;lp-head&quot;>
+      <div class=&quot;lp-title&quot;>
+        <h2>품질설계 의뢰현황</h2><span class=&quot;cnt&quot; id=&quot;q-cnt&quot;>0건</span>
+        <span class=&quot;as-of&quot;>의뢰일 기준 · 최신순</span>
+      </div>
+      <div class=&quot;lp-filter&quot; role=&quot;search&quot; aria-label=&quot;의뢰현황 조회조건&quot;>
+        <div class=&quot;f-field&quot;><label for=&quot;qf-from&quot;>설계의뢰일자</label>
+          <input type=&quot;date&quot; class=&quot;inp&quot; id=&quot;qf-from&quot; value=&quot;2026-08-30&quot;>
+          <span style=&quot;color:var(--ink-3)&quot;>~</span>
+          <input type=&quot;date&quot; class=&quot;inp&quot; id=&quot;qf-to&quot; value=&quot;2026-08-31&quot; aria-label=&quot;설계의뢰일자 종료일&quot;></div>
+        <div class=&quot;f-field&quot;><label for=&quot;qf-prd&quot;>품명</label>
+          <select class=&quot;inp&quot; id=&quot;qf-prd&quot;><option value=&quot;&quot;>전체</option>
+            <option value=&quot;3&quot;>3 : CCGI</option><option value=&quot;4&quot;>4 : CCLI</option>
+            <option value=&quot;G&quot;>G : GI</option><option value=&quot;L&quot;>L : G/L</option><option value=&quot;W&quot;>W : GLX</option></select></div>
+        <div class=&quot;f-field&quot;><label for=&quot;qf-st&quot;>설계상태</label>
+          <select class=&quot;inp&quot; id=&quot;qf-st&quot;><option value=&quot;&quot;>전체</option>
+            <option value=&quot;WAIT&quot;>미설계</option><option value=&quot;ING&quot;>설계중</option>
+            <option value=&quot;CONF&quot;>확정</option><option value=&quot;HOLD&quot;>보류</option></select></div>
+        <div class=&quot;f-field&quot; style=&quot;flex:1 1 100%&quot;><label for=&quot;qf-q&quot;>키워드</label>
+          <div class=&quot;search-wrap&quot; style=&quot;flex:1&quot;><input class=&quot;inp&quot; id=&quot;qf-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;주문번호·규격약호·최종수요가 검색&quot;>
+            <button class=&quot;search-clear&quot; id=&quot;qf-q-clear&quot; aria-label=&quot;검색어 지우기&quot;>✕</button></div>
+          <div class=&quot;lp-actions&quot;>
+            <button class=&quot;btn btn-pri btn-sm&quot; id=&quot;qf-search&quot;>조회</button>
+            <button class=&quot;btn btn-sm&quot; id=&quot;qf-reset&quot;>초기화</button>
+          </div></div>
+      </div>
+    </div>
+    <div class=&quot;lp-scroll&quot;>
+      <table class=&quot;list&quot; aria-label=&quot;설계 의뢰 주문 목록&quot;>
+        <thead><tr>
+          <th>주문번호 · 행번</th><th>규격약호</th><th class=&quot;c&quot;>두께 × 폭</th><th>최종수요가</th><th class=&quot;c&quot;>설계상태</th>
+        </tr></thead>
+        <tbody id=&quot;q-rows&quot;></tbody>
+      </table>
+    </div>
+    <div class=&quot;lp-msg&quot;>MESSAGE <b id=&quot;q-msg&quot;>0건의 Data가 조회되었습니다.</b><span class=&quot;pgm-id&quot;>C104000010</span></div>
+  </aside>
+
+  <!-- ================= 우: 품질설계결과 ================= -->
+  <main class=&quot;rpane&quot; aria-label=&quot;품질설계결과&quot;>
+    <div class=&quot;rp-scroll&quot; id=&quot;rp-scroll&quot;>
+      <div class=&quot;rp-empty&quot; id=&quot;rp-empty&quot;>
+        <div><div class=&quot;big&quot;>왼쪽 의뢰현황에서 주문을 선택하세요</div>
+        행을 클릭하거나 ↑↓ 키로 이동하면 해당 주문의 품질설계결과가 여기에 표시됩니다.</div>
+      </div>
+      <div id=&quot;rp-body&quot; hidden></div>
+    </div>
+  </main>
+
+</div>
+
+<div class=&quot;toasts&quot; id=&quot;toasts&quot; aria-live=&quot;polite&quot;></div>
+
+<script>
+/* ============================================================
+   Q-DESIGN mock — 데이터는 AS-IS 화면(2026-08-31 조회분) 기준
+   ============================================================ */
+'use strict';
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&amp;<>&quot;']/g,c=>({'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c]));
+const fmtW=n=>n.toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
+function toast(msg,type='ok'){
+  const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;
+  $('#toasts').appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .25s';setTimeout(()=>t.remove(),260);},2600);
+}
+
+/* ---------- 상태 ---------- */
+const ST={WAIT:['미설계','wait'],ING:['설계중','ing'],CONF:['확정','conf'],HOLD:['보류','hold']};
+const PRD_NM={'3':'3 : CCGI','4':'4 : CCLI','G':'G : GI','L':'L : G/L','W':'W : GLX'};
+
+/* ---------- seed: 의뢰현황 (AS-IS 조회 화면 데이터) ---------- */
+const ORDERS=[
+ {no:'D260831014',ln:'010',prd:'3',edge:'N',spec:'KS3-CGCC',   use:'G0493P : 생활가전',useF:'G0493P : 생활가전 - 냉장고 - 측면,측판(SIDE)',buyer:'110197 : LG전자 창원1공장',thk:0.450,wid:1490.0,mat:'1A',st:'CONF',urgent:false,reqD:'08-31'},
+ {no:'D260831020',ln:'010',prd:'L',edge:'M',spec:'KSL-SGLCC',  use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.400,wid:915.0,mat:'1A',st:'ING',urgent:false,reqD:'08-31'},
+ {no:'D260831021',ln:'010',prd:'G',edge:'M',spec:'KSG-SGC340', use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.440,wid:1225.0,mat:'BA',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831023',ln:'010',prd:'G',edge:'M',spec:'KSG-SGC340', use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.440,wid:1225.0,mat:'BA',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831024',ln:'010',prd:'L',edge:'M',spec:'KSL-SGLC570',use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.370,wid:1221.0,mat:'EA',st:'ING',urgent:false,reqD:'08-31'},
+ {no:'D260831025',ln:'010',prd:'G',edge:'M',spec:'KSG-SGCC',   use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.440,wid:1306.0,mat:'1A',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831026',ln:'010',prd:'G',edge:'M',spec:'KSG-SGCC',   use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.490,wid:1437.0,mat:'1A',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831027',ln:'010',prd:'L',edge:'M',spec:'KSL-SGLCC',  use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.800,wid:1224.0,mat:'1A',st:'ING',urgent:false,reqD:'08-31'},
+ {no:'D260831028',ln:'010',prd:'G',edge:'M',spec:'KSG-SGC340', use:'B01000 : 건재 내장',useF:'B01000 : 건재 내장 - 판넬',buyer:'320104 : 부산공장 일반용',thk:0.510,wid:1064.0,mat:'BA',st:'CONF',urgent:false,reqD:'08-31'},
+ {no:'D260831032',ln:'010',prd:'4',edge:'M',spec:'KS4-CGLCC',  use:'Q18090 : 외장재(건재)',useF:'Q18090 : 외장재(건재) - 지붕재',buyer:'115462 : (주)신우산업',thk:0.500,wid:1070.0,mat:'1A',st:'ING',urgent:true,reqD:'08-31'},
+ {no:'D260831035',ln:'010',prd:'G',edge:'M',spec:'KSG-SGC570', use:'A02000 : 건재 구조',useF:'A02000 : 건재 구조용',buyer:'110545 : (주)동진스틸',thk:0.410,wid:1219.0,mat:'EA',st:'CONF',urgent:false,reqD:'08-31'},
+ {no:'D260831052',ln:'010',prd:'L',edge:'M',spec:'KSL-SGLC570',use:'L03000 : 기타(자가)',useF:'L03000 : 기타(자가소비)',buyer:'320104 : 부산공장 일반용',thk:0.363,wid:1040.0,mat:'EA',st:'HOLD',urgent:false,reqD:'08-31'},
+ {no:'D260831053',ln:'010',prd:'L',edge:'M',spec:'KSL-SGLC570',use:'L03000 : 기타(자가)',useF:'L03000 : 기타(자가소비)',buyer:'320104 : 부산공장 일반용',thk:0.462,wid:1094.0,mat:'EA',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831054',ln:'010',prd:'W',edge:'M',spec:'KSW-SGLC570',use:'L03000 : 기타(자가)',useF:'L03000 : 기타(자가소비)',buyer:'320104 : 부산공장 일반용',thk:0.398,wid:1046.0,mat:'EA',st:'ING',urgent:false,reqD:'08-31'},
+ {no:'D260831059',ln:'010',prd:'G',edge:'M',spec:'KSG-SGCC',   use:'B09000 : 건재 내장',useF:'B09000 : 건재 내장 - 일반',buyer:'320100 : 일반시판용',thk:1.600,wid:1096.0,mat:'1A',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'D260831059',ln:'020',prd:'G',edge:'M',spec:'KSG-SGCC',   use:'B09000 : 건재 내장',useF:'B09000 : 건재 내장 - 일반',buyer:'320100 : 일반시판용',thk:1.600,wid:1219.0,mat:'1A',st:'WAIT',urgent:false,reqD:'08-31'},
+ {no:'E260814004',ln:'010',prd:'L',edge:'M',spec:'AML-CS-B',   use:'C04000P : 건재 외장',useF:'C04000P : 건재 외장 - 판넬',buyer:'603410 : KLOECKNER METALS',thk:0.457,wid:1217.6,mat:'1A',st:'CONF',urgent:false,reqD:'08-30'},
+ {no:'E260814011',ln:'010',prd:'G',edge:'M',spec:'AMG-CS-B',   use:'M02000 : 소재용 -',useF:'M02000 : 소재용 - 재압연',buyer:'605551 : Global metal resources',thk:0.488,wid:1219.2,mat:'1A',st:'CONF',urgent:false,reqD:'08-30'},
+ {no:'E260827001',ln:'010',prd:'W',edge:'M',spec:'ASW-G300',   use:'M02000 : 소재용 -',useF:'M02000 : 소재용 - 재압연',buyer:'205202 : PCC',thk:0.550,wid:938.0,mat:'CB',st:'HOLD',urgent:true,reqD:'08-30'},
+];
+
+/* ---------- 코드 매핑 ---------- */
+const MAT_NM={'1A':'1A : SAE1008','BA':'BA : SAE1006','EA':'EA : SAE1015','CB':'CB : SGC570급'};
+const MAT_HR={'1A':'H32 - 1 종 : SAE 1008','BA':'H34 - 2 종 : SAE 1006','EA':'H36 - 3 종 : SAE 1015','CB':'H38 - 고강도 : SGC570급'};
+const SPEC_NM=s=>s.startsWith('KS3')?'도장 용융 아연 도금 강판 및 강대':s.startsWith('KS4')?'도장 용융 알루미늄 아연 합금 도금 강판':
+  s.startsWith('KSG')||s.startsWith('AMG')?'용융 아연 도금 강판 및 강대':s.startsWith('KSL')||s.startsWith('AML')?'용융 55% 알루미늄 아연 합금 도금 강판':
+  '용융 알루미늄 아연 마그네슘 합금 도금 강판';
+const COAT_CD={'3':'E : 80 g/㎡','4':'A10 : AZ100','G':'Z12 : 120 g/㎡','L':'A15 : AZ150','W':'M12 : AM120'};
+const COAT_RANGE={'3':[80,120,84,12],'4':[100,150,104,12],'G':[120,180,124,17],'L':[150,200,153,12],'W':[120,170,125,12]};
+const isColor=o=>o.prd==='3'||o.prd==='4';
+
+/* ---------- 재질 기준 (규격약호별 rough mock) ---------- */
+function matBands(spec){
+  if(/SGC340/.test(spec))return {yp:[245,''],ts:[340,510],el:[20,''],bend:'1T'};
+  if(/570|G300/.test(spec))return {yp:[560,''],ts:[570,''],el:['',''],bend:'3T'};
+  return {yp:[205,380],ts:[270,500],el:[22,''],bend:'1T'};
+}
+
+/* ---------- 상세 데이터 생성 ---------- */
+function genDetail(o){
+  const mb=matBands(o.spec);
+  const t=o.thk, target=+(t-0.02).toFixed(3);
+  const co=COAT_RANGE[o.prd];
+  const d={
+    head:{buyer:o.buyer,spec:o.spec,size:`${t.toFixed(3)}  x  ${fmtW(o.wid)}  x  0.0`,prd:PRD_NM[o.prd],use:o.useF,
+          mat:MAT_NM[o.mat],mat2:MAT_HR[o.mat],bom:isColor(o)?(o.prd==='3'?'L2000E':'L4000C'):''},
+    common:[
+      ['품질설계상태',ST[o.st][0],'b'],['주문유형',o.no.startsWith('E')?'Z03 : 수출 일반':'Z01 : 내수 일반'],['유통경로 / 국가코드',o.no.startsWith('E')?'12 : 수출 · US':'11 : 민수 · KR : 한국'],
+      ['제품형태 / EDGE',`C : Coil · ${o.edge}${o.edge==='N'?' : ZERO-SPANGLE':''}`],['규격명',SPEC_NM(o.spec)],['인수도규격 / 규격년도',o.spec.startsWith('A')?'ASTM A755M · 2020':'KSD3520A · 2008'],
+      ['고객사',o.buyer],['주문 Actual Size',`${t.toFixed(2)} X ${Math.round(o.wid)} X COIL`],['수요가',o.buyer],
+      ['주문량 / 단위중량','12,000 · 4.20'],['중량결정','NA : 계근중량'],['주문납기(고객/확정)','2026-09-04 · --'],
+      ['도금량코드',COAT_CD[o.prd]],['조질도','4 : EXTR'],['주문두께구분','1 : BMT'],
+      ['두께관리코드','D : 규격일반:(-)보정20'],['폭관리코드','A : No S/T: 0~미보증'],['주문내경/종류','508 · P : PAPER'],
+      ['포장단중(하/상)','5000 · 8000'],['정포장중량(하/상)','5000 · 8000'],['포장방법',o.no.startsWith('E')?'ARSE00 : 수출Coil+방청+목재':'ARSX00 : 내수Coil+일반+철판'],['권취방법','S : Stagger'],
+    ],
+    mat:{
+      bands:[
+        ['고객사양','','','','','','','','','','',''],
+        ['규격사양','','',mb.yp[0],'',mb.ts[0],'','','','','',''],
+        ['사내사양','','',mb.yp[0],mb.yp[1],mb.ts[0],mb.ts[1],mb.el[0],'','','',mb.bend],
+        ['보증사양','','',mb.yp[0],mb.yp[1],mb.ts[0],mb.ts[1],mb.el[0],'','','',mb.bend+' - 간격 1.0t'],
+      ],
+      spc:[
+        ['고객사양','','','','','','','','','',''],
+        ['규격사양','M','150','05','','','','',co[0],co[1]],
+        ['사내사양','T','50','','','','','','',''],
+        ['보증사양','M - Middle부','150','05 - KS 5호 시편','','','','',co[0],co[1]],
+      ]},
+    tol:{
+      tols:[['고객사양','-0.05','0.1','0','30','0','0'],['규격사양','-0.05','0.1','0','','',''],['보증사양','-0.05','0.1','0','30','0','0']],
+      base:[['설계기준','BMT',(t-0.008).toFixed(3),(t+0.142).toFixed(3),Math.round(o.wid),Math.round(o.wid)+30,'0','0'],
+            ['규격기준','BMT',(t-0.003).toFixed(3),(t+0.147).toFixed(3),'외관검사기준','32','','']],
+      shape:[['고객사양','3','2','2','','2','','',''],['규격사양','3','2','2','','2','','',''],['보증사양','3','2','2','','2','','','']]},
+    cgl:{
+      lines:[['적정',MAT_HR[o.mat],'L - 일반(중)',(t*4).toFixed(1),(t*4).toFixed(1),(t*4+0.2).toFixed(1),Math.round(o.wid)+3],
+             ['차선1',`G32 - 구매GR (${MAT_HR[o.mat].split(' - ')[1]||''})`,'L - 일반(중)',(t-0.008).toFixed(3),(t-0.03).toFixed(2),(t+0.01).toFixed(2),Math.round(o.wid)-1],
+             ['차선2','','','','','','']],
+      pltcm:[['5Stand WRType','B'],['내경링 사용여부','Y - 사용'],['S/T유무','N - 무'],['X-Ray Set두께값',target.toFixed(2)],
+             ['Side Trimming Set값(주공정)',String(Math.round(o.wid)+6)],['폭수축값','3'],['BigData 분석값','4'],
+             ['두께목표값',`${target.toFixed(2)} (${(target-0.015).toFixed(3)} ~ ${(target+0.015).toFixed(3)})`],['폭목표값(주공정)',String(Math.round(o.wid)+3)]],
+      ops:o.prd==='W'||o.prd==='L'
+        ?[['5 CGL','1 - CQ','730','','','150'],['7 CGL','1 - CQ','730','','','150'],['',' ','','','',''],['',' ','','','','']]
+        :[['2 CGL','1 - CQ','680','','','180'],['3 CGL','1 - CQ','680','','','180'],['4 CGL','','','','',''],['5 CGL','1 - CQ','730','','','150']],
+      coat:{min:co[0],max:co[1],target:co[2],thk:co[3],spangle:o.prd==='G'?'0 : MINI':'4 : EXTRA SMOOTH',lv:'Y - Leveling',skin:'Y',
+            sizeT:(t-0.008).toFixed(3),sizeW:Math.round(o.wid)}},
+    egl:null,
+    post:{t2c:'N - 무',st:'N - 무',wMin:Math.round(o.wid),wMax:Math.round(o.wid)+30,
+          pack:o.no.startsWith('E')?'ARSE00 : 수출Coil+방청+목재+없음+없음':'ARSX00 : 내수Coil+일반+철판+없음+없음',packMsg:'',qMsg:''},
+    color:null,
+    route:{no:isColor(o)?'35A000':(o.prd==='G'?'21A000':'27A000'),
+      rows:isColor(o)
+        ?[['1','1P - PLTCM','HD81AND-AR03724'],['2','85 - 5CGL','HG81A4E-MX00272'],['3','A5 - 5CCL','H381A4E-4ZH22A0006']]
+        :o.prd==='G'?[['1','1P - PLTCM','HD81AND-AR03724'],['2','31 - 2CGL','HG81A4E-GX'+o.no.slice(-5)]]
+        :[['1','1P - PLTCM','HD81AND-AR03724'],['2','87 - 7CGL','HW81A4E-LX'+o.no.slice(-5)]]},
+    comp:(()=>{const hi=/570|G300/.test(o.spec);
+      const inh=hi?['사내사양','','0.2500','','0.5000','','1.7000','','0.0300','','0.0350','','0.1500','','0.2000']
+                  :['사내사양','0.0200','0.0800','','0.5000','','0.5000','','0.0300','','0.0350','','0.1500','','0.2000'];
+      const g2i=['사내사양','','0.2000','','','','0.0250','','0.0080','','0.0080','',''];
+      return {g1:[['고객사양','','','','','','','','','','','','','',''],['규격사양','','','','','','','','','','','','','',''],inh,['보증사양',...inh.slice(1)]],
+              g2:[['고객사양','','','','','','','','','','','',''],['규격사양','','','','','','','','','','','',''],g2i,['보증사양',...g2i.slice(1)]]};})(),
+  };
+  if(isColor(o)){
+    const top=o.prd==='3'?['L2001','W0034','C9015']:['L2003','W0034','C9012'];
+    d.color={
+      matrix:[
+        ['품질수지','','','H2 : HI-POLYMER','PC : Primer','B1 : EPOXY','','',''],
+        ['색상코드','','',top[0],top[1],top[2],'','',''],
+        ['광택코드','','','2 : 무광(30%↓)','4 : 반광(40~60)','2 : 무광(30%↓)','','',''],
+        ['광택도','','','16 - 24','','24 - 36','','',''],
+        ['도막두께','','','20','5','5','','',''],
+        ['PMT','','','232','216','224','','',''],
+        ['시너','','','THN04','THN04','THN02','','',''],
+        ['구매수지','','','H2 : HPP(SELF)','PC : Non-Cr Primer','B1 : EPOXY(원)','','',''],
+      ],
+      sum:{way:'4 : TOP = 2 COAT / BACK = 1 COAT',cT:top[0],cB:top[2],thkT:'25',thkB:'5',glossT:'2',glossB:'2',resinT:'H2',resinB:'B1',
+           szT:(o.thk+0.022).toFixed(3),szW:Math.round(o.wid),chem:'CHNCR',
+           name:o.prd==='3'?'딤그레이 b상향(5CCL)':'화이트 g상향(5CCL)'},
+      test:[['Bending','2T'],['시험평점',''],['M.E.K','250'],['연필경도','1H'],['색차','0.3']]};
+    d.common.push(['색상코드(T/B)',`${top[0]} · ${top[2]}`],['수지구분(T/B)','H2 : HPP(SEL · B1 : EPOXY'],['도막두께(T/B)','25 · 5'],
+                  ['광택도(T/B)','2 : 무광(30%) · 2 : 무광(30%)'],['Material Code','F381A4E-4ZH22A0006'],['Class/SubClass',`AB14EA · 4ZH22A${d.head.bom}`]);
+  }
+  return d;
+}
+
+/* ---------- 기준 주문(D260831014-010) — 첨부 화면 그대로 ---------- */
+function refDetail(){
+  const o=ORDERS[0];const d=genDetail(o);
+  d.common=[
+    ['품질설계상태','A : 확정','b'],['주문유형','Z01 : 내수 일반'],['유통경로 / 국가코드','11 : 민수 · KR : 한국'],
+    ['제품형태 / EDGE','C : Coil · N : ZERO-SPANGLE'],['규격명','도장 용융 아연 도금 강판 및 강대'],['인수도규격 / 규격년도','KSD3520A · 2008'],
+    ['고객사','110092 : (주)금아스틸'],['불연속패턴 / 폭관리',''],['주문 Actual Size','0.45 X 1490 X COIL'],
+    ['수요가','510086 : 금아스틸 2공장'],['주문요청량 / 단위','0 · MT : 중량 보증'],['인도허용차(하/상)','10.0 · 10.0'],
+    ['주문량 / 단위중량','28,000 · 5.149'],['중량결정','NA : 계근중량'],['주문납기(고객/확정)','2026-09-01 · --'],
+    ['도금량코드','E : 80 g/㎡'],['조도 / Spangle / 조질도','- · 4 : EXTR · -'],['표면처리코드',''],
+    ['포장단중(하/상)','5000 · 8000'],['포장길이(하/상)','0 · 0'],['Sheet 포장매수/중량','0 · 0'],
+    ['정포장중량(하/상)','5000 · 8000'],['정포장매수(하/상)','0 · 0'],['보호필름 폭','0'],
+    ['소포장(중량/혼입율)','4000'],['주문두께구분','1 : BMT'],['미부착폭 W/S · D/S','0.0 · 0.0'],
+    ['두께관리코드','D : 규격일반:(-)보정20'],['폭관리코드','A : No S/T: 0~미보증'],['길이관리코드',''],
+    ['압연목표두께/단위',''],['주문내경/종류','508 · P : PAPER'],['주문외경/길이관리',''],
+    ['색상코드(T/B)','L2001 · C9015'],['EMBOSS무늬',''],['보호필름상세',''],
+    ['수지구분(T/B)','H2 : HPP(SEL · B1 : EPOXY'],['도막두께(T/B)','25 · 5'],['광택도(T/B)','2 : 무광(30%) · 2 : 무광(30%)'],
+    ['Sheet적치방법',''],['포장방법','ARSX00 : 내수Coil+일반+철판'],['권취방법','S : Stagger','warn'],
+    ['Material Code','F381A4E-4ZH22A0006'],['Class/SubClass','AB14EA · 4ZH22AL2000E'],['고객정의색상','/ C9012 무광 TYPE 블러킹 주의','wide'],
+  ];
+  d.mat.bands=[
+    ['고객사양','','','','','','','','','','',''],
+    ['규격사양','','','205','','270','','','','','',''],
+    ['사내사양','','','205','380','270','500','22','','','','1T'],
+    ['보증사양','','','205','380','270','500','22','','','','1T - 간격 1.0t'],
+  ];
+  d.cgl.lines=[['적정','H32 - 1 종 : SAE 1008','L - 일반(중)','1.8','1.8','2','1493'],
+               ['차선1','G32 - 구매GR (1종 : SAE 1008)','L - 일반(중)','0.442','0.42','0.46','1489'],
+               ['차선2','','','','','','']];
+  d.cgl.pltcm=[['5Stand WRType','B'],['내경링 사용여부','Y - 사용'],['S/T유무','N - 무'],['X-Ray Set두께값','0.43'],
+               ['Side Trimming Set값(주공정)','1496'],['폭수축값','3'],['BigData 분석값','4'],
+               ['두께목표값','0.43 (0.415 ~ 0.445)'],['폭목표값(주공정)','1493']];
+  d.cgl.ops=[['2 CGL','1 - CQ','680','','','180'],['3 CGL','1 - CQ','680','','','180'],['4 CGL','','','','',''],['5 CGL','1 - CQ','730','','','150']];
+  d.cgl.coat={min:80,max:120,target:84,thk:12,spangle:'4 : EXTRA SMOOTH',lv:'Y - Leveling',skin:'Y',sizeT:'0.442',sizeW:1490};
+  d.tol.base=[['설계기준','BMT','0.442','0.592','1490','1520','0','0'],['규격기준','BMT','0.447','0.597','외관검사기준','32','','']];
+  return d;
+}
+
+/* ---------- 렌더 헬퍼 ---------- */
+function kvGrid(items){
+  return `<div class=&quot;kv-grid&quot;>`+items.map(it=>{
+    const cls=it[2]==='wide'?' wide':'';const v=it[2]==='b'?`<div class=&quot;vbox b&quot;>${esc(it[1])}</div>`:`<div class=&quot;vbox&quot;>${esc(it[1])}</div>`;
+    return `<div class=&quot;kv${cls}&quot;><label>${esc(it[0])}</label>${v}</div>`;
+  }).join('')+`</div>`;
+}
+function bandTable(groups,rows,opts={}){
+  const two=groups.some(g=>g.s);
+  let h1=`<tr><th${two?' rowspan=&quot;2&quot;':''}>${esc(opts.first||'사양구분')}</th>`;
+  let h2='<tr>';
+  groups.forEach(g=>{
+    if(g.s){h1+=`<th colspan=&quot;${g.s.length}&quot;>${esc(g.t)}</th>`;g.s.forEach(s=>h2+=`<th>${esc(s)}</th>`);}
+    else h1+=`<th${two?' rowspan=&quot;2&quot;':''}>${esc(g.t)}</th>`;
+  });
+  h1+='</tr>';h2+='</tr>';
+  const body=rows.map(r=>{
+    const edit=opts.editRows&amp;&amp;opts.editRows.includes(r[0]);
+    return `<tr${edit?' class=&quot;edit&quot;':''}><td class=&quot;rowh&quot;>${esc(r[0])}</td>`+r.slice(1).map(c=>`<td>${esc(c)}</td>`).join('')+`</tr>`;
+  }).join('');
+  return `<div class=&quot;tbl-wrap&quot;><table class=&quot;band&quot;><thead>${h1}${two?h2:''}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* ---------- 섹션 정의 ---------- */
+const SECS=[
+ {id:'common',t:'공통',sum:d=>`${d.common[0][1]} · 도금량 ${(d.common.find(c=>c[0]==='도금량코드')||['',''])[1]}`,
+  body:d=>kvGrid(d.common)},
+ {id:'mat',t:'재질',sum:d=>{const b=d.mat.bands[3];return `YP ${b[3]||'-'}~${b[4]||''} · TS ${b[5]||'-'}~${b[6]||''} · 굴곡 ${b[11]||'-'}`;},
+  body:d=>bandTable(
+    [{t:'HRB',s:['하한','상한']},{t:'YP(MPa)',s:['하한','상한']},{t:'TS(MPa)',s:['하한','상한']},{t:'EL(%)',s:['하한','상한']},{t:'ERI(mm)',s:['하한','상한']},{t:'굴곡'}],
+    d.mat.bands,{editRows:['보증사양']})
+   +`<div class=&quot;band-title&quot;>시편·도금량 <span class=&quot;note&quot;>시편채취 위치·길이·가공코드 및 시험 도금량</span></div>`
+   +bandTable([{t:'시편채취위치'},{t:'시편채취길이(mm)'},{t:'시편가공코드'},
+      {t:'EGL도금량(g/㎡)',s:['전면하한','전면상한','후면하한','후면상한']},{t:'CGL시험도금량(g/㎡)',s:['하한','상한']}],
+      d.mat.spc,{editRows:['보증사양']})},
+ {id:'tol',t:'인수도',sum:d=>{const b=d.tol.base[0];return `설계기준 BMT ${b[2]}~${b[3]} · 폭 ${b[4]}~${b[5]}`;},
+  body:d=>bandTable([{t:'두께공차(mm)',s:['하한','상한']},{t:'폭공차(mm)',s:['하한','상한']},{t:'길이공차(mm)',s:['하한','상한']}],
+      d.tol.tols,{editRows:['보증사양']})
+   +`<div class=&quot;band-title&quot;>적용기준</div>`
+   +bandTable([{t:'두께구분'},{t:'제품 두께 범위',s:['하한','상한']},{t:'제품 폭 범위',s:['하한','상한']},{t:'제품 길이 범위',s:['하한','상한']}],
+      d.tol.base,{first:'적용기준'})
+   +`<div class=&quot;band-title&quot;>형상 <span class=&quot;note&quot;>단위 mm</span></div>`
+   +bandTable([{t:'반곡'},{t:'중곡'},{t:'외곡'},{t:'직각도'},{t:'직선도'},{t:'대각선공차'},{t:'급준도'},{t:'TELESCOPE'}],
+      d.tol.shape,{editRows:['보증사양']})},
+ {id:'cgl',t:'용융도금 - 제조표준',sum:d=>`두께목표 ${d.cgl.pltcm[7][1].split(' ')[0]} · 폭 ${d.cgl.pltcm[8][1]} · 도금 ${d.cgl.coat.min}~${d.cgl.coat.max}g/㎡`,
+  body:d=>bandTable([{t:'원자재 코드'},{t:'원자재 선호도'},{t:'두께',s:['목표','하한','상한']},{t:'폭 목표'}],
+      d.cgl.lines,{first:'적차선',editRows:['적정']})
+   +`<div class=&quot;band-title&quot;>PLTCM <span class=&quot;note&quot;>※ 시스템 설계값 복원은 '재설계' 하시기 바랍니다</span></div>`
+   +kvGrid(d.cgl.pltcm)
+   +`<div class=&quot;band-title&quot;>CGL 소둔·라인</div>`
+   +bandTable([{t:'소둔Cycle'},{t:'HT(℃)'},{t:'CT(℃)'},{t:'ST(℃)'},{t:'Line Speed'}],d.cgl.ops,{first:'Line'})
+   +`<div class=&quot;band-title&quot;>도금 부착량·목표</div>`
+   +kvGrid([['도금 부착량(하한/상한)',`${d.cgl.coat.min} · ${d.cgl.coat.max}`],['도금목표(도금량/두께)',`${d.cgl.coat.target} · ${d.cgl.coat.thk}`],
+            ['Spangle',d.cgl.coat.spangle],['L/V',d.cgl.coat.lv],['Skin Pass',d.cgl.coat.skin],
+            ['목표 Size(두께 × 폭)',`${d.cgl.coat.sizeT} × ${d.cgl.coat.sizeW}`],['표면처리',''],['Back마킹','']])},
+ {id:'egl',t:'전기도금 - 제조표준',sum:d=>d.egl?'설계값 있음':'설계값 없음',
+  body:d=>d.egl?'' :`<div class=&quot;sec-empty&quot;><b>전기도금 라인 설계값이 없습니다.</b><br>이 주문은 용융도금(CGL) 경유 제품으로, EGL 경유 시에만 적차선·ECL·TM·ANN·EGL 표준이 표시됩니다.</div>`},
+ {id:'post',t:'후공정 - 제조표준',sum:d=>`제품폭범위 ${d.post.wMin}~${d.post.wMax} · ${d.post.pack.split(' : ')[0]}`,
+  body:d=>`<div class=&quot;band-title&quot;>정전</div>`
+   +kvGrid([['폭 Set (조수 1~10)',''],['1T2C유무',d.post.t2c],['S/T유무',d.post.st],['제품폭범위(하한/상한)',`${d.post.wMin} · ${d.post.wMax}`],
+            ['엠보스무늬',''],['SHEET적치방법',''],['방청유',''],['SHL 작업 SIZE','']])
+   +`<div class=&quot;band-title&quot;>보호필름</div>`
+   +kvGrid([['관리점착력',''],['상세코드',''],['부착위치',''],['두께',''],['폭',''],['SUS점착력',''],['제품점착력','']])
+   +`<div class=&quot;band-title&quot;>품질메세지 · 포장</div>`
+   +kvGrid([['품질메세지',d.post.qMsg,'wide'],['포장방법',d.post.pack,'wide'],['포장메세지',d.post.packMsg,'wide']])},
+ {id:'color',t:'칼라제조사양',sum:d=>d.color?`${d.color.sum.way.split(' : ')[1]} · TOP ${d.color.sum.cT} / BACK ${d.color.sum.cB}`:'해당 없음',
+  body:d=>d.color
+   ?bandTable([{t:'Top',s:['4Coat','3Coat','2Coat','1Coat']},{t:'Back',s:['1Coat']},{t:'Lamina',s:['접착제','필름','인쇄']}].map(g=>g),
+      d.color.matrix.map(r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8]]),{first:'구분'})
+    +`<div class=&quot;band-title&quot;>도장 요약</div>`
+    +kvGrid([['도장방식',d.color.sum.way],['색상코드(Top/Back)',`${d.color.sum.cT} · ${d.color.sum.cB}`],
+             ['도막두께 Total(Top/Back)',`${d.color.sum.thkT} · ${d.color.sum.thkB}`],['광택코드(Top/Back)',`${d.color.sum.glossT} · ${d.color.sum.glossB}`],
+             ['수지코드(Top/Back)',`${d.color.sum.resinT} · ${d.color.sum.resinB}`],['목표 Size(두께 × 폭)',`${d.color.sum.szT} · ${d.color.sum.szW}`],
+             ['Chem Coat',d.color.sum.chem],['상세색상명',d.color.sum.name,'wide']])
+    +`<div class=&quot;band-title&quot;>시험기준</div>`
+    +bandTable([{t:'기준값'}],d.color.test,{first:'시험항목'})
+   :`<div class=&quot;sec-empty&quot;><b>칼라제조사양 해당 없음</b><br>도장(CCGI·CCLI) 제품에서만 표시되는 섹션입니다.</div>`},
+ {id:'route',t:'통과공정',sum:d=>d.route.rows.map(r=>r[1].split(' - ')[1]).join(' → '),
+  body:d=>`<div class=&quot;band-title&quot;>통과공정번호 <span class=&quot;code-badge&quot;>${esc(d.route.no)}</span>
+     <span class=&quot;note&quot; style=&quot;margin-left:auto&quot;><button class=&quot;btn btn-sm&quot; data-mock=&quot;행추가&quot;>⊕ 행추가</button> <button class=&quot;btn btn-sm&quot; data-mock=&quot;행삭제&quot;>⊖ 삭제</button></span></div>`
+   +bandTable([{t:'주공정'},{t:'대체공정1'},{t:'대체공정2'},{t:'MaterialCode'},{t:'SMS'}],
+      d.route.rows.map(r=>[r[0],r[1],'','',r[2],'']),{first:'순서'})},
+ {id:'comp',t:'성분',sum:d=>{const i=d.comp.g1[2];return i[2]?`C ≤ ${i[2]} · Mn ≤ ${i[6]||'-'} · P ≤ ${i[8]||'-'}`:'기준 없음';},
+  body:d=>bandTable([{t:'C(%)',s:['하한','상한']},{t:'Si(%)',s:['하한','상한']},{t:'Mn(%)',s:['하한','상한']},{t:'P(%)',s:['하한','상한']},{t:'S(%)',s:['하한','상한']},{t:'Cr(%)',s:['하한','상한']},{t:'Ni(%)',s:['하한','상한']}],
+      d.comp.g1,{editRows:['보증사양']})
+   +`<div class=&quot;band-title&quot;>성분 (계속)</div>`
+   +bandTable([{t:'Cu(%)',s:['하한','상한']},{t:'Al(%)',s:['하한','상한']},{t:'Ti(%)',s:['하한','상한']},{t:'Nb(%)',s:['하한','상한']},{t:'V(%)',s:['하한','상한']},{t:'N(%)',s:['하한','상한']}],
+      d.comp.g2,{editRows:['보증사양']})},
+];
+
+/* ---------- 상태·선택 ---------- */
+const ui={sel:null,fPrd:'',fSt:'',fQ:'',collapsed:new Set()};
+const stOf=o=>o.st;
+
+function rowsFiltered(){
+  const q=ui.fQ.trim().toLowerCase();
+  return ORDERS.filter(o=>{
+    if(ui.fPrd&amp;&amp;o.prd!==ui.fPrd)return false;
+    if(ui.fSt&amp;&amp;o.st!==ui.fSt)return false;
+    if(q&amp;&amp;!(o.no+' '+o.spec+' '+o.buyer).toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+function renderList(){
+  const rows=rowsFiltered();
+  $('#q-cnt').textContent=rows.length+'건';
+  $('#q-msg').textContent=rows.length+'건의 Data가 조회되었습니다.';
+  $('#qf-q-clear').classList.toggle('on',!!ui.fQ);
+  $('#q-rows').innerHTML=rows.map(o=>{
+    const key=o.no+'-'+o.ln;
+    const [lb,cls]=ST[o.st];
+    return `<tr tabindex=&quot;0&quot; data-key=&quot;${key}&quot; class=&quot;${ui.sel===key?'sel':''}&quot; aria-selected=&quot;${ui.sel===key}&quot;>
+      <td>${o.urgent?'<span class=&quot;urgent-dot&quot; title=&quot;긴급재&quot;></span>':''}<span class=&quot;ord&quot;>${o.no}-${o.ln}</span>
+        <span class=&quot;sub&quot;>${esc(PRD_NM[o.prd])} · ${esc(o.edge)} · C:Coil</span></td>
+      <td><span class=&quot;code-badge&quot;>${esc(o.spec)}</span><span class=&quot;sub&quot;>${esc(o.use)}</span></td>
+      <td class=&quot;c num&quot;>${o.thk.toFixed(3)}<span class=&quot;sub&quot;>× ${fmtW(o.wid)}</span></td>
+      <td><span class=&quot;buyer&quot; title=&quot;${esc(o.buyer)}&quot;>${esc(o.buyer.split(' : ')[1]||o.buyer)}</span><span class=&quot;sub mono&quot;>${esc(o.buyer.split(' : ')[0])} · 의뢰 ${o.reqD}</span></td>
+      <td class=&quot;c&quot;><span class=&quot;pill ${cls}&quot;><span class=&quot;pdot&quot;></span>${lb}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------- 우측 상세 ---------- */
+function findOrder(key){return ORDERS.find(o=>o.no+'-'+o.ln===key);}
+function detailOf(o){return (o.no==='D260831014'&amp;&amp;o.ln==='010')?refDetail():genDetail(o);}
+
+function renderDetail(){
+  const o=findOrder(ui.sel);
+  if(!o){$('#rp-empty').hidden=false;$('#rp-body').hidden=true;return;}
+  const d=detailOf(o);
+  const [lb,cls]=ST[o.st];
+  $('#rp-empty').hidden=true;$('#rp-body').hidden=false;
+  $('#rp-body').innerHTML=`
+    <div class=&quot;ord-head&quot;>
+      <div class=&quot;oh-top&quot;>
+        <span class=&quot;oh-no&quot;>${o.no}<small> - ${o.ln}</small></span>
+        <span class=&quot;pill ${cls}&quot;><span class=&quot;pdot&quot;></span>${lb}</span>
+        ${o.urgent?'<span class=&quot;pill hold&quot;><span class=&quot;pdot&quot;></span>긴급재</span>':''}
+        <div class=&quot;oh-actions&quot;>
+          <button class=&quot;btn btn-sm&quot; data-act=&quot;hold&quot;>${o.st==='HOLD'?'보류해제':'보류'}</button>
+          <button class=&quot;btn btn-sm&quot; data-mock=&quot;변경이력&quot;>변경이력</button>
+          <button class=&quot;btn btn-sm&quot; data-mock=&quot;품질협정서&quot; ${o.st!=='CONF'?'disabled':''}>품질협정서</button>
+          <button class=&quot;btn btn-sm&quot; data-act=&quot;save&quot;>저장</button>
+          <button class=&quot;btn btn-pri btn-sm&quot; data-act=&quot;confirm&quot; ${o.st==='CONF'?'disabled':''}>설계확정</button>
+        </div>
+      </div>
+      <div class=&quot;oh-kv&quot;>
+        <span class=&quot;kvi&quot;><b>최종수요가</b><span>${esc(d.head.buyer)}</span></span>
+        <span class=&quot;kvi&quot;><b>규격약호</b><span class=&quot;mono&quot;>${esc(d.head.spec)}</span></span>
+        <span class=&quot;kvi&quot;><b>주문Size</b><span class=&quot;mono num&quot;>${esc(d.head.size)}</span></span>
+        <span class=&quot;kvi&quot;><b>품명</b><span>${esc(d.head.prd)}</span></span>
+        <span class=&quot;kvi&quot;><b>용도</b><span>${esc(d.head.use)}</span></span>
+        <span class=&quot;kvi&quot;><b>재질/원자재</b><span>${esc(d.head.mat)} · ${esc(d.head.mat2)}</span></span>
+        ${d.head.bom?`<span class=&quot;kvi&quot;><b>BOM</b><span class=&quot;mono&quot;>${esc(d.head.bom)}</span></span>`:''}
+      </div>
+    </div>
+    <div class=&quot;sec-nav&quot; role=&quot;navigation&quot; aria-label=&quot;설계결과 섹션 이동&quot;>
+      ${SECS.map(s=>`<button class=&quot;sec-chip&quot; data-goto=&quot;${s.id}&quot;>${s.t.split(' - ')[0]}</button>`).join('')}
+      <span class=&quot;gap&quot;></span>
+      <button class=&quot;btn btn-sm&quot; data-act=&quot;expand-all&quot;>전체 펼치기</button>
+      <button class=&quot;btn btn-sm&quot; data-act=&quot;collapse-all&quot;>전체 접기</button>
+    </div>
+    ${SECS.map(s=>{
+      const open=!ui.collapsed.has(s.id);
+      return `<section class=&quot;acc ${open?'open':''}&quot; id=&quot;sec-${s.id}&quot; data-sec=&quot;${s.id}&quot;>
+        <button class=&quot;acc-h&quot; aria-expanded=&quot;${open}&quot; aria-controls=&quot;secb-${s.id}&quot;>
+          <span class=&quot;chev&quot;>▶</span><span class=&quot;t&quot;>${s.t}</span>
+          <span class=&quot;sum&quot;>${esc(s.sum(d))}</span>
+          <span class=&quot;state&quot;>${open?'접기':'펼치기'}</span>
+        </button>
+        <div class=&quot;acc-b&quot; id=&quot;secb-${s.id}&quot;>${s.body(d)}
+          <div class=&quot;acc-save&quot;><button class=&quot;btn btn-sm&quot; data-mock=&quot;${s.t} 저장&quot;>저장</button></div>
+        </div>
+      </section>`;
+    }).join('')}
+    <p class=&quot;subtle-note&quot;>※ 목업 화면입니다 — 값은 AS-IS 화면(D260831014-010) 및 파생 예시 데이터이며, 저장·확정 동작은 시연용입니다.</p>`;
+}
+
+/* ---------- 선택 ---------- */
+function select(key,scrollTop){
+  if(ui.sel===key)return;
+  ui.sel=key;
+  $$('#q-rows tr').forEach(tr=>{const on=tr.dataset.key===key;tr.classList.toggle('sel',on);tr.setAttribute('aria-selected',on);});
+  renderDetail();
+  if(scrollTop!==false)$('#rp-scroll').scrollTop=0;
+}
+
+/* ---------- 이벤트 ---------- */
+document.addEventListener('click',e=>{
+  const tr=e.target.closest('#q-rows tr');
+  if(tr){select(tr.dataset.key);tr.focus({preventScroll:true});return;}
+  const goto=e.target.closest('[data-goto]');
+  if(goto){
+    const id=goto.dataset.goto;
+    ui.collapsed.delete(id);
+    const sec=$('#sec-'+id);
+    if(sec){sec.classList.add('open');$('.acc-h',sec).setAttribute('aria-expanded','true');$('.state',sec).textContent='접기';
+      sec.scrollIntoView({behavior:'smooth',block:'start'});}
+    return;
+  }
+  const acch=e.target.closest('.acc-h');
+  if(acch){
+    const sec=acch.closest('.acc');const id=sec.dataset.sec;
+    const open=sec.classList.toggle('open');
+    acch.setAttribute('aria-expanded',String(open));
+    $('.state',sec).textContent=open?'접기':'펼치기';
+    if(open)ui.collapsed.delete(id);else ui.collapsed.add(id);
+    return;
+  }
+  const act=e.target.closest('[data-act]');
+  if(act){
+    const o=findOrder(ui.sel);if(!o)return;
+    switch(act.dataset.act){
+      case 'expand-all':ui.collapsed.clear();renderDetail();break;
+      case 'collapse-all':SECS.forEach(s=>ui.collapsed.add(s.id));renderDetail();break;
+      case 'save':toast('설계결과가 저장되었습니다 (목업)');break;
+      case 'confirm':o.st='CONF';renderList();renderDetail();toast(`${o.no}-${o.ln} 품질설계가 확정되었습니다`);break;
+      case 'hold':o.st=o.st==='HOLD'?'ING':'HOLD';renderList();renderDetail();
+        toast(o.st==='HOLD'?`${o.no}-${o.ln} 보류 처리되었습니다`:'보류가 해제되었습니다 — 설계중 상태로 돌아갑니다');break;
+    }
+    return;
+  }
+  const mock=e.target.closest('[data-mock]');
+  if(mock){toast(`[${mock.dataset.mock}] — 목업에서는 동작을 제공하지 않습니다`,'err');return;}
+  if(e.target.id==='qf-q-clear'){ui.fQ='';$('#qf-q').value='';renderList();$('#qf-q').focus();return;}
+  if(e.target.id==='qf-search'){ui.fQ=$('#qf-q').value;renderList();return;}
+  if(e.target.id==='qf-reset'){ui.fPrd='';ui.fSt='';ui.fQ='';$('#qf-prd').value='';$('#qf-st').value='';$('#qf-q').value='';renderList();return;}
+});
+
+/* 행 포커스 이동 시에도 상세 갱신 (요구사항: 클릭 또는 포커스) */
+document.addEventListener('focusin',e=>{
+  const tr=e.target.closest?.('#q-rows tr');
+  if(tr)select(tr.dataset.key);
+});
+document.addEventListener('keydown',e=>{
+  const tr=e.target.closest?.('#q-rows tr');
+  if(!tr)return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    const sib=e.key==='ArrowDown'?tr.nextElementSibling:tr.previousElementSibling;
+    if(sib)sib.focus();
+  }else if(e.key==='Enter'){select(tr.dataset.key);}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='qf-prd'){ui.fPrd=e.target.value;renderList();}
+  else if(e.target.id==='qf-st'){ui.fSt=e.target.value;renderList();}
+});
+let deb;document.addEventListener('input',e=>{
+  if(e.target.id==='qf-q'){clearTimeout(deb);deb=setTimeout(()=>{ui.fQ=e.target.value;renderList();},140);}
+});
+
+/* ---------- init ---------- */
+renderList();
+select('D260831014-010');
+</script>
+</body>
+</html>
+"></iframe>
+        </section>
+
         <section class="route-view placeholder-view" id="quality-judgment-view" aria-labelledby="judgment-title" hidden>
           <div class="placeholder-copy">
             <p class="eyebrow">QUALITY JUDGMENT</p>
@@ -2889,6 +3593,13 @@ if(hadDraft)toast('작성 중이던 사양을 자동으로 복원했습니다');
       hash: '#/quality-design/module-management/quality-spec',
       viewId: 'quality-spec-view',
       title: '품질사양 관리',
+      crumbs: ['품질설계', '모듈관리'],
+      openLink: true
+    },
+    'quality-design-result': {
+      hash: '#/quality-design/module-management/quality-design-result',
+      viewId: 'quality-design-result-view',
+      title: '품질설계결과',
       crumbs: ['품질설계', '모듈관리'],
       openLink: true
     },

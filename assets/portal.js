@@ -13,6 +13,13 @@
       crumbs: ['품질설계', '모듈관리'],
       openLink: true
     },
+    'quality-design-result': {
+      hash: '#/quality-design/module-management/quality-design-result',
+      viewId: 'quality-design-result-view',
+      title: '품질설계결과',
+      crumbs: ['품질설계', '모듈관리'],
+      openLink: true
+    },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',

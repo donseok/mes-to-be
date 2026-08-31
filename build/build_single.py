@@ -57,6 +57,21 @@ index = index.replace(
     '          <iframe id="module-frame" title="품질사양 관리 목업" '
     'loading="eager" srcdoc="' + escaped + '"></iframe>', 1)
 
+# --- 2b. 품질설계결과 모듈도 iframe srcdoc으로 내장 -------------------------
+module_qd = open(path('modules', 'quality-design.html'), encoding='utf-8').read()
+old_iframe_qd = '''          <iframe
+            id="module-frame-qd"
+            title="품질설계결과 목업"
+            src="./modules/quality-design.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_qd in index, 'qd iframe block not found'
+escaped_qd = module_qd.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_qd,
+    '          <iframe id="module-frame-qd" title="품질설계결과 목업" '
+    'loading="lazy" srcdoc="' + escaped_qd + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')

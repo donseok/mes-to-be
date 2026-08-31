@@ -8,6 +8,7 @@
 | 파일 | 역할 |
 |---|---|
 | `modules/quality-spec.html` | 품질사양 관리 모듈 (사양 목록·신규 등록·코드 사전·변경 이력·전송 이력·시뮬레이션 — 화면/기능의 대부분) |
+| `modules/quality-design.html` | 품질설계 모듈 (좌: 의뢰현황 목록 · 우: 설계결과 — 구 탭 9종을 펼치기/접기 섹션으로 통합) |
 | `build/template.html` | 포털 셸 (사이드바 메뉴, 해시 라우팅 뼈대, iframe 자리) |
 | `assets/portal.css` · `assets/portal.js` | 포털 셸의 스타일·동작 (사이드바 접기, 라우팅, 모바일 서랍) |
 
@@ -17,7 +18,7 @@
 python3 build/build_single.py
 ```
 
-`build/template.html`에 CSS/JS를 인라인하고 모듈 전체를 iframe `srcdoc`으로 내장해
+`build/template.html`에 CSS/JS를 인라인하고 두 모듈(품질사양·품질설계) 전체를 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
 
 ## 작업 순서
