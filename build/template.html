@@ -22,7 +22,6 @@
         <button class="sidebar-close" id="sidebar-close" type="button" aria-label="메뉴 닫기">✕</button>
       </div>
 
-      <div class="menu-caption">품질 업무</div>
       <nav class="portal-nav" aria-label="품질 모듈">
         <button class="nav-parent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
           <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
@@ -60,11 +59,30 @@
               품질설계결과
             </a>
           </div>
+
+          <a class="nav-link" href="#/quality-design/simulation" data-route="simulation">
+            시뮬레이션
+          </a>
         </div>
 
         <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
           품질판정
         </a>
+
+        <button class="nav-parent" type="button" data-tree-toggle="output-management-tree" aria-expanded="true" aria-controls="output-management-tree">
+          <span>출력물관리</span><span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="nav-tree open" id="output-management-tree">
+          <a class="nav-link" href="#/output-management/quality-certificate" data-route="quality-certificate">
+            품질보증서관리
+          </a>
+          <a class="nav-link" href="#/output-management/inspection-certificate" data-route="inspection-certificate">
+            검사증명서관리
+          </a>
+          <a class="nav-link" href="#/output-management/tag-management" data-route="tag-management">
+            Tag관리
+          </a>
+        </div>
       </nav>
 
       <div class="sidebar-foot">
@@ -137,6 +155,38 @@
             <p class="eyebrow">QUALITY JUDGMENT</p>
             <h2 id="judgment-title">품질판정</h2>
             <p>품질판정 하위 프로그램을 설계하면 이 메뉴 아래에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="simulation-view" aria-labelledby="simulation-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">SIMULATION</p>
+            <h2 id="simulation-title">시뮬레이션</h2>
+            <p>시뮬레이션 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="quality-certificate-view" aria-labelledby="quality-certificate-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">QUALITY CERTIFICATE</p>
+            <h2 id="quality-certificate-title">품질보증서관리</h2>
+            <p>품질보증서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="inspection-certificate-view" aria-labelledby="inspection-certificate-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">INSPECTION CERTIFICATE</p>
+            <h2 id="inspection-certificate-title">검사증명서관리</h2>
+            <p>검사증명서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="tag-management-view" aria-labelledby="tag-management-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">TAG MANAGEMENT</p>
+            <h2 id="tag-management-title">Tag관리</h2>
+            <p>Tag관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
           </div>
         </section>
       </main>

@@ -129,14 +129,8 @@ a{ color:inherit; }
 }
 .sidebar-collapse:hover{ background:var(--side-line); color:var(--side-ink); }
 
-.menu-caption{
-  padding:18px 16px 6px;
-  font-size:11px; font-weight:500; letter-spacing:.14em;
-  color:var(--side-dim);
-}
-
 /* ---------- nav ---------- */
-.portal-nav{ padding:0 10px; flex:1; }
+.portal-nav{ padding:14px 10px 0; flex:1; }
 
 .nav-parent,.nav-subparent{
   display:flex; align-items:center; justify-content:space-between;
@@ -301,7 +295,6 @@ noscript{
     padding:14px 8px 12px;
   }
   .app-shell.sidebar-collapsed .portal-brand span:not(.brand-mark){ display:none; }
-  .app-shell.sidebar-collapsed .menu-caption,
   .app-shell.sidebar-collapsed .portal-nav,
   .app-shell.sidebar-collapsed .sidebar-foot{ display:none; }
 }
@@ -350,7 +343,6 @@ noscript{
         <button class="sidebar-close" id="sidebar-close" type="button" aria-label="메뉴 닫기">✕</button>
       </div>
 
-      <div class="menu-caption">품질 업무</div>
       <nav class="portal-nav" aria-label="품질 모듈">
         <button class="nav-parent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
           <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
@@ -388,11 +380,30 @@ noscript{
               품질설계결과
             </a>
           </div>
+
+          <a class="nav-link" href="#/quality-design/simulation" data-route="simulation">
+            시뮬레이션
+          </a>
         </div>
 
         <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
           품질판정
         </a>
+
+        <button class="nav-parent" type="button" data-tree-toggle="output-management-tree" aria-expanded="true" aria-controls="output-management-tree">
+          <span>출력물관리</span><span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="nav-tree open" id="output-management-tree">
+          <a class="nav-link" href="#/output-management/quality-certificate" data-route="quality-certificate">
+            품질보증서관리
+          </a>
+          <a class="nav-link" href="#/output-management/inspection-certificate" data-route="inspection-certificate">
+            검사증명서관리
+          </a>
+          <a class="nav-link" href="#/output-management/tag-management" data-route="tag-management">
+            Tag관리
+          </a>
+        </div>
       </nav>
 
       <div class="sidebar-foot">
@@ -4352,6 +4363,38 @@ renderHist();
             <p>품질판정 하위 프로그램을 설계하면 이 메뉴 아래에 같은 방식으로 연결할 수 있습니다.</p>
           </div>
         </section>
+
+        <section class="route-view placeholder-view" id="simulation-view" aria-labelledby="simulation-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">SIMULATION</p>
+            <h2 id="simulation-title">시뮬레이션</h2>
+            <p>시뮬레이션 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="quality-certificate-view" aria-labelledby="quality-certificate-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">QUALITY CERTIFICATE</p>
+            <h2 id="quality-certificate-title">품질보증서관리</h2>
+            <p>품질보증서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="inspection-certificate-view" aria-labelledby="inspection-certificate-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">INSPECTION CERTIFICATE</p>
+            <h2 id="inspection-certificate-title">검사증명서관리</h2>
+            <p>검사증명서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="tag-management-view" aria-labelledby="tag-management-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">TAG MANAGEMENT</p>
+            <h2 id="tag-management-title">Tag관리</h2>
+            <p>Tag관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -4401,11 +4444,39 @@ renderHist();
       crumbs: ['품질설계', '설계결과관리'],
       openLink: true
     },
+    'simulation': {
+      hash: '#/quality-design/simulation',
+      viewId: 'simulation-view',
+      title: '시뮬레이션',
+      crumbs: ['품질설계'],
+      openLink: false
+    },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
       crumbs: ['품질 업무'],
+      openLink: false
+    },
+    'quality-certificate': {
+      hash: '#/output-management/quality-certificate',
+      viewId: 'quality-certificate-view',
+      title: '품질보증서관리',
+      crumbs: ['출력물관리'],
+      openLink: false
+    },
+    'inspection-certificate': {
+      hash: '#/output-management/inspection-certificate',
+      viewId: 'inspection-certificate-view',
+      title: '검사증명서관리',
+      crumbs: ['출력물관리'],
+      openLink: false
+    },
+    'tag-management': {
+      hash: '#/output-management/tag-management',
+      viewId: 'tag-management-view',
+      title: 'Tag관리',
+      crumbs: ['출력물관리'],
       openLink: false
     }
   };

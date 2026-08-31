@@ -41,11 +41,39 @@
       crumbs: ['품질설계', '설계결과관리'],
       openLink: true
     },
+    'simulation': {
+      hash: '#/quality-design/simulation',
+      viewId: 'simulation-view',
+      title: '시뮬레이션',
+      crumbs: ['품질설계'],
+      openLink: false
+    },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
       crumbs: ['품질 업무'],
+      openLink: false
+    },
+    'quality-certificate': {
+      hash: '#/output-management/quality-certificate',
+      viewId: 'quality-certificate-view',
+      title: '품질보증서관리',
+      crumbs: ['출력물관리'],
+      openLink: false
+    },
+    'inspection-certificate': {
+      hash: '#/output-management/inspection-certificate',
+      viewId: 'inspection-certificate-view',
+      title: '검사증명서관리',
+      crumbs: ['출력물관리'],
+      openLink: false
+    },
+    'tag-management': {
+      hash: '#/output-management/tag-management',
+      viewId: 'tag-management-view',
+      title: 'Tag관리',
+      crumbs: ['출력물관리'],
       openLink: false
     }
   };
