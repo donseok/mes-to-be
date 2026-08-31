@@ -9,8 +9,9 @@
 <style>
 /* ============================================================
    P-FEAS — MES 생산가부관리 목업
-   탭: B.D 생산범위(2CGL GI) — 참조 엑셀 시트를 그대로 옮긴 화면.
-   행: 폭(1260~650↑) · 열: Full Hard 두께(0.24~2.2) · 셀: 가부 상태.
+   탭: B.D 생산범위 5종(2CGL GI · 2CGL GL · 3CGL GI.GIX · 4CGL GL.GLX · 5CGL GI.GL)
+   — 참조 엑셀 'B.D 생산범위' 시트들을 그대로 옮긴 화면 + 수정 이력.
+   행: 폭 · 열: Full Hard 두께 · 셀: 가부 상태 (그룹별 축이 다른 시트 지원).
    상태 4종: 생산불가(백) · 생산가능(청) · 조건부 생산(황) · 생산불가 검증완료(적).
    palette·타입은 Q-SPEC/W-ERR 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
@@ -113,7 +114,7 @@ input,select{font:inherit;color:var(--ink)}
 .tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
 
 /* ---------- layout ---------- */
-.wrap{padding:16px 20px 60px;max-width:1180px;margin:0 auto}
+.wrap{padding:16px 20px 60px;max-width:1280px;margin:0 auto}
 .screen{display:none}
 .screen.on{display:block}
 .panel{
@@ -226,6 +227,12 @@ table.bdmx{
 .bdmx td.c{background:var(--xl-cond)}
 .bdmx td.x{background:var(--xl-no-verified)}
 .bdmx td.hl{outline:2px solid var(--result);outline-offset:-2px}
+.bdmx td.mnote{
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;
+  text-align:center;vertical-align:middle;padding:2px 6px;cursor:default;
+  white-space:normal;line-height:1.3;
+}
+.bdmx td.mnote.red{color:var(--xl-warn)}
 .bdmx tfoot th{
   background:var(--surface);font-weight:500;text-align:center;padding:3px 1px;
   font-size:10.5px;color:var(--ink);letter-spacing:-.02em;
@@ -239,8 +246,8 @@ table.bdmx{
   content:'';position:absolute;right:0;top:0;
   border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--result) transparent transparent;
 }
-.edit-on .bdmx td{cursor:cell}
-.edit-on .bdmx td:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.edit-on .bdmx td:not(.mnote){cursor:cell}
+.edit-on .bdmx td:not(.mnote):hover{outline:2px solid var(--accent);outline-offset:-2px}
 
 .panel-note{
   padding:9px 14px;border-top:1px solid var(--border);
@@ -312,18 +319,17 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
   <div class="topbar-right"><span class="mock-flag">MOCK-UP</span></div>
 </header>
 
-<!-- ================= tabs ================= -->
-<nav class="tabs" role="tablist">
-  <button class="tab on" id="tab-range" data-tab="range" role="tab" aria-selected="true" aria-controls="sc-range" tabindex="0">B.D 생산범위(2CGL GI)</button>
-  <button class="tab" id="tab-hist" data-tab="hist" role="tab" aria-selected="false" aria-controls="sc-hist" tabindex="-1">수정 이력 <span class="cnt" id="cnt-hist">0</span></button>
-</nav>
+<!-- ================= tabs (시트 5종 + 수정 이력 — JS 생성) ================= -->
+<nav class="tabs" id="tabs" role="tablist"></nav>
 
 <main class="wrap" id="main-content">
 
-  <!-- ================= B.D 생산범위(2CGL GI) ================= -->
-  <section class="screen on" id="sc-range" role="tabpanel" aria-labelledby="tab-range">
+  <!-- ================= B.D 생산범위 (활성 시트 렌더링) ================= -->
+  <section class="screen on" id="sc-range" role="tabpanel">
     <div class="fbar">
-      <div class="f-field"><label for="lk-width">가부 간편조회 — 폭 (mm)</label>
+      <div class="f-field"><label for="lk-group">가부 간편조회 — 재질 그룹</label>
+        <select class="inp" id="lk-group"></select></div>
+      <div class="f-field"><label for="lk-width">폭 (mm)</label>
         <select class="inp" id="lk-width"></select></div>
       <div class="f-field"><label for="lk-thick">두께 (mm)</label>
         <select class="inp" id="lk-thick"></select></div>
@@ -332,50 +338,13 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
       <div class="lookup-chips" id="lookup-chips" aria-live="polite"></div>
       <div class="f-sep" aria-hidden="true"></div>
       <button class="btn" id="btn-edit" data-action="toggle-edit" aria-pressed="false">✎ 수정 모드</button>
-      <button class="btn btn-danger" data-action="reset-overrides">수정값 전체 초기화</button>
+      <button class="btn btn-danger" data-action="reset-overrides">현재 탭 수정값 초기화</button>
       <div class="fbar-meta"><b id="range-info">—</b></div>
     </div>
 
     <div class="panel">
-      <div class="sheet">
-        <div class="xl-title">2CGL GI 생산가능 SIZE (Full Hard 치수 기준)</div>
-
-        <div class="xl-meta">
-          <span class="legend">
-            <span class="lg"><span class="sw"></span>생산불가</span>
-            <span class="lg"><span class="sw p"></span>생산가능</span>
-            <span class="lg"><span class="sw c"></span>조건부 생산</span>
-            <span class="lg"><span class="sw x"></span>생산불가 (검증 완료)</span>
-          </span>
-          <span class="rev-date" id="rev-date">[개정일 : '25.03.31]</span>
-        </div>
-
-        <ul class="xl-notes">
-          <li>-. 내경 508Py / 610Py 권취 가능</li>
-          <li>-. Back Marking 가능여부 : 불가 (설비 無)</li>
-          <li>-. 생산가능 도금량 : 80~310g/㎡</li>
-          <li>-. 생산가능 후처리</li>
-        </ul>
-        <table class="post-tbl" aria-label="생산가능 후처리">
-          <thead><tr>
-            <th>구분<small>(후처리 Code)</small></th>
-            <th>무처리/Oiling<small>(MX / MO)</small></th>
-            <th>크롬 6가<small>(CX / CO)</small></th>
-            <th>크롬 3가<small>(FX)</small></th>
-            <th>갈바크린<small>(SX)</small></th>
-          </tr></thead>
-          <tbody><tr><td>GI</td><td>O</td><td>O</td><td>O</td><td>O</td></tr></tbody>
-        </table>
-
-        <div class="xl-section">-. 생산가능 Size (재질별)</div>
-        <div id="mgroups"></div>
-      </div>
-
-      <div class="panel-note">
-        <span>행: <b>폭(mm)</b> 1260 ~ 650↑ · 열: <b>Full Hard 두께(mm)</b> 0.24 ~ 2.2 · 셀: <b>생산 가부 상태</b></span>
-        <span>출처: <b>B.D 생산범위(2CGL GI)</b> 기준 시트 (개정일 '25.03.31)</span>
-        <span id="edit-hint" hidden>수정 모드: 셀을 클릭하면 상태가 <b>생산불가 → 생산가능 → 조건부 생산 → 생산불가(검증 완료)</b> 순으로 바뀝니다</span>
-      </div>
+      <div class="sheet" id="sheet-root"></div>
+      <div class="panel-note" id="sheet-note"></div>
     </div>
   </section>
 
@@ -390,7 +359,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
           <option value="">전체</option><option>셀 수정</option><option>초기화</option>
         </select></div>
       <div class="f-field" style="flex:1;min-width:180px"><label for="h-q">키워드</label>
-        <div class="search-wrap"><input class="inp" id="h-q" type="search" autocomplete="off" placeholder="재질·폭·두께·작업자 검색">
+        <div class="search-wrap"><input class="inp" id="h-q" type="search" autocomplete="off" placeholder="시트·재질·폭·두께·작업자 검색">
           <button class="search-clear" id="h-q-clear" data-action="h-search-clear" aria-label="검색어 지우기">✕</button></div></div>
       <button class="btn btn-pri" data-action="h-search">조회</button>
       <button class="btn" data-action="h-reset">초기화</button>
@@ -415,7 +384,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 <!-- ================= 확인 모달 ================= -->
 <div class="modal-back" id="modal-back" role="presentation">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-h" id="modal-title">수정값 전체 초기화</div>
+    <div class="modal-h" id="modal-title">현재 탭 수정값 초기화</div>
     <div class="modal-b" id="modal-body"></div>
     <div class="modal-f">
       <button class="btn" data-action="modal-close">취소</button>
@@ -429,17 +398,17 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 <script>
 'use strict';
 /* ============================================================
-   상태 — localStorage에만 저장 (LS_KEY 버전을 올리면 시드로 초기화)
-   cells: {그룹키: ['24자 상태문자열' × 6행]}  행=폭, 열=두께
+   시트 데이터 — 참조 엑셀 'B.D 생산범위' 시트 5종(개정일 '25.03.31)에서
+   프로그램으로 추출한 원본 그대로의 시드.
+   groups[].seed: 행=폭, 열=두께(그룹별 축) 상태 문자열
    상태문자: '-' 생산불가 · 'P' 생산가능 · 'C' 조건부 생산 · 'X' 생산불가(검증 완료)
-   changelog: {id, ts, by, kind, item, before, after}
-   시드 = 참조 엑셀 'B.D 생산범위(2CGL GI)' 시트(개정일 '25.03.31) 원본 그대로
+   overlay: 매트릭스 좌상단에 겹쳐진 원본 주석 박스 (rows×cols 셀 영역)
+   ※ 2CGL GL 원본 시트 제목은 '2CGL GI ...'로 오기재되어 있어 GL로 정정함
    ============================================================ */
-var LS_KEY='pfeas-bd2cgl-gi-v1';
-var CUR_USER='주인';
+var SHEETS=[{"key":"2cgl-gi","tab":"B.D 생산범위(2CGL GI)","title":"2CGL GI 생산가능 SIZE (Full Hard 치수 기준)","rev":"[개정일 : '25.03.31]","notes":["-. 내경 508Py / 610Py 권취 가능","-. Back Marking 가능여부 : 불가 (설비 無)","-. 생산가능 도금량 : 80~310g/㎡","-. 생산가능 후처리"],"post":{"heads":["구분\n(후처리 Code)","무처리/Oiling\n(MX / MO)","크롬 6가\n(CX / CO)","크롬 3가\n(FX)","갈바크린\n(SX)"],"rows":[["GI","O","O","O","O"]]},"groups":[{"name":"CQ, Gr-A, B(G250)","codes":"재질코드(Material Code) = 1A, AA, BA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["-----PPPPPPPPPPPPPPCCC--","---PPPPPPPPPPPPPPPPCCC--","--PPPPPPPPPPPPPPPPPCCC--","-PPPPPPPPPPPPPPPPPPCCC--","PPPPPPPPPPPPPPPPPPPCCC--","PPPPPPPPPPPPPPPPPPPCCC--"]},{"name":"Full-Ann (DQ, DDQ, IF Steel)","codes":"재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["------PPPPPPPPCCCC------","-----CPPPPPPPPCCCC------","----CCPPPPPPPPCCCC------","---CCCPPPPPPPPCCCC------","---CCCPPPPPPPPCCCC------","---CCCPPPPPPPPCCCC------"],"warn":"※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)"},{"name":"Gr-C(G300), D(G350)","codes":"재질코드(Material Code) = CA, CB, DA, DB, DC, DD","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["------PPPPPPPPPPPPPCCC--","----CPPPPPPPPPPPPPPCCC--","----CPPPPPPPPPPPPPPCCC--","----CPPPPPPPPPPPPPPCCC--","----CPPPPPPPPPPPPPPCCC--","----CPPPPPPPPPPPPPPCCC--"],"warn":"※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정"},{"name":"Gr-E(G550)","codes":"재질코드(Material Code) = EA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["----PPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------"],"warnbox":"PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)"}]},{"key":"2cgl-gl","tab":"B.D 생산범위(2CGL GL)","title":"2CGL GL 생산가능 SIZE (Full Hard 치수 기준)","titleNote":"원본 시트 제목은 \"2CGL GI ...\"로 오기재되어 있어 GL로 정정함","rev":"[개정일 : '25.03.31]","notes":["-. 내경 508Py / 610Py 권취 가능","-. Back Marking 가능여부 : 불가 (설비 無)","-. 생산가능 도금량 : 40~200g/㎡","-. 생산가능 후처리"],"post":{"heads":["구분\n(후처리 Code)","무처리/Oiling\n(MX / MO)","크롬 6가\n(CX / CO)","갈바크린\n(SX)","PE-FOAM 부착용\n(F2)","크롬프리\n(E5)"],"rows":[["GL","O","O","O","O","X"]]},"groups":[{"name":"CQ, Gr-A, B(G250)","codes":"재질코드(Material Code) = 1A, AA, BA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["-----PPPPPCCCC----------","---PPPPPPPCCCC----------","--PPPPPPPPCCCC----------","-PPPPPPPPPCCCC----------","PPPPPPPPPPCCCC----------","PPPPPPPPPPCCCC----------"]},{"name":"Full-Ann (DQ, DDQ, IF Steel)","codes":"재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["------PPPPCCCC----------","-----CPPPPCCCC----------","----CCPPPPCCCC----------","---CCCPPPPCCCC----------","---CCCPPPPCCCC----------","---CCCPPPPCCCC----------"],"warn":"※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)"},{"name":"Gr-C(G300), D(G350)","codes":"재질코드(Material Code) = CA, CB, DA, DB, DC, DD","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["----PPPPPPCCCC----------","---PPPPPPPCCCC----------","---PPPPPPPCCCC----------","---PPPPPPPCCCC----------","---PPPPPPPCCCC----------","---PPPPPPPCCCC----------"],"warn":"※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정"},{"name":"Gr-E(G550)","codes":"재질코드(Material Code) = EA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.28","0.30","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2"],"seed":["----PPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------","---PPPP-----------------"],"warnbox":"PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)"}]},{"key":"3cgl","tab":"B.D 생산범위(3CGL GI.GIX)","title":"3CGL 생산가능 SIZE (Full Hard 치수 기준)","rev":"[개정일 : '25.03.31]","notes":["-. 내경 508Py / 610Py 권취 가능","-. Back Marking 가능여부 : 불가 (설비 無)","-. 생산가능 도금량 : 80~350g/㎡","-. 생산가능 후처리"],"post":{"heads":["구분\n(후처리 Code)","무처리/Oiling\n(MX / MO)","크롬산\n(CX / CO)","크롬프리\n(NC)","갈바크린+크롬\n(DX)"],"rows":[["GI","O","O","O","O"],["GIX","O","O","O","O"]]},"groups":[{"name":"CQ, Gr-A","codes":"재질코드(Material Code) = 1A","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["---PPPPPPPPPPPPPPPPPPPPC--","--PPPPPPPPPPPPPPPPPPPPPCCC","--PPPPPPPPPPPPPPPPPPPPPCCC","-PPPPPPPPPPPPPPPPPPPPPPCCC","-PPPPPPPPPPPPPPPPPPPPPPCCC","-PPPPPPPPPPPPPPPPPPPPPPCCC"]},{"name":"Full-Ann (DQ)","codes":"재질코드(Material Code) = 3A, 3B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["-----CPPPPPPPPPPPPPP------","---CCPPPPPPPPPPPPPPPP-----","---CPPPPPPPPPPPPPPPPP-----","---PPPPPPPPPPPPPPPPPP-----","--XPPPPPPPPPPPPPPPPPP-----","--XPPPPPPPPPPPPPPPPPP-----"]},{"name":"Full-Ann (DDQ)","codes":"재질코드(Material Code) = 4A, 4B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["------CCPPPPPPPPPCCC------","-----CPPPPPPPPPPPCCC------","----XPPPPPPPPPPPPCCC------","---XPPPPPPPPPPPPPCCC------","--XPPPPPPPPPPPPPPCCC------","--XPPPPPPPPPPPPPPCCC------"]},{"name":"Full-Ann (IF Steel)","codes":"재질코드(Material Code) = 5A, 5B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.35","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["------CCCCCCCCCCCCCC------","-----CPPPPPPPPPPPCCC------","----XPPPPPPPPPPPPCCC------","---XPPPPPPPPPPPPPCCC------","--XPPPPPPPPPPPPPPCCC------","--XPPPPPPPPPPPPPPCCC------"]},{"name":"Gr-B(G250)","codes":"재질코드(Material Code) = BA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["---PPPPPPPPPPPPPPPPPPP----","--XPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--"]},{"name":"Gr-C(G300)","codes":"재질코드(Material Code) = CA, CB","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["---XPPPPPPPPPPPPPPPPPP----","--XPPPPPPPPPPPPPPPPPPPPP--","--XPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--"]},{"name":"Gr-D(G350)","codes":"재질코드(Material Code) = DA, DB, DC, DD","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["---XPPPPPPPPPPPPPPPPPP----","--XPPPPPPPPPPPPPPPPPPPPP--","--XPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--","--CPPPPPPPPPPPPPPPPPPPPP--"]},{"name":"G450","codes":"재질코드(Material Code) = EC 외 Code","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["----------CCCPPPPPCCC-----","----------CCCPPPPPCCC-----","----------CCCPPPPPCCC-----","----------CCCPPPPPCCC-----","----------CCCPPPPPCCC-----","----------CCCPPPPPCCC-----"],"warn":"※ 특수강종 : SAE1022材 적용 제품"},{"name":"Gr-E(G550)","codes":"재질코드(Material Code) = EA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.24","0.25","0.3","0.33","0.4","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2","2.1","2.2","2.3","2.4","2.5"],"seed":["---PPPPPCCCC--------------","--CPPPPPCCCC--------------","--PPPPPPCCCC--------------","--PPPPPPCCCC--------------","--PPPPPPCCCC--------------","--PPPPPPCCCC--------------"],"warnbox":"PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)"}]},{"key":"4cgl","tab":"B.D 생산범위(4CGL GL.GLX)","title":"4CGL 생산가능 SIZE (Full Hard 치수 기준)","rev":"[개정일 : '25.03.31]","notes":["-. 내경 508Py, 610Py 권취 가능","-. Back Marking 가능여부 : 가능(양측 Edge부)","-. 생산가능 도금량 : 60~200g/㎡ (100미만, 200g 초과 제품은 별도 협의)","-. 생산가능 후처리"],"post":{"heads":["구분\n(후처리 Code)","무처리/Oiling\n(MX / MO)","크롬산\n(CX / CO)","크롬프리\n(E5)","F2\n(F2)","갈바크린(+크롬)\n(DX / SX)","착색갈바크린\n(1/2B, 1/2R, 1/2G, 1/2Y, 1/2X)"],"rows":[["GL","O","O","O","O","O","-"],["GLX","O","O","-","O","DX","-"]]},"groups":[{"name":"CQ, Gr-A, B(G250)","codes":"재질코드(Material Code) = 1A, AA, BA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.25","0.26","0.27","0.30","0.35","0.40","0.45","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2"],"seed":["-----PPPPPCCC--","----CPPPPPCCC--","--XCPPPPPPCCC--","--CCPPPPPPCCC--","CCPPPPPPPPCCC--","CCPPPPPPPPCCC--"]},{"name":"Full-Ann (DQ)","codes":"재질코드(Material Code) = 3A, 3B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.25","0.26","0.27","0.30","0.35","0.40","0.45","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2"],"seed":["-----C---------","----CCC--------","--XXCCPC-------","--XCPPPP-------","--XCPPPP-------","--XCPPPP-------"]},{"name":"Full-Ann (DDQ, IF-Steel)","codes":"재질코드(Material Code) = 4A, 4B, 5A, 5B","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.25","0.26","0.27","0.30","0.35","0.40","0.45","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2"],"seed":["---------------","---------------","---------------","----XPPP-------","---XPPPP-------","---XPPPP-------"]},{"name":"Gr-C(G300), D(G350)","codes":"재질코드(Material Code) =  CA, CB, DA, DB, DD","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.25","0.26","0.27","0.30","0.35","0.40","0.45","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2"],"seed":["-----PPPPP-----","----CPPPPPC----","---XPPPPPPC----","--XPPPPPPPC----","--CPPPPPPPC----","--CPPPPPPPC----"]},{"name":"Gr-E(G550)","codes":"재질코드(Material Code) = EA","widths":["1260","1230","1150","1050","950","650↑"],"thicks":["0.25","0.26","0.27","0.28","0.30","0.40","0.45","0.5","0.6","0.7","0.8","0.9","1","1.1","1.2"],"seed":["----PPPPPPPC---","---PPPPPPPPC---","--PPPPPPPPPC---","-PPPPPPPPPPC---","CPPPPPPPPPPC---","CPPPPPPPPPPC---"],"warnbox":"PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)"}]},{"key":"5cgl","tab":"B.D 생산범위(5CGL GI.GL)","title":"5CGL 생산가능 SIZE (Full Hard 치수 기준)","rev":"[개정일 : '25.03.31]","notes":["-. 내경 508Py / 610Py 권취 가능","-. 폭 1,570mm 초과 제품 조건부 생산 가능","-. Back Marking 가능여부 : 가능 (W/S Edge부)","-. 생산가능 도금량 : GI 80~600g/㎡ , GL 60~200g/㎡","-. 생산가능 후처리"],"post":{"heads":["구분\n(후처리 Code)","무처리/Oiling\n(MX / MO)","크롬산\n(CX / CO / FX)","크롬프리\n(NC / E5)","갈바크린(+크롬)\n(DX / SX)","조관용수지\n(LP)","F2\n(F2)","착색갈바크린\n(1/2B, 1/2R, 1/2G, 1/2Y, 1/2X)"],"rows":[["GI","O","O","O","O","-","-","-"],["GL","O","O","O","O","O","△","O"]]},"groups":[{"name":"CQ, Gr-A","codes":"재질코드(Material Code) = 1A, AA","widths":["1570","1500","1450","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-----CPPPPPPPPPPPPPP-----","----PPPPPPPPPPPPPPPPP----","--CPPPPPPPPPPPPPPPPPP----","--PPPPPPPPPPPPPPPPPPPPPPP","-CPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP"]},{"name":"Full-Ann (DQ)","codes":"재질코드(Material Code) = 3A, 3B","widths":["1570","1500","1400","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.40","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------PPPPPPPP----------","------PPPPPPPPPP---------","-----PPPPPPPPPPPP--------","----PPPPPPPPPPPPPP-------","---PPPPPPPPPPPPPPPPPC----","--PPPPPPPPPPPPPPPPPPC----","--PPPPPPPPPPPPPPPPPPC----","--PPPPPPPPPPPPPPPPPPC----"],"overlay":{"rows":2,"cols":6,"text":"[CQ와 물성 유사하나 안정 구간]","red":false}},{"name":"Full-Ann (DDQ)","codes":"재질코드(Material Code) = 4A, 4B","widths":["1570","1500","1400","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.40","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------PPPPPPPP----------","------CPPPPPPPPP---------","-----PPPPPPPPPPPP--------","----PPPPPPPPPPPPPP-------","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----"]},{"name":"Full-Ann (IF Steel)","codes":"재질코드(Material Code) = 5A, 5B","widths":["1570","1500","1450","1350","1200","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------PPPPPPPP----------","-------PPPPPPPPP---------","-------PPPPPPPPPP--------","----PPPPPPPPPPPPPP-------","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----","---PPPPPPPPPPPPPPPPPC----"]},{"name":"Gr-B(G250)","codes":"재질코드(Material Code) = BA","widths":["1570","1500","1450","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["------PPPPPPPPPPPPPP-----","------PPPPPPPPPPPPPPP----","-----PPPPPPPPPPPPPPPP----","--CPPPPPPPPPPPPPPPPPPP---","-PPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP","-PPPPPPPPPPPPPPPPPPPPPPPP"],"overlay":{"rows":2,"cols":5,"text":"SAE1008\nFurnace 온도 하향 작업 구간","red":true}},{"name":"Gr-C(G300)","codes":"재질코드(Material Code) = CA, CB","widths":["1570","1500","1450","1300","1260","1150","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["------PPPPPPPPPPPP-------","------PPPPPPPPPPPP-------","-----PPPPPPPPPPPPPPPP----","--PPPPPPPPPPPPPPPPPPP----","--PPPPPPPPPPPPPPPPPPPPPC-","-CPPPPPPPPPPPPPPPPPPPPPC-","-CPPPPPPPPPPPPPPPPPPPPPC-","-CPPPPPPPPPPPPPPPPPPPPPC-"]},{"name":"Gr-D(G350)","codes":"재질코드(Material Code) =DA, DB, DC, DD","widths":["1570","1500","1450","1300","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------PPPPPPP-----------","-------PPPPPPPP----------","-----CPPPPPPPPPP---------","----CCPPPPPPPPPPPPCCC----","---PPPPPPPPPPPPPPPPPPCCC-","---PPPPPPPPPPPPPPPPPPCCC-","---PPPPPPPPPPPPPPPPPPCCC-","---PPPPPPPPPPPPPPPPPPCCC-"]},{"name":"G450","codes":"재질코드(Material Code) = EC","widths":["1570","1500","1450","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------------------------","---------PPPPPP----------","---------PPPPPPPPPPPC----","--------CPPPPPPPPPPPCCCCC","--------CPPPPPPPPPPPPPPPP","--------CPPPPPPPPPPPPPPPP","--------CPPPPPPPPPPPPPPPP","--------CPPPPPPPPPPPPPPPP"]},{"name":"Gr-E(G550)","codes":"재질코드(Material Code) = EA","widths":["1570","1500","1450","1350","1260","1100","1000","900↑"],"thicks":["0.25","0.3","0.33","0.35","0.38","0.4","0.45","0.5","0.8","1","1.2","1.4","1.6","1.8","2","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8","2.9","3"],"seed":["-------------------------","------PPPPPPPPC----------","-----PPPPPPPPPP----------","---CPPPPPPPPPPPP---------","--PPPPPPPPPPPPPPPC-------","--PPPPPPPPPPPPPPPC-------","--PPPPPPPPPPPPPPPC-------","--PPPPPPPPPPPPPPPC-------"],"overlay":{"rows":2,"cols":6,"text":"PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)","red":true}}]}];
 
-var THICKS=['0.24','0.25','0.28','0.30','0.35','0.4','0.5','0.6','0.7','0.8','0.9','1','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2','2.1','2.2'];
-var WIDTHS=['1260','1230','1150','1050','950','650↑'];
+var LS_KEY='pfeas-bd-range-v2';
+var CUR_USER='주인';
 var STATES={
   '-':{name:'생산불가',cls:''},
   'P':{name:'생산가능',cls:'p'},
@@ -448,50 +417,23 @@ var STATES={
 };
 var CYCLE=['-','P','C','X'];
 
-var GROUPS=[
-  {key:'cq',name:'CQ, Gr-A, B(G250)',codes:'재질코드(Material Code) = 1A, AA, BA',
-   warn:null,warnbox:null,
-   seed:['-----PPPPPPPPPPPPPPCCC--',
-         '---PPPPPPPPPPPPPPPPCCC--',
-         '--PPPPPPPPPPPPPPPPPCCC--',
-         '-PPPPPPPPPPPPPPPPPPCCC--',
-         'PPPPPPPPPPPPPPPPPPPCCC--',
-         'PPPPPPPPPPPPPPPPPPPCCC--']},
-  {key:'fa',name:'Full-Ann (DQ, DDQ, IF Steel)',codes:'재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B',
-   warn:'※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)',warnbox:null,
-   seed:['------PPPPPPPPCCCC------',
-         '-----CPPPPPPPPCCCC------',
-         '----CCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------']},
-  {key:'cd',name:'Gr-C(G300), D(G350)',codes:'재질코드(Material Code) = CA, CB, DA, DB, DC, DD',
-   warn:'※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정',warnbox:null,
-   seed:['------PPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--']},
-  {key:'e',name:'Gr-E(G550)',codes:'재질코드(Material Code) = EA',
-   warn:null,warnbox:'PL-TCM 형상 제어 애로<br>(급준도 관리 제품 협의 후 진행)',
-   seed:['----PPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------']}
-];
-
 var $=function(s){return document.querySelector(s);};
 var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function nl2br(s){return esc(s).replace(/\n/g,'<br>');}
 function pad2(n){return String(n).padStart(2,'0');}
 function now(){return Date.now();}
 function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
 function dateStr(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function groupOf(key){for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].key===key)return GROUPS[i];return null;}
-function cellLabel(gKey,w,t){return '['+groupOf(gKey).name+'] 폭 '+WIDTHS[w]+' × 두께 '+THICKS[t];}
+function sheetOf(key){for(var i=0;i<SHEETS.length;i++)if(SHEETS[i].key===key)return SHEETS[i];return null;}
+function sheetShort(s){return s.tab.replace('B.D 생산범위','').replace(/[()]/g,'').trim();}
+function cellLabel(s,gi,w,t){
+  var g=s.groups[gi];
+  return '['+sheetShort(s)+' · '+g.name+'] 폭 '+g.widths[w]+' × 두께 '+g.thicks[t];
+}
+function isCovered(g,w,t){
+  return !!(g.overlay&&w<g.overlay.rows&&t<g.overlay.cols);
+}
 
 var toastTimer=null;
 function toast(msg,type){
@@ -500,15 +442,13 @@ function toast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2600);
 }
 
-/* ---------- seed ---------- */
+/* ---------- 상태 (localStorage — LS_KEY 버전을 올리면 시드로 초기화) ---------- */
 function seedCells(){
   var cells={};
-  GROUPS.forEach(function(g){cells[g.key]=g.seed.slice();});
+  SHEETS.forEach(function(s){cells[s.key]=s.groups.map(function(g){return g.seed.slice();});});
   return cells;
 }
-function seedState(){
-  return {v:LS_KEY,seq:1,cells:seedCells(),changelog:[]};
-}
+function seedState(){return {v:LS_KEY,seq:1,cells:seedCells(),changelog:[]};}
 var state=null;
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 function loadState(){
@@ -522,45 +462,82 @@ state=loadState();saveState();
 function addLog(kind,item,before,after,by){
   state.changelog.push({id:'c'+(state.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before,after:after});
 }
-function cellState(gKey,w,t){return state.cells[gKey][w].charAt(t);}
-function setCellState(gKey,w,t,st){
-  var row=state.cells[gKey][w];
-  state.cells[gKey][w]=row.substring(0,t)+st+row.substring(t+1);
+function cellState(sKey,gi,w,t){return state.cells[sKey][gi][w].charAt(t);}
+function setCellState(sKey,gi,w,t,st){
+  var row=state.cells[sKey][gi][w];
+  state.cells[sKey][gi][w]=row.substring(0,t)+st+row.substring(t+1);
 }
-function isEdited(gKey,w,t){return cellState(gKey,w,t)!==groupOf(gKey).seed[w].charAt(t);}
-function editedCount(){
-  var n=0;
-  GROUPS.forEach(function(g){
-    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++)
-      if(isEdited(g.key,w,t))n++;
+function isEdited(sKey,gi,w,t){return cellState(sKey,gi,w,t)!==sheetOf(sKey).groups[gi].seed[w].charAt(t);}
+function editedCount(sKey){
+  var s=sheetOf(sKey),n=0;
+  s.groups.forEach(function(g,gi){
+    for(var w=0;w<g.widths.length;w++)for(var t=0;t<g.thicks.length;t++)
+      if(!isCovered(g,w,t)&&isEdited(sKey,gi,w,t))n++;
   });
   return n;
 }
 
 /* ---------- ui 상태 ---------- */
 var ui={
-  edit:false,lookup:null, // lookup: {w,t} — 간편조회 중인 좌표
+  sheet:SHEETS[0].key,edit:false,lookup:null, // lookup: {gi,w,t} — 간편조회 중인 좌표
   histFrom:'',histTo:'',histKind:'',histQ:''
 };
 
 /* ============================================================
-   B.D 생산범위 매트릭스 — 엑셀 시트 배치 그대로
-   (재질 그룹 헤더 → 가부 매트릭스, 두께 라벨은 하단 행)
+   탭 바 (시트 5종 + 수정 이력)
    ============================================================ */
-function buildGroups(){ // 뼈대 1회 생성
-  $('#mgroups').innerHTML=GROUPS.map(function(g){
+function buildTabs(){
+  $('#tabs').innerHTML=SHEETS.map(function(s){
+    return '<button class="tab" id="tab-'+s.key+'" data-tab="'+s.key+'" role="tab" aria-controls="sc-range">'+esc(s.tab)+'</button>';
+  }).join('')+'<button class="tab" id="tab-hist" data-tab="hist" role="tab" aria-controls="sc-hist">수정 이력 <span class="cnt" id="cnt-hist">0</span></button>';
+}
+
+/* ============================================================
+   시트 렌더링 — 엑셀 배치 그대로
+   (제목 → 범례·개정일 → 주기 → 후처리 표 → 재질 그룹별 매트릭스)
+   ============================================================ */
+function postCell(v,isHead){
+  var parts=String(v==null?'':v).split('\n');
+  var tag=isHead?'th':'td';
+  return '<'+tag+'>'+esc(parts[0])+(parts[1]?'<small>'+esc(parts[1])+'</small>':'')+'</'+tag+'>';
+}
+function buildSheet(){
+  var s=sheetOf(ui.sheet);
+  var h='<div class="xl-title">'+esc(s.title)+'</div>';
+  h+='<div class="xl-meta"><span class="legend">'
+    +'<span class="lg"><span class="sw"></span>생산불가</span>'
+    +'<span class="lg"><span class="sw p"></span>생산가능</span>'
+    +'<span class="lg"><span class="sw c"></span>조건부 생산</span>'
+    +'<span class="lg"><span class="sw x"></span>생산불가 (검증 완료)</span>'
+    +'</span><span class="rev-date">'+esc(s.rev)+'</span></div>';
+  h+='<ul class="xl-notes">'+s.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul>';
+  h+='<table class="post-tbl" aria-label="생산가능 후처리"><thead><tr>'
+    +s.post.heads.map(function(v){return postCell(v,true);}).join('')
+    +'</tr></thead><tbody>'
+    +s.post.rows.map(function(r){return '<tr>'+r.map(function(v){return postCell(v,false);}).join('')+'</tr>';}).join('')
+    +'</tbody></table>';
+  h+='<div class="xl-section">-. 생산가능 Size (재질별)</div>';
+  h+=s.groups.map(function(g,gi){
     var head='<div class="mgroup-head">'
       +'<span class="mgroup-name">'+esc(g.name)+'</span>'
       +'<span class="mgroup-codes">'+esc(g.codes)+'</span>'
       +(g.warn?'<span class="mgroup-warn">'+esc(g.warn)+'</span>':'')
       +'</div>'
-      +(g.warnbox?'<div class="mgroup-warnbox">'+g.warnbox+'</div>':'');
-    var body=WIDTHS.map(function(wLabel,w){
-      return '<tr><th scope="row">'+esc(wLabel)+'</th>'+THICKS.map(function(tLabel,t){
-        return '<td data-g="'+g.key+'" data-w="'+w+'" data-t="'+t+'"></td>';
-      }).join('')+'</tr>';
+      +(g.warnbox?'<div class="mgroup-warnbox">'+nl2br(g.warnbox)+'</div>':'');
+    var body=g.widths.map(function(wLabel,w){
+      var tds='';
+      for(var t=0;t<g.thicks.length;t++){
+        if(isCovered(g,w,t)){
+          if(w===0&&t===0){
+            tds+='<td class="mnote'+(g.overlay.red?' red':'')+'" colspan="'+g.overlay.cols+'" rowspan="'+g.overlay.rows+'">'+nl2br(g.overlay.text)+'</td>';
+          }
+          continue;
+        }
+        tds+='<td data-g="'+gi+'" data-w="'+w+'" data-t="'+t+'"></td>';
+      }
+      return '<tr><th scope="row">'+esc(wLabel)+'</th>'+tds+'</tr>';
     }).join('');
-    var foot='<tr><th scope="row">두께(mm) →</th>'+THICKS.map(function(tLabel){
+    var foot='<tr><th scope="row">두께(mm) →</th>'+g.thicks.map(function(tLabel){
       return '<th scope="col">'+esc(tLabel)+'</th>';
     }).join('')+'</tr>';
     return '<div class="mgroup">'+head
@@ -568,53 +545,76 @@ function buildGroups(){ // 뼈대 1회 생성
       +'<tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot>'
       +'</table></div></div>';
   }).join('');
+  $('#sheet-root').innerHTML=h;
+  var wSpan=s.groups[0].widths,tAll=s.groups[0].thicks;
+  $('#sheet-note').innerHTML=
+    '<span>행: <b>폭(mm)</b> '+esc(wSpan[0]+' ~ '+wSpan[wSpan.length-1])+' · 열: <b>Full Hard 두께(mm)</b> '
+    +esc(tAll[0]+' ~ '+tAll[tAll.length-1])+' · 셀: <b>생산 가부 상태</b></span>'
+    +'<span>출처: <b>'+esc(s.tab)+'</b> 기준 시트 ('+esc(s.rev.replace(/[\[\]]/g,''))+')</span>'
+    +(s.titleNote?'<span>※ '+esc(s.titleNote)+'</span>':'')
+    +'<span id="edit-hint"'+(ui.edit?'':' hidden')+'>수정 모드: 셀을 클릭하면 상태가 <b>생산불가 → 생산가능 → 조건부 생산 → 생산불가(검증 완료)</b> 순으로 바뀝니다</span>';
+  renderSheetStates();
 }
-function renderGroups(){ // 상태·색만 갱신 (hl 등 무관한 클래스는 보존)
-  $$('#mgroups td').forEach(function(td){
-    var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
-    var st=cellState(g,w,t),edited=isEdited(g,w,t);
+function renderSheetStates(){ // 상태·색만 갱신 (hl 등 무관한 클래스는 보존)
+  var s=sheetOf(ui.sheet);
+  $$('#sheet-root td[data-g]').forEach(function(td){
+    var gi=Number(td.getAttribute('data-g')),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+    var st=cellState(s.key,gi,w,t),edited=isEdited(s.key,gi,w,t);
     td.classList.toggle('p',st==='P');
     td.classList.toggle('c',st==='C');
     td.classList.toggle('x',st==='X');
     td.classList.toggle('edited',edited);
-    var label=cellLabel(g,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
+    var label=cellLabel(s,gi,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
     td.title=label;td.setAttribute('aria-label',label);
   });
-  var ed=editedCount();
-  $('#range-info').textContent='재질 그룹 '+GROUPS.length+'종 · 폭 '+WIDTHS.length+'단 × 두께 '+THICKS.length+'단 · 수정 '+ed+'셀';
+  var ed=editedCount(s.key);
+  $('#range-info').textContent='재질 그룹 '+s.groups.length+'종 · 폭 '+s.groups[0].widths.length+'단 × 두께 '+s.groups[0].thicks.length+'단 · 수정 '+ed+'셀';
   $('#cnt-hist').textContent=state.changelog.length;
   renderLookupChips(); // 조회 중이면 chip도 최신 상태로 갱신
 }
 
-/* ---------- 가부 간편조회 ---------- */
+/* ---------- 가부 간편조회 (재질 그룹 → 폭 → 두께) ---------- */
 function buildLookup(){
-  $('#lk-width').innerHTML=WIDTHS.map(function(w,i){return '<option value="'+i+'">'+esc(w)+'</option>';}).join('');
-  $('#lk-thick').innerHTML=THICKS.map(function(t,i){return '<option value="'+i+'">'+esc(t)+'</option>';}).join('');
+  var s=sheetOf(ui.sheet);
+  $('#lk-group').innerHTML=s.groups.map(function(g,i){return '<option value="'+i+'">'+esc(g.name)+'</option>';}).join('');
+  buildLookupAxes();
+}
+function buildLookupAxes(){
+  var s=sheetOf(ui.sheet),g=s.groups[Number($('#lk-group').value)||0];
+  $('#lk-width').innerHTML=g.widths.map(function(w,i){return '<option value="'+i+'">'+esc(w)+'</option>';}).join('');
+  $('#lk-thick').innerHTML=g.thicks.map(function(t,i){return '<option value="'+i+'">'+esc(t)+'</option>';}).join('');
 }
 function stateColor(st){
   return st==='P'?'var(--xl-ok)':st==='C'?'var(--xl-cond)':st==='X'?'var(--xl-no-verified)':'var(--surface)';
 }
 function renderLookupChips(){
   if(!ui.lookup){$('#lookup-chips').innerHTML='';return;}
-  var w=ui.lookup.w,t=ui.lookup.t;
-  $('#lookup-chips').innerHTML=GROUPS.map(function(g){
-    var st=cellState(g.key,w,t);
-    return '<span class="lchip"><span class="dot" style="background:'+stateColor(st)+'"></span>'
-      +esc(g.name)+' : <b>'+esc(STATES[st].name)+'</b></span>';
-  }).join('');
+  var s=sheetOf(ui.sheet),gi=ui.lookup.gi,g=s.groups[gi];
+  var html;
+  if(isCovered(g,ui.lookup.w,ui.lookup.t)){
+    html='<span class="lchip"><span class="dot"></span>'+esc(g.name)+' : <b>주석 영역 (원본 시트 참조)</b></span>';
+  }else{
+    var st=cellState(s.key,gi,ui.lookup.w,ui.lookup.t);
+    html='<span class="lchip"><span class="dot" style="background:'+stateColor(st)+'"></span>'
+      +esc(g.name)+' · 폭 '+esc(g.widths[ui.lookup.w])+' × 두께 '+esc(g.thicks[ui.lookup.t])
+      +' : <b>'+esc(STATES[st].name)+'</b></span>';
+  }
+  $('#lookup-chips').innerHTML=html;
 }
 function runLookup(){
-  ui.lookup={w:Number($('#lk-width').value),t:Number($('#lk-thick').value)};
+  ui.lookup={gi:Number($('#lk-group').value),w:Number($('#lk-width').value),t:Number($('#lk-thick').value)};
   renderLookupChips();
-  $$('#mgroups td').forEach(function(td){
+  $$('#sheet-root td[data-g]').forEach(function(td){
     td.classList.toggle('hl',
-      Number(td.getAttribute('data-w'))===ui.lookup.w&&Number(td.getAttribute('data-t'))===ui.lookup.t);
+      Number(td.getAttribute('data-g'))===ui.lookup.gi
+      &&Number(td.getAttribute('data-w'))===ui.lookup.w
+      &&Number(td.getAttribute('data-t'))===ui.lookup.t);
   });
 }
 function clearLookup(){
   ui.lookup=null;
   renderLookupChips();
-  $$('#mgroups td.hl').forEach(function(td){td.classList.remove('hl');});
+  $$('#sheet-root td.hl').forEach(function(td){td.classList.remove('hl');});
 }
 
 /* ---------- 셀 수정 (수정 모드에서 클릭 → 상태 순환) ---------- */
@@ -625,43 +625,44 @@ function setEditMode(on){
   b.classList.toggle('on',on);
   b.setAttribute('aria-pressed',on?'true':'false');
   b.textContent=on?'✓ 수정 모드 종료':'✎ 수정 모드';
-  $('#edit-hint').hidden=!on;
+  var hint=$('#edit-hint');if(hint)hint.hidden=!on;
 }
-$('#mgroups').addEventListener('click',function(e){
+$('#sc-range').addEventListener('click',function(e){
   if(!ui.edit)return;
   var td=e.target.closest('td');
   if(!td||!td.hasAttribute('data-g'))return;
-  var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
-  var prev=cellState(g,w,t);
+  var s=sheetOf(ui.sheet);
+  var gi=Number(td.getAttribute('data-g')),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+  var prev=cellState(s.key,gi,w,t);
   var next=CYCLE[(CYCLE.indexOf(prev)+1)%CYCLE.length];
-  setCellState(g,w,t,next);
-  addLog('셀 수정',cellLabel(g,w,t),STATES[prev].name,STATES[next].name);
-  saveState();renderGroups();renderHist();
-  toast(cellLabel(g,w,t)+' : '+STATES[prev].name+' → '+STATES[next].name+' 저장 · 이력에 기록되었습니다');
+  setCellState(s.key,gi,w,t,next);
+  addLog('셀 수정',cellLabel(s,gi,w,t),STATES[prev].name,STATES[next].name);
+  saveState();renderSheetStates();renderHist();
+  toast(cellLabel(s,gi,w,t)+' : '+STATES[prev].name+' → '+STATES[next].name+' 저장 · 이력에 기록되었습니다');
 });
 
-/* ---------- 수정값 전체 초기화 ---------- */
+/* ---------- 현재 탭 수정값 초기화 ---------- */
 function openResetModal(){
-  var n=editedCount();
-  if(!n){toast('수정된 셀이 없습니다');return;}
-  $('#modal-body').innerHTML='수정된 셀 <b>'+n+'개</b>를 모두 기준 시트(개정일 &#39;25.03.31) 원본 상태로 되돌립니다.<br>'
+  var s=sheetOf(ui.sheet),n=editedCount(s.key);
+  if(!n){toast('현재 탭에 수정된 셀이 없습니다');return;}
+  $('#modal-body').innerHTML='<b>'+esc(s.tab)+'</b> 탭의 수정된 셀 <b>'+n+'개</b>를 모두 기준 시트(개정일 &#39;25.03.31) 원본 상태로 되돌립니다.<br>'
     +'초기화 내역도 <b>수정 이력</b>에 기록됩니다. 계속할까요?';
   $('#modal-back').classList.add('on');document.body.classList.add('modal-open');
 }
 function closeModal(){$('#modal-back').classList.remove('on');document.body.classList.remove('modal-open');}
 function doReset(){
-  var n=0;
-  GROUPS.forEach(function(g){
-    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++){
-      if(isEdited(g.key,w,t)){
-        addLog('초기화',cellLabel(g.key,w,t),STATES[cellState(g.key,w,t)].name,STATES[g.seed[w].charAt(t)].name);
+  var s=sheetOf(ui.sheet),n=0;
+  s.groups.forEach(function(g,gi){
+    for(var w=0;w<g.widths.length;w++)for(var t=0;t<g.thicks.length;t++){
+      if(!isCovered(g,w,t)&&isEdited(s.key,gi,w,t)){
+        addLog('초기화',cellLabel(s,gi,w,t),STATES[cellState(s.key,gi,w,t)].name,STATES[g.seed[w].charAt(t)].name);
         n++;
       }
     }
   });
-  state.cells=seedCells();
-  saveState();renderGroups();renderHist();closeModal();
-  toast('수정된 셀 '+n+'개를 기준 시트 원본으로 초기화했습니다 · 이력에 기록되었습니다');
+  state.cells[s.key]=s.groups.map(function(g){return g.seed.slice();});
+  saveState();renderSheetStates();renderHist();closeModal();
+  toast(sheetShort(s)+' 탭 수정 셀 '+n+'개를 기준 시트 원본으로 초기화했습니다 · 이력에 기록되었습니다');
 }
 
 /* ============================================================
@@ -717,12 +718,20 @@ function setTab(name){
     t.setAttribute('aria-selected',on?'true':'false');
     t.tabIndex=on?0:-1;
   });
-  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
-  if(name==='hist')renderHist();
+  var isHist=name==='hist';
+  $('#sc-range').classList.toggle('on',!isHist);
+  $('#sc-hist').classList.toggle('on',isHist);
+  if(isHist){renderHist();return;}
+  if(ui.sheet!==name){
+    ui.sheet=name;
+    clearLookup();
+    buildLookup();
+    buildSheet();
+  }
 }
-$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
-
 document.addEventListener('click',function(e){
+  var tab=e.target.closest('.tab');
+  if(tab){setTab(tab.getAttribute('data-tab'));return;}
   var el=e.target.closest('[data-action]');if(!el)return;
   switch(el.getAttribute('data-action')){
     case 'toggle-edit':setEditMode(!ui.edit);break;
@@ -736,15 +745,17 @@ document.addEventListener('click',function(e){
     case 'h-search-clear':$('#h-q').value='';histRunQuery();break;
   }
 });
+$('#lk-group').addEventListener('change',buildLookupAxes);
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'&&$('#modal-back').classList.contains('on'))closeModal();
 });
 $('#h-q').addEventListener('keydown',function(e){if(e.key==='Enter')histRunQuery();});
 
 /* ---------- init ---------- */
+buildTabs();
 buildLookup();
-buildGroups();
-renderGroups();
+buildSheet();
+setTab(ui.sheet);
 histDefaults();
 renderHist();
 </script>

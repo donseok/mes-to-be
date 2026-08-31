@@ -4372,8 +4372,9 @@ renderHist();
 <style>
 /* ============================================================
    P-FEAS — MES 생산가부관리 목업
-   탭: B.D 생산범위(2CGL GI) — 참조 엑셀 시트를 그대로 옮긴 화면.
-   행: 폭(1260~650↑) · 열: Full Hard 두께(0.24~2.2) · 셀: 가부 상태.
+   탭: B.D 생산범위 5종(2CGL GI · 2CGL GL · 3CGL GI.GIX · 4CGL GL.GLX · 5CGL GI.GL)
+   — 참조 엑셀 'B.D 생산범위' 시트들을 그대로 옮긴 화면 + 수정 이력.
+   행: 폭 · 열: Full Hard 두께 · 셀: 가부 상태 (그룹별 축이 다른 시트 지원).
    상태 4종: 생산불가(백) · 생산가능(청) · 조건부 생산(황) · 생산불가 검증완료(적).
    palette·타입은 Q-SPEC/W-ERR 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
@@ -4476,7 +4477,7 @@ input,select{font:inherit;color:var(--ink)}
 .tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
 
 /* ---------- layout ---------- */
-.wrap{padding:16px 20px 60px;max-width:1180px;margin:0 auto}
+.wrap{padding:16px 20px 60px;max-width:1280px;margin:0 auto}
 .screen{display:none}
 .screen.on{display:block}
 .panel{
@@ -4589,6 +4590,12 @@ table.bdmx{
 .bdmx td.c{background:var(--xl-cond)}
 .bdmx td.x{background:var(--xl-no-verified)}
 .bdmx td.hl{outline:2px solid var(--result);outline-offset:-2px}
+.bdmx td.mnote{
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;
+  text-align:center;vertical-align:middle;padding:2px 6px;cursor:default;
+  white-space:normal;line-height:1.3;
+}
+.bdmx td.mnote.red{color:var(--xl-warn)}
 .bdmx tfoot th{
   background:var(--surface);font-weight:500;text-align:center;padding:3px 1px;
   font-size:10.5px;color:var(--ink);letter-spacing:-.02em;
@@ -4602,8 +4609,8 @@ table.bdmx{
   content:'';position:absolute;right:0;top:0;
   border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--result) transparent transparent;
 }
-.edit-on .bdmx td{cursor:cell}
-.edit-on .bdmx td:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.edit-on .bdmx td:not(.mnote){cursor:cell}
+.edit-on .bdmx td:not(.mnote):hover{outline:2px solid var(--accent);outline-offset:-2px}
 
 .panel-note{
   padding:9px 14px;border-top:1px solid var(--border);
@@ -4675,18 +4682,17 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
   <div class=&quot;topbar-right&quot;><span class=&quot;mock-flag&quot;>MOCK-UP</span></div>
 </header>
 
-<!-- ================= tabs ================= -->
-<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
-  <button class=&quot;tab on&quot; id=&quot;tab-range&quot; data-tab=&quot;range&quot; role=&quot;tab&quot; aria-selected=&quot;true&quot; aria-controls=&quot;sc-range&quot; tabindex=&quot;0&quot;>B.D 생산범위(2CGL GI)</button>
-  <button class=&quot;tab&quot; id=&quot;tab-hist&quot; data-tab=&quot;hist&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot; aria-controls=&quot;sc-hist&quot; tabindex=&quot;-1&quot;>수정 이력 <span class=&quot;cnt&quot; id=&quot;cnt-hist&quot;>0</span></button>
-</nav>
+<!-- ================= tabs (시트 5종 + 수정 이력 — JS 생성) ================= -->
+<nav class=&quot;tabs&quot; id=&quot;tabs&quot; role=&quot;tablist&quot;></nav>
 
 <main class=&quot;wrap&quot; id=&quot;main-content&quot;>
 
-  <!-- ================= B.D 생산범위(2CGL GI) ================= -->
-  <section class=&quot;screen on&quot; id=&quot;sc-range&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;tab-range&quot;>
+  <!-- ================= B.D 생산범위 (활성 시트 렌더링) ================= -->
+  <section class=&quot;screen on&quot; id=&quot;sc-range&quot; role=&quot;tabpanel&quot;>
     <div class=&quot;fbar&quot;>
-      <div class=&quot;f-field&quot;><label for=&quot;lk-width&quot;>가부 간편조회 — 폭 (mm)</label>
+      <div class=&quot;f-field&quot;><label for=&quot;lk-group&quot;>가부 간편조회 — 재질 그룹</label>
+        <select class=&quot;inp&quot; id=&quot;lk-group&quot;></select></div>
+      <div class=&quot;f-field&quot;><label for=&quot;lk-width&quot;>폭 (mm)</label>
         <select class=&quot;inp&quot; id=&quot;lk-width&quot;></select></div>
       <div class=&quot;f-field&quot;><label for=&quot;lk-thick&quot;>두께 (mm)</label>
         <select class=&quot;inp&quot; id=&quot;lk-thick&quot;></select></div>
@@ -4695,50 +4701,13 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
       <div class=&quot;lookup-chips&quot; id=&quot;lookup-chips&quot; aria-live=&quot;polite&quot;></div>
       <div class=&quot;f-sep&quot; aria-hidden=&quot;true&quot;></div>
       <button class=&quot;btn&quot; id=&quot;btn-edit&quot; data-action=&quot;toggle-edit&quot; aria-pressed=&quot;false&quot;>✎ 수정 모드</button>
-      <button class=&quot;btn btn-danger&quot; data-action=&quot;reset-overrides&quot;>수정값 전체 초기화</button>
+      <button class=&quot;btn btn-danger&quot; data-action=&quot;reset-overrides&quot;>현재 탭 수정값 초기화</button>
       <div class=&quot;fbar-meta&quot;><b id=&quot;range-info&quot;>—</b></div>
     </div>
 
     <div class=&quot;panel&quot;>
-      <div class=&quot;sheet&quot;>
-        <div class=&quot;xl-title&quot;>2CGL GI 생산가능 SIZE (Full Hard 치수 기준)</div>
-
-        <div class=&quot;xl-meta&quot;>
-          <span class=&quot;legend&quot;>
-            <span class=&quot;lg&quot;><span class=&quot;sw&quot;></span>생산불가</span>
-            <span class=&quot;lg&quot;><span class=&quot;sw p&quot;></span>생산가능</span>
-            <span class=&quot;lg&quot;><span class=&quot;sw c&quot;></span>조건부 생산</span>
-            <span class=&quot;lg&quot;><span class=&quot;sw x&quot;></span>생산불가 (검증 완료)</span>
-          </span>
-          <span class=&quot;rev-date&quot; id=&quot;rev-date&quot;>[개정일 : '25.03.31]</span>
-        </div>
-
-        <ul class=&quot;xl-notes&quot;>
-          <li>-. 내경 508Py / 610Py 권취 가능</li>
-          <li>-. Back Marking 가능여부 : 불가 (설비 無)</li>
-          <li>-. 생산가능 도금량 : 80~310g/㎡</li>
-          <li>-. 생산가능 후처리</li>
-        </ul>
-        <table class=&quot;post-tbl&quot; aria-label=&quot;생산가능 후처리&quot;>
-          <thead><tr>
-            <th>구분<small>(후처리 Code)</small></th>
-            <th>무처리/Oiling<small>(MX / MO)</small></th>
-            <th>크롬 6가<small>(CX / CO)</small></th>
-            <th>크롬 3가<small>(FX)</small></th>
-            <th>갈바크린<small>(SX)</small></th>
-          </tr></thead>
-          <tbody><tr><td>GI</td><td>O</td><td>O</td><td>O</td><td>O</td></tr></tbody>
-        </table>
-
-        <div class=&quot;xl-section&quot;>-. 생산가능 Size (재질별)</div>
-        <div id=&quot;mgroups&quot;></div>
-      </div>
-
-      <div class=&quot;panel-note&quot;>
-        <span>행: <b>폭(mm)</b> 1260 ~ 650↑ · 열: <b>Full Hard 두께(mm)</b> 0.24 ~ 2.2 · 셀: <b>생산 가부 상태</b></span>
-        <span>출처: <b>B.D 생산범위(2CGL GI)</b> 기준 시트 (개정일 '25.03.31)</span>
-        <span id=&quot;edit-hint&quot; hidden>수정 모드: 셀을 클릭하면 상태가 <b>생산불가 → 생산가능 → 조건부 생산 → 생산불가(검증 완료)</b> 순으로 바뀝니다</span>
-      </div>
+      <div class=&quot;sheet&quot; id=&quot;sheet-root&quot;></div>
+      <div class=&quot;panel-note&quot; id=&quot;sheet-note&quot;></div>
     </div>
   </section>
 
@@ -4753,7 +4722,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
           <option value=&quot;&quot;>전체</option><option>셀 수정</option><option>초기화</option>
         </select></div>
       <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label for=&quot;h-q&quot;>키워드</label>
-        <div class=&quot;search-wrap&quot;><input class=&quot;inp&quot; id=&quot;h-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;재질·폭·두께·작업자 검색&quot;>
+        <div class=&quot;search-wrap&quot;><input class=&quot;inp&quot; id=&quot;h-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;시트·재질·폭·두께·작업자 검색&quot;>
           <button class=&quot;search-clear&quot; id=&quot;h-q-clear&quot; data-action=&quot;h-search-clear&quot; aria-label=&quot;검색어 지우기&quot;>✕</button></div></div>
       <button class=&quot;btn btn-pri&quot; data-action=&quot;h-search&quot;>조회</button>
       <button class=&quot;btn&quot; data-action=&quot;h-reset&quot;>초기화</button>
@@ -4778,7 +4747,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 <!-- ================= 확인 모달 ================= -->
 <div class=&quot;modal-back&quot; id=&quot;modal-back&quot; role=&quot;presentation&quot;>
   <div class=&quot;modal&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-labelledby=&quot;modal-title&quot;>
-    <div class=&quot;modal-h&quot; id=&quot;modal-title&quot;>수정값 전체 초기화</div>
+    <div class=&quot;modal-h&quot; id=&quot;modal-title&quot;>현재 탭 수정값 초기화</div>
     <div class=&quot;modal-b&quot; id=&quot;modal-body&quot;></div>
     <div class=&quot;modal-f&quot;>
       <button class=&quot;btn&quot; data-action=&quot;modal-close&quot;>취소</button>
@@ -4792,17 +4761,17 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 <script>
 'use strict';
 /* ============================================================
-   상태 — localStorage에만 저장 (LS_KEY 버전을 올리면 시드로 초기화)
-   cells: {그룹키: ['24자 상태문자열' × 6행]}  행=폭, 열=두께
+   시트 데이터 — 참조 엑셀 'B.D 생산범위' 시트 5종(개정일 '25.03.31)에서
+   프로그램으로 추출한 원본 그대로의 시드.
+   groups[].seed: 행=폭, 열=두께(그룹별 축) 상태 문자열
    상태문자: '-' 생산불가 · 'P' 생산가능 · 'C' 조건부 생산 · 'X' 생산불가(검증 완료)
-   changelog: {id, ts, by, kind, item, before, after}
-   시드 = 참조 엑셀 'B.D 생산범위(2CGL GI)' 시트(개정일 '25.03.31) 원본 그대로
+   overlay: 매트릭스 좌상단에 겹쳐진 원본 주석 박스 (rows×cols 셀 영역)
+   ※ 2CGL GL 원본 시트 제목은 '2CGL GI ...'로 오기재되어 있어 GL로 정정함
    ============================================================ */
-var LS_KEY='pfeas-bd2cgl-gi-v1';
-var CUR_USER='주인';
+var SHEETS=[{&quot;key&quot;:&quot;2cgl-gi&quot;,&quot;tab&quot;:&quot;B.D 생산범위(2CGL GI)&quot;,&quot;title&quot;:&quot;2CGL GI 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;rev&quot;:&quot;[개정일 : '25.03.31]&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. Back Marking 가능여부 : 불가 (설비 無)&quot;,&quot;-. 생산가능 도금량 : 80~310g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;post&quot;:{&quot;heads&quot;:[&quot;구분\n(후처리 Code)&quot;,&quot;무처리/Oiling\n(MX / MO)&quot;,&quot;크롬 6가\n(CX / CO)&quot;,&quot;크롬 3가\n(FX)&quot;,&quot;갈바크린\n(SX)&quot;],&quot;rows&quot;:[[&quot;GI&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;]]},&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A, B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA, BA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;-----PPPPPPPPPPPPPPCCC--&quot;,&quot;---PPPPPPPPPPPPPPPPCCC--&quot;,&quot;--PPPPPPPPPPPPPPPPPCCC--&quot;,&quot;-PPPPPPPPPPPPPPPPPPCCC--&quot;,&quot;PPPPPPPPPPPPPPPPPPPCCC--&quot;,&quot;PPPPPPPPPPPPPPPPPPPCCC--&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ, DDQ, IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPCCCC------&quot;,&quot;-----CPPPPPPPPCCCC------&quot;,&quot;----CCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;],&quot;warn&quot;:&quot;※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)&quot;},{&quot;name&quot;:&quot;Gr-C(G300), D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB, DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;],&quot;warn&quot;:&quot;※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정&quot;},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;----PPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;],&quot;warnbox&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;}]},{&quot;key&quot;:&quot;2cgl-gl&quot;,&quot;tab&quot;:&quot;B.D 생산범위(2CGL GL)&quot;,&quot;title&quot;:&quot;2CGL GL 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;titleNote&quot;:&quot;원본 시트 제목은 \&quot;2CGL GI ...\&quot;로 오기재되어 있어 GL로 정정함&quot;,&quot;rev&quot;:&quot;[개정일 : '25.03.31]&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. Back Marking 가능여부 : 불가 (설비 無)&quot;,&quot;-. 생산가능 도금량 : 40~200g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;post&quot;:{&quot;heads&quot;:[&quot;구분\n(후처리 Code)&quot;,&quot;무처리/Oiling\n(MX / MO)&quot;,&quot;크롬 6가\n(CX / CO)&quot;,&quot;갈바크린\n(SX)&quot;,&quot;PE-FOAM 부착용\n(F2)&quot;,&quot;크롬프리\n(E5)&quot;],&quot;rows&quot;:[[&quot;GL&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;X&quot;]]},&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A, B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA, BA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;-----PPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;,&quot;--PPPPPPPPCCCC----------&quot;,&quot;-PPPPPPPPPCCCC----------&quot;,&quot;PPPPPPPPPPCCCC----------&quot;,&quot;PPPPPPPPPPCCCC----------&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ, DDQ, IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;------PPPPCCCC----------&quot;,&quot;-----CPPPPCCCC----------&quot;,&quot;----CCPPPPCCCC----------&quot;,&quot;---CCCPPPPCCCC----------&quot;,&quot;---CCCPPPPCCCC----------&quot;,&quot;---CCCPPPPCCCC----------&quot;],&quot;warn&quot;:&quot;※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)&quot;},{&quot;name&quot;:&quot;Gr-C(G300), D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB, DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;----PPPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;,&quot;---PPPPPPPCCCC----------&quot;],&quot;warn&quot;:&quot;※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정&quot;},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;----PPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;],&quot;warnbox&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;}]},{&quot;key&quot;:&quot;3cgl&quot;,&quot;tab&quot;:&quot;B.D 생산범위(3CGL GI.GIX)&quot;,&quot;title&quot;:&quot;3CGL 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;rev&quot;:&quot;[개정일 : '25.03.31]&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. Back Marking 가능여부 : 불가 (설비 無)&quot;,&quot;-. 생산가능 도금량 : 80~350g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;post&quot;:{&quot;heads&quot;:[&quot;구분\n(후처리 Code)&quot;,&quot;무처리/Oiling\n(MX / MO)&quot;,&quot;크롬산\n(CX / CO)&quot;,&quot;크롬프리\n(NC)&quot;,&quot;갈바크린+크롬\n(DX)&quot;],&quot;rows&quot;:[[&quot;GI&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;],[&quot;GIX&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;]]},&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;---PPPPPPPPPPPPPPPPPPPPC--&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPCCC&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPCCC&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPCCC&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPCCC&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPCCC&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;-----CPPPPPPPPPPPPPP------&quot;,&quot;---CCPPPPPPPPPPPPPPPP-----&quot;,&quot;---CPPPPPPPPPPPPPPPPP-----&quot;,&quot;---PPPPPPPPPPPPPPPPPP-----&quot;,&quot;--XPPPPPPPPPPPPPPPPPP-----&quot;,&quot;--XPPPPPPPPPPPPPPPPPP-----&quot;]},{&quot;name&quot;:&quot;Full-Ann (DDQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 4A, 4B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;------CCPPPPPPPPPCCC------&quot;,&quot;-----CPPPPPPPPPPPCCC------&quot;,&quot;----XPPPPPPPPPPPPCCC------&quot;,&quot;---XPPPPPPPPPPPPPCCC------&quot;,&quot;--XPPPPPPPPPPPPPPCCC------&quot;,&quot;--XPPPPPPPPPPPPPPCCC------&quot;]},{&quot;name&quot;:&quot;Full-Ann (IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 5A, 5B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;------CCCCCCCCCCCCCC------&quot;,&quot;-----CPPPPPPPPPPPCCC------&quot;,&quot;----XPPPPPPPPPPPPCCC------&quot;,&quot;---XPPPPPPPPPPPPPCCC------&quot;,&quot;--XPPPPPPPPPPPPPPCCC------&quot;,&quot;--XPPPPPPPPPPPPPPCCC------&quot;]},{&quot;name&quot;:&quot;Gr-B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = BA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;---PPPPPPPPPPPPPPPPPPP----&quot;,&quot;--XPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;]},{&quot;name&quot;:&quot;Gr-C(G300)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;---XPPPPPPPPPPPPPPPPPP----&quot;,&quot;--XPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--XPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;]},{&quot;name&quot;:&quot;Gr-D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;---XPPPPPPPPPPPPPPPPPP----&quot;,&quot;--XPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--XPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;,&quot;--CPPPPPPPPPPPPPPPPPPPPP--&quot;]},{&quot;name&quot;:&quot;G450&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EC 외 Code&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;----------CCCPPPPPCCC-----&quot;,&quot;----------CCCPPPPPCCC-----&quot;,&quot;----------CCCPPPPPCCC-----&quot;,&quot;----------CCCPPPPPCCC-----&quot;,&quot;----------CCCPPPPPCCC-----&quot;,&quot;----------CCCPPPPPCCC-----&quot;],&quot;warn&quot;:&quot;※ 특수강종 : SAE1022材 적용 제품&quot;},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;],&quot;seed&quot;:[&quot;---PPPPPCCCC--------------&quot;,&quot;--CPPPPPCCCC--------------&quot;,&quot;--PPPPPPCCCC--------------&quot;,&quot;--PPPPPPCCCC--------------&quot;,&quot;--PPPPPPCCCC--------------&quot;,&quot;--PPPPPPCCCC--------------&quot;],&quot;warnbox&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;}]},{&quot;key&quot;:&quot;4cgl&quot;,&quot;tab&quot;:&quot;B.D 생산범위(4CGL GL.GLX)&quot;,&quot;title&quot;:&quot;4CGL 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;rev&quot;:&quot;[개정일 : '25.03.31]&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py, 610Py 권취 가능&quot;,&quot;-. Back Marking 가능여부 : 가능(양측 Edge부)&quot;,&quot;-. 생산가능 도금량 : 60~200g/㎡ (100미만, 200g 초과 제품은 별도 협의)&quot;,&quot;-. 생산가능 후처리&quot;],&quot;post&quot;:{&quot;heads&quot;:[&quot;구분\n(후처리 Code)&quot;,&quot;무처리/Oiling\n(MX / MO)&quot;,&quot;크롬산\n(CX / CO)&quot;,&quot;크롬프리\n(E5)&quot;,&quot;F2\n(F2)&quot;,&quot;갈바크린(+크롬)\n(DX / SX)&quot;,&quot;착색갈바크린\n(1/2B, 1/2R, 1/2G, 1/2Y, 1/2X)&quot;],&quot;rows&quot;:[[&quot;GL&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;-&quot;],[&quot;GLX&quot;,&quot;O&quot;,&quot;O&quot;,&quot;-&quot;,&quot;O&quot;,&quot;DX&quot;,&quot;-&quot;]]},&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A, B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA, BA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.26&quot;,&quot;0.27&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;],&quot;seed&quot;:[&quot;-----PPPPPCCC--&quot;,&quot;----CPPPPPCCC--&quot;,&quot;--XCPPPPPPCCC--&quot;,&quot;--CCPPPPPPCCC--&quot;,&quot;CCPPPPPPPPCCC--&quot;,&quot;CCPPPPPPPPCCC--&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.26&quot;,&quot;0.27&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;],&quot;seed&quot;:[&quot;-----C---------&quot;,&quot;----CCC--------&quot;,&quot;--XXCCPC-------&quot;,&quot;--XCPPPP-------&quot;,&quot;--XCPPPP-------&quot;,&quot;--XCPPPP-------&quot;]},{&quot;name&quot;:&quot;Full-Ann (DDQ, IF-Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 4A, 4B, 5A, 5B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.26&quot;,&quot;0.27&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;],&quot;seed&quot;:[&quot;---------------&quot;,&quot;---------------&quot;,&quot;---------------&quot;,&quot;----XPPP-------&quot;,&quot;---XPPPP-------&quot;,&quot;---XPPPP-------&quot;]},{&quot;name&quot;:&quot;Gr-C(G300), D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) =  CA, CB, DA, DB, DD&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.26&quot;,&quot;0.27&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;],&quot;seed&quot;:[&quot;-----PPPPP-----&quot;,&quot;----CPPPPPC----&quot;,&quot;---XPPPPPPC----&quot;,&quot;--XPPPPPPPC----&quot;,&quot;--CPPPPPPPC----&quot;,&quot;--CPPPPPPPC----&quot;]},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.26&quot;,&quot;0.27&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;],&quot;seed&quot;:[&quot;----PPPPPPPC---&quot;,&quot;---PPPPPPPPC---&quot;,&quot;--PPPPPPPPPC---&quot;,&quot;-PPPPPPPPPPC---&quot;,&quot;CPPPPPPPPPPC---&quot;,&quot;CPPPPPPPPPPC---&quot;],&quot;warnbox&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;}]},{&quot;key&quot;:&quot;5cgl&quot;,&quot;tab&quot;:&quot;B.D 생산범위(5CGL GI.GL)&quot;,&quot;title&quot;:&quot;5CGL 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;rev&quot;:&quot;[개정일 : '25.03.31]&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. 폭 1,570mm 초과 제품 조건부 생산 가능&quot;,&quot;-. Back Marking 가능여부 : 가능 (W/S Edge부)&quot;,&quot;-. 생산가능 도금량 : GI 80~600g/㎡ , GL 60~200g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;post&quot;:{&quot;heads&quot;:[&quot;구분\n(후처리 Code)&quot;,&quot;무처리/Oiling\n(MX / MO)&quot;,&quot;크롬산\n(CX / CO / FX)&quot;,&quot;크롬프리\n(NC / E5)&quot;,&quot;갈바크린(+크롬)\n(DX / SX)&quot;,&quot;조관용수지\n(LP)&quot;,&quot;F2\n(F2)&quot;,&quot;착색갈바크린\n(1/2B, 1/2R, 1/2G, 1/2Y, 1/2X)&quot;],&quot;rows&quot;:[[&quot;GI&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;-&quot;,&quot;-&quot;,&quot;-&quot;],[&quot;GL&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;O&quot;,&quot;△&quot;,&quot;O&quot;]]},&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-----CPPPPPPPPPPPPPP-----&quot;,&quot;----PPPPPPPPPPPPPPPPP----&quot;,&quot;--CPPPPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1400&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;------PPPPPPPPPP---------&quot;,&quot;-----PPPPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:6,&quot;text&quot;:&quot;[CQ와 물성 유사하나 안정 구간]&quot;,&quot;red&quot;:false}},{&quot;name&quot;:&quot;Full-Ann (DDQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 4A, 4B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1400&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;------CPPPPPPPPP---------&quot;,&quot;-----PPPPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;]},{&quot;name&quot;:&quot;Full-Ann (IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 5A, 5B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1200&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;-------PPPPPPPPP---------&quot;,&quot;-------PPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;]},{&quot;name&quot;:&quot;Gr-B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = BA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPPPP-----&quot;,&quot;------PPPPPPPPPPPPPPP----&quot;,&quot;-----PPPPPPPPPPPPPPPP----&quot;,&quot;--CPPPPPPPPPPPPPPPPPPP---&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:5,&quot;text&quot;:&quot;SAE1008\nFurnace 온도 하향 작업 구간&quot;,&quot;red&quot;:true}},{&quot;name&quot;:&quot;Gr-C(G300)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1300&quot;,&quot;1260&quot;,&quot;1150&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPP-------&quot;,&quot;------PPPPPPPPPPPP-------&quot;,&quot;-----PPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;]},{&quot;name&quot;:&quot;Gr-D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) =DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1300&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPP-----------&quot;,&quot;-------PPPPPPPP----------&quot;,&quot;-----CPPPPPPPPPP---------&quot;,&quot;----CCPPPPPPPPPPPPCCC----&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;]},{&quot;name&quot;:&quot;G450&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EC&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------------------------&quot;,&quot;---------PPPPPP----------&quot;,&quot;---------PPPPPPPPPPPC----&quot;,&quot;--------CPPPPPPPPPPPCCCCC&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;]},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------------------------&quot;,&quot;------PPPPPPPPC----------&quot;,&quot;-----PPPPPPPPPP----------&quot;,&quot;---CPPPPPPPPPPPP---------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:6,&quot;text&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;,&quot;red&quot;:true}}]}];
 
-var THICKS=['0.24','0.25','0.28','0.30','0.35','0.4','0.5','0.6','0.7','0.8','0.9','1','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2','2.1','2.2'];
-var WIDTHS=['1260','1230','1150','1050','950','650↑'];
+var LS_KEY='pfeas-bd-range-v2';
+var CUR_USER='주인';
 var STATES={
   '-':{name:'생산불가',cls:''},
   'P':{name:'생산가능',cls:'p'},
@@ -4811,50 +4780,23 @@ var STATES={
 };
 var CYCLE=['-','P','C','X'];
 
-var GROUPS=[
-  {key:'cq',name:'CQ, Gr-A, B(G250)',codes:'재질코드(Material Code) = 1A, AA, BA',
-   warn:null,warnbox:null,
-   seed:['-----PPPPPPPPPPPPPPCCC--',
-         '---PPPPPPPPPPPPPPPPCCC--',
-         '--PPPPPPPPPPPPPPPPPCCC--',
-         '-PPPPPPPPPPPPPPPPPPCCC--',
-         'PPPPPPPPPPPPPPPPPPPCCC--',
-         'PPPPPPPPPPPPPPPPPPPCCC--']},
-  {key:'fa',name:'Full-Ann (DQ, DDQ, IF Steel)',codes:'재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B',
-   warn:'※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)',warnbox:null,
-   seed:['------PPPPPPPPCCCC------',
-         '-----CPPPPPPPPCCCC------',
-         '----CCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------',
-         '---CCCPPPPPPPPCCCC------']},
-  {key:'cd',name:'Gr-C(G300), D(G350)',codes:'재질코드(Material Code) = CA, CB, DA, DB, DC, DD',
-   warn:'※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정',warnbox:null,
-   seed:['------PPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--',
-         '----CPPPPPPPPPPPPPPCCC--']},
-  {key:'e',name:'Gr-E(G550)',codes:'재질코드(Material Code) = EA',
-   warn:null,warnbox:'PL-TCM 형상 제어 애로<br>(급준도 관리 제품 협의 후 진행)',
-   seed:['----PPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------',
-         '---PPPP-----------------']}
-];
-
 var $=function(s){return document.querySelector(s);};
 var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
 function esc(s){return String(s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+function nl2br(s){return esc(s).replace(/\n/g,'<br>');}
 function pad2(n){return String(n).padStart(2,'0');}
 function now(){return Date.now();}
 function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
 function dateStr(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function groupOf(key){for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].key===key)return GROUPS[i];return null;}
-function cellLabel(gKey,w,t){return '['+groupOf(gKey).name+'] 폭 '+WIDTHS[w]+' × 두께 '+THICKS[t];}
+function sheetOf(key){for(var i=0;i<SHEETS.length;i++)if(SHEETS[i].key===key)return SHEETS[i];return null;}
+function sheetShort(s){return s.tab.replace('B.D 생산범위','').replace(/[()]/g,'').trim();}
+function cellLabel(s,gi,w,t){
+  var g=s.groups[gi];
+  return '['+sheetShort(s)+' · '+g.name+'] 폭 '+g.widths[w]+' × 두께 '+g.thicks[t];
+}
+function isCovered(g,w,t){
+  return !!(g.overlay&amp;&amp;w<g.overlay.rows&amp;&amp;t<g.overlay.cols);
+}
 
 var toastTimer=null;
 function toast(msg,type){
@@ -4863,15 +4805,13 @@ function toast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2600);
 }
 
-/* ---------- seed ---------- */
+/* ---------- 상태 (localStorage — LS_KEY 버전을 올리면 시드로 초기화) ---------- */
 function seedCells(){
   var cells={};
-  GROUPS.forEach(function(g){cells[g.key]=g.seed.slice();});
+  SHEETS.forEach(function(s){cells[s.key]=s.groups.map(function(g){return g.seed.slice();});});
   return cells;
 }
-function seedState(){
-  return {v:LS_KEY,seq:1,cells:seedCells(),changelog:[]};
-}
+function seedState(){return {v:LS_KEY,seq:1,cells:seedCells(),changelog:[]};}
 var state=null;
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 function loadState(){
@@ -4885,45 +4825,82 @@ state=loadState();saveState();
 function addLog(kind,item,before,after,by){
   state.changelog.push({id:'c'+(state.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before,after:after});
 }
-function cellState(gKey,w,t){return state.cells[gKey][w].charAt(t);}
-function setCellState(gKey,w,t,st){
-  var row=state.cells[gKey][w];
-  state.cells[gKey][w]=row.substring(0,t)+st+row.substring(t+1);
+function cellState(sKey,gi,w,t){return state.cells[sKey][gi][w].charAt(t);}
+function setCellState(sKey,gi,w,t,st){
+  var row=state.cells[sKey][gi][w];
+  state.cells[sKey][gi][w]=row.substring(0,t)+st+row.substring(t+1);
 }
-function isEdited(gKey,w,t){return cellState(gKey,w,t)!==groupOf(gKey).seed[w].charAt(t);}
-function editedCount(){
-  var n=0;
-  GROUPS.forEach(function(g){
-    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++)
-      if(isEdited(g.key,w,t))n++;
+function isEdited(sKey,gi,w,t){return cellState(sKey,gi,w,t)!==sheetOf(sKey).groups[gi].seed[w].charAt(t);}
+function editedCount(sKey){
+  var s=sheetOf(sKey),n=0;
+  s.groups.forEach(function(g,gi){
+    for(var w=0;w<g.widths.length;w++)for(var t=0;t<g.thicks.length;t++)
+      if(!isCovered(g,w,t)&amp;&amp;isEdited(sKey,gi,w,t))n++;
   });
   return n;
 }
 
 /* ---------- ui 상태 ---------- */
 var ui={
-  edit:false,lookup:null, // lookup: {w,t} — 간편조회 중인 좌표
+  sheet:SHEETS[0].key,edit:false,lookup:null, // lookup: {gi,w,t} — 간편조회 중인 좌표
   histFrom:'',histTo:'',histKind:'',histQ:''
 };
 
 /* ============================================================
-   B.D 생산범위 매트릭스 — 엑셀 시트 배치 그대로
-   (재질 그룹 헤더 → 가부 매트릭스, 두께 라벨은 하단 행)
+   탭 바 (시트 5종 + 수정 이력)
    ============================================================ */
-function buildGroups(){ // 뼈대 1회 생성
-  $('#mgroups').innerHTML=GROUPS.map(function(g){
+function buildTabs(){
+  $('#tabs').innerHTML=SHEETS.map(function(s){
+    return '<button class=&quot;tab&quot; id=&quot;tab-'+s.key+'&quot; data-tab=&quot;'+s.key+'&quot; role=&quot;tab&quot; aria-controls=&quot;sc-range&quot;>'+esc(s.tab)+'</button>';
+  }).join('')+'<button class=&quot;tab&quot; id=&quot;tab-hist&quot; data-tab=&quot;hist&quot; role=&quot;tab&quot; aria-controls=&quot;sc-hist&quot;>수정 이력 <span class=&quot;cnt&quot; id=&quot;cnt-hist&quot;>0</span></button>';
+}
+
+/* ============================================================
+   시트 렌더링 — 엑셀 배치 그대로
+   (제목 → 범례·개정일 → 주기 → 후처리 표 → 재질 그룹별 매트릭스)
+   ============================================================ */
+function postCell(v,isHead){
+  var parts=String(v==null?'':v).split('\n');
+  var tag=isHead?'th':'td';
+  return '<'+tag+'>'+esc(parts[0])+(parts[1]?'<small>'+esc(parts[1])+'</small>':'')+'</'+tag+'>';
+}
+function buildSheet(){
+  var s=sheetOf(ui.sheet);
+  var h='<div class=&quot;xl-title&quot;>'+esc(s.title)+'</div>';
+  h+='<div class=&quot;xl-meta&quot;><span class=&quot;legend&quot;>'
+    +'<span class=&quot;lg&quot;><span class=&quot;sw&quot;></span>생산불가</span>'
+    +'<span class=&quot;lg&quot;><span class=&quot;sw p&quot;></span>생산가능</span>'
+    +'<span class=&quot;lg&quot;><span class=&quot;sw c&quot;></span>조건부 생산</span>'
+    +'<span class=&quot;lg&quot;><span class=&quot;sw x&quot;></span>생산불가 (검증 완료)</span>'
+    +'</span><span class=&quot;rev-date&quot;>'+esc(s.rev)+'</span></div>';
+  h+='<ul class=&quot;xl-notes&quot;>'+s.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul>';
+  h+='<table class=&quot;post-tbl&quot; aria-label=&quot;생산가능 후처리&quot;><thead><tr>'
+    +s.post.heads.map(function(v){return postCell(v,true);}).join('')
+    +'</tr></thead><tbody>'
+    +s.post.rows.map(function(r){return '<tr>'+r.map(function(v){return postCell(v,false);}).join('')+'</tr>';}).join('')
+    +'</tbody></table>';
+  h+='<div class=&quot;xl-section&quot;>-. 생산가능 Size (재질별)</div>';
+  h+=s.groups.map(function(g,gi){
     var head='<div class=&quot;mgroup-head&quot;>'
       +'<span class=&quot;mgroup-name&quot;>'+esc(g.name)+'</span>'
       +'<span class=&quot;mgroup-codes&quot;>'+esc(g.codes)+'</span>'
       +(g.warn?'<span class=&quot;mgroup-warn&quot;>'+esc(g.warn)+'</span>':'')
       +'</div>'
-      +(g.warnbox?'<div class=&quot;mgroup-warnbox&quot;>'+g.warnbox+'</div>':'');
-    var body=WIDTHS.map(function(wLabel,w){
-      return '<tr><th scope=&quot;row&quot;>'+esc(wLabel)+'</th>'+THICKS.map(function(tLabel,t){
-        return '<td data-g=&quot;'+g.key+'&quot; data-w=&quot;'+w+'&quot; data-t=&quot;'+t+'&quot;></td>';
-      }).join('')+'</tr>';
+      +(g.warnbox?'<div class=&quot;mgroup-warnbox&quot;>'+nl2br(g.warnbox)+'</div>':'');
+    var body=g.widths.map(function(wLabel,w){
+      var tds='';
+      for(var t=0;t<g.thicks.length;t++){
+        if(isCovered(g,w,t)){
+          if(w===0&amp;&amp;t===0){
+            tds+='<td class=&quot;mnote'+(g.overlay.red?' red':'')+'&quot; colspan=&quot;'+g.overlay.cols+'&quot; rowspan=&quot;'+g.overlay.rows+'&quot;>'+nl2br(g.overlay.text)+'</td>';
+          }
+          continue;
+        }
+        tds+='<td data-g=&quot;'+gi+'&quot; data-w=&quot;'+w+'&quot; data-t=&quot;'+t+'&quot;></td>';
+      }
+      return '<tr><th scope=&quot;row&quot;>'+esc(wLabel)+'</th>'+tds+'</tr>';
     }).join('');
-    var foot='<tr><th scope=&quot;row&quot;>두께(mm) →</th>'+THICKS.map(function(tLabel){
+    var foot='<tr><th scope=&quot;row&quot;>두께(mm) →</th>'+g.thicks.map(function(tLabel){
       return '<th scope=&quot;col&quot;>'+esc(tLabel)+'</th>';
     }).join('')+'</tr>';
     return '<div class=&quot;mgroup&quot;>'+head
@@ -4931,53 +4908,76 @@ function buildGroups(){ // 뼈대 1회 생성
       +'<tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot>'
       +'</table></div></div>';
   }).join('');
+  $('#sheet-root').innerHTML=h;
+  var wSpan=s.groups[0].widths,tAll=s.groups[0].thicks;
+  $('#sheet-note').innerHTML=
+    '<span>행: <b>폭(mm)</b> '+esc(wSpan[0]+' ~ '+wSpan[wSpan.length-1])+' · 열: <b>Full Hard 두께(mm)</b> '
+    +esc(tAll[0]+' ~ '+tAll[tAll.length-1])+' · 셀: <b>생산 가부 상태</b></span>'
+    +'<span>출처: <b>'+esc(s.tab)+'</b> 기준 시트 ('+esc(s.rev.replace(/[\[\]]/g,''))+')</span>'
+    +(s.titleNote?'<span>※ '+esc(s.titleNote)+'</span>':'')
+    +'<span id=&quot;edit-hint&quot;'+(ui.edit?'':' hidden')+'>수정 모드: 셀을 클릭하면 상태가 <b>생산불가 → 생산가능 → 조건부 생산 → 생산불가(검증 완료)</b> 순으로 바뀝니다</span>';
+  renderSheetStates();
 }
-function renderGroups(){ // 상태·색만 갱신 (hl 등 무관한 클래스는 보존)
-  $$('#mgroups td').forEach(function(td){
-    var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
-    var st=cellState(g,w,t),edited=isEdited(g,w,t);
+function renderSheetStates(){ // 상태·색만 갱신 (hl 등 무관한 클래스는 보존)
+  var s=sheetOf(ui.sheet);
+  $$('#sheet-root td[data-g]').forEach(function(td){
+    var gi=Number(td.getAttribute('data-g')),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+    var st=cellState(s.key,gi,w,t),edited=isEdited(s.key,gi,w,t);
     td.classList.toggle('p',st==='P');
     td.classList.toggle('c',st==='C');
     td.classList.toggle('x',st==='X');
     td.classList.toggle('edited',edited);
-    var label=cellLabel(g,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
+    var label=cellLabel(s,gi,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
     td.title=label;td.setAttribute('aria-label',label);
   });
-  var ed=editedCount();
-  $('#range-info').textContent='재질 그룹 '+GROUPS.length+'종 · 폭 '+WIDTHS.length+'단 × 두께 '+THICKS.length+'단 · 수정 '+ed+'셀';
+  var ed=editedCount(s.key);
+  $('#range-info').textContent='재질 그룹 '+s.groups.length+'종 · 폭 '+s.groups[0].widths.length+'단 × 두께 '+s.groups[0].thicks.length+'단 · 수정 '+ed+'셀';
   $('#cnt-hist').textContent=state.changelog.length;
   renderLookupChips(); // 조회 중이면 chip도 최신 상태로 갱신
 }
 
-/* ---------- 가부 간편조회 ---------- */
+/* ---------- 가부 간편조회 (재질 그룹 → 폭 → 두께) ---------- */
 function buildLookup(){
-  $('#lk-width').innerHTML=WIDTHS.map(function(w,i){return '<option value=&quot;'+i+'&quot;>'+esc(w)+'</option>';}).join('');
-  $('#lk-thick').innerHTML=THICKS.map(function(t,i){return '<option value=&quot;'+i+'&quot;>'+esc(t)+'</option>';}).join('');
+  var s=sheetOf(ui.sheet);
+  $('#lk-group').innerHTML=s.groups.map(function(g,i){return '<option value=&quot;'+i+'&quot;>'+esc(g.name)+'</option>';}).join('');
+  buildLookupAxes();
+}
+function buildLookupAxes(){
+  var s=sheetOf(ui.sheet),g=s.groups[Number($('#lk-group').value)||0];
+  $('#lk-width').innerHTML=g.widths.map(function(w,i){return '<option value=&quot;'+i+'&quot;>'+esc(w)+'</option>';}).join('');
+  $('#lk-thick').innerHTML=g.thicks.map(function(t,i){return '<option value=&quot;'+i+'&quot;>'+esc(t)+'</option>';}).join('');
 }
 function stateColor(st){
   return st==='P'?'var(--xl-ok)':st==='C'?'var(--xl-cond)':st==='X'?'var(--xl-no-verified)':'var(--surface)';
 }
 function renderLookupChips(){
   if(!ui.lookup){$('#lookup-chips').innerHTML='';return;}
-  var w=ui.lookup.w,t=ui.lookup.t;
-  $('#lookup-chips').innerHTML=GROUPS.map(function(g){
-    var st=cellState(g.key,w,t);
-    return '<span class=&quot;lchip&quot;><span class=&quot;dot&quot; style=&quot;background:'+stateColor(st)+'&quot;></span>'
-      +esc(g.name)+' : <b>'+esc(STATES[st].name)+'</b></span>';
-  }).join('');
+  var s=sheetOf(ui.sheet),gi=ui.lookup.gi,g=s.groups[gi];
+  var html;
+  if(isCovered(g,ui.lookup.w,ui.lookup.t)){
+    html='<span class=&quot;lchip&quot;><span class=&quot;dot&quot;></span>'+esc(g.name)+' : <b>주석 영역 (원본 시트 참조)</b></span>';
+  }else{
+    var st=cellState(s.key,gi,ui.lookup.w,ui.lookup.t);
+    html='<span class=&quot;lchip&quot;><span class=&quot;dot&quot; style=&quot;background:'+stateColor(st)+'&quot;></span>'
+      +esc(g.name)+' · 폭 '+esc(g.widths[ui.lookup.w])+' × 두께 '+esc(g.thicks[ui.lookup.t])
+      +' : <b>'+esc(STATES[st].name)+'</b></span>';
+  }
+  $('#lookup-chips').innerHTML=html;
 }
 function runLookup(){
-  ui.lookup={w:Number($('#lk-width').value),t:Number($('#lk-thick').value)};
+  ui.lookup={gi:Number($('#lk-group').value),w:Number($('#lk-width').value),t:Number($('#lk-thick').value)};
   renderLookupChips();
-  $$('#mgroups td').forEach(function(td){
+  $$('#sheet-root td[data-g]').forEach(function(td){
     td.classList.toggle('hl',
-      Number(td.getAttribute('data-w'))===ui.lookup.w&amp;&amp;Number(td.getAttribute('data-t'))===ui.lookup.t);
+      Number(td.getAttribute('data-g'))===ui.lookup.gi
+      &amp;&amp;Number(td.getAttribute('data-w'))===ui.lookup.w
+      &amp;&amp;Number(td.getAttribute('data-t'))===ui.lookup.t);
   });
 }
 function clearLookup(){
   ui.lookup=null;
   renderLookupChips();
-  $$('#mgroups td.hl').forEach(function(td){td.classList.remove('hl');});
+  $$('#sheet-root td.hl').forEach(function(td){td.classList.remove('hl');});
 }
 
 /* ---------- 셀 수정 (수정 모드에서 클릭 → 상태 순환) ---------- */
@@ -4988,43 +4988,44 @@ function setEditMode(on){
   b.classList.toggle('on',on);
   b.setAttribute('aria-pressed',on?'true':'false');
   b.textContent=on?'✓ 수정 모드 종료':'✎ 수정 모드';
-  $('#edit-hint').hidden=!on;
+  var hint=$('#edit-hint');if(hint)hint.hidden=!on;
 }
-$('#mgroups').addEventListener('click',function(e){
+$('#sc-range').addEventListener('click',function(e){
   if(!ui.edit)return;
   var td=e.target.closest('td');
   if(!td||!td.hasAttribute('data-g'))return;
-  var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
-  var prev=cellState(g,w,t);
+  var s=sheetOf(ui.sheet);
+  var gi=Number(td.getAttribute('data-g')),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+  var prev=cellState(s.key,gi,w,t);
   var next=CYCLE[(CYCLE.indexOf(prev)+1)%CYCLE.length];
-  setCellState(g,w,t,next);
-  addLog('셀 수정',cellLabel(g,w,t),STATES[prev].name,STATES[next].name);
-  saveState();renderGroups();renderHist();
-  toast(cellLabel(g,w,t)+' : '+STATES[prev].name+' → '+STATES[next].name+' 저장 · 이력에 기록되었습니다');
+  setCellState(s.key,gi,w,t,next);
+  addLog('셀 수정',cellLabel(s,gi,w,t),STATES[prev].name,STATES[next].name);
+  saveState();renderSheetStates();renderHist();
+  toast(cellLabel(s,gi,w,t)+' : '+STATES[prev].name+' → '+STATES[next].name+' 저장 · 이력에 기록되었습니다');
 });
 
-/* ---------- 수정값 전체 초기화 ---------- */
+/* ---------- 현재 탭 수정값 초기화 ---------- */
 function openResetModal(){
-  var n=editedCount();
-  if(!n){toast('수정된 셀이 없습니다');return;}
-  $('#modal-body').innerHTML='수정된 셀 <b>'+n+'개</b>를 모두 기준 시트(개정일 &amp;#39;25.03.31) 원본 상태로 되돌립니다.<br>'
+  var s=sheetOf(ui.sheet),n=editedCount(s.key);
+  if(!n){toast('현재 탭에 수정된 셀이 없습니다');return;}
+  $('#modal-body').innerHTML='<b>'+esc(s.tab)+'</b> 탭의 수정된 셀 <b>'+n+'개</b>를 모두 기준 시트(개정일 &amp;#39;25.03.31) 원본 상태로 되돌립니다.<br>'
     +'초기화 내역도 <b>수정 이력</b>에 기록됩니다. 계속할까요?';
   $('#modal-back').classList.add('on');document.body.classList.add('modal-open');
 }
 function closeModal(){$('#modal-back').classList.remove('on');document.body.classList.remove('modal-open');}
 function doReset(){
-  var n=0;
-  GROUPS.forEach(function(g){
-    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++){
-      if(isEdited(g.key,w,t)){
-        addLog('초기화',cellLabel(g.key,w,t),STATES[cellState(g.key,w,t)].name,STATES[g.seed[w].charAt(t)].name);
+  var s=sheetOf(ui.sheet),n=0;
+  s.groups.forEach(function(g,gi){
+    for(var w=0;w<g.widths.length;w++)for(var t=0;t<g.thicks.length;t++){
+      if(!isCovered(g,w,t)&amp;&amp;isEdited(s.key,gi,w,t)){
+        addLog('초기화',cellLabel(s,gi,w,t),STATES[cellState(s.key,gi,w,t)].name,STATES[g.seed[w].charAt(t)].name);
         n++;
       }
     }
   });
-  state.cells=seedCells();
-  saveState();renderGroups();renderHist();closeModal();
-  toast('수정된 셀 '+n+'개를 기준 시트 원본으로 초기화했습니다 · 이력에 기록되었습니다');
+  state.cells[s.key]=s.groups.map(function(g){return g.seed.slice();});
+  saveState();renderSheetStates();renderHist();closeModal();
+  toast(sheetShort(s)+' 탭 수정 셀 '+n+'개를 기준 시트 원본으로 초기화했습니다 · 이력에 기록되었습니다');
 }
 
 /* ============================================================
@@ -5080,12 +5081,20 @@ function setTab(name){
     t.setAttribute('aria-selected',on?'true':'false');
     t.tabIndex=on?0:-1;
   });
-  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
-  if(name==='hist')renderHist();
+  var isHist=name==='hist';
+  $('#sc-range').classList.toggle('on',!isHist);
+  $('#sc-hist').classList.toggle('on',isHist);
+  if(isHist){renderHist();return;}
+  if(ui.sheet!==name){
+    ui.sheet=name;
+    clearLookup();
+    buildLookup();
+    buildSheet();
+  }
 }
-$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
-
 document.addEventListener('click',function(e){
+  var tab=e.target.closest('.tab');
+  if(tab){setTab(tab.getAttribute('data-tab'));return;}
   var el=e.target.closest('[data-action]');if(!el)return;
   switch(el.getAttribute('data-action')){
     case 'toggle-edit':setEditMode(!ui.edit);break;
@@ -5099,15 +5108,17 @@ document.addEventListener('click',function(e){
     case 'h-search-clear':$('#h-q').value='';histRunQuery();break;
   }
 });
+$('#lk-group').addEventListener('change',buildLookupAxes);
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'&amp;&amp;$('#modal-back').classList.contains('on'))closeModal();
 });
 $('#h-q').addEventListener('keydown',function(e){if(e.key==='Enter')histRunQuery();});
 
 /* ---------- init ---------- */
+buildTabs();
 buildLookup();
-buildGroups();
-renderGroups();
+buildSheet();
+setTab(ui.sheet);
 histDefaults();
 renderHist();
 </script>
