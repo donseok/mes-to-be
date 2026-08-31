@@ -36,3 +36,4 @@ python3 build/build_single.py
 - 엑셀 다운로드는 외부 라이브러리 없이 xlsx(zip)를 직접 생성
 - 모듈은 iframe 내부(embedded)에서 자기 상단바를 숨김 — 단독 실행 시엔 표시
 - 조회 화면들은 `.fixed-grid` 내부 스크롤로 조회조건·컬럼 헤더 고정
+- 코드 사전: 구분·사용 여부·키워드 조회 지원, 항목별 데이터 타입·자리수 관리 (예: VARCHAR2(8) — DATE는 자리수 없음)

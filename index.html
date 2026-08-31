@@ -1073,10 +1073,25 @@ select.page-size{padding:3px 6px;font-size:12px;height:auto;width:auto}
 
   <!-- ================= 코드 사전 ================= -->
   <section class=&quot;screen&quot; id=&quot;sc-dict&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;tab-dict&quot;>
+    <div class=&quot;fbar fbar-compact&quot;>
+      <div class=&quot;f-field&quot;><label for=&quot;df-kind&quot;>구분</label>
+        <select class=&quot;inp&quot; id=&quot;df-kind&quot;><option value=&quot;&quot;>전체</option><option value=&quot;COND&quot;>조건</option><option value=&quot;RESULT&quot;>설계결과</option><option value=&quot;BOTH&quot;>공통</option></select></div>
+      <div class=&quot;f-field&quot;><label for=&quot;df-active&quot;>사용 여부</label>
+        <select class=&quot;inp&quot; id=&quot;df-active&quot;><option value=&quot;&quot;>전체</option><option value=&quot;on&quot;>사용</option><option value=&quot;off&quot;>중지</option></select></div>
+      <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label for=&quot;d-q&quot;>키워드</label>
+        <div class=&quot;search-wrap&quot;><input class=&quot;inp&quot; id=&quot;d-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;항목명·시스템 코드·설명 검색&quot;>
+          <button class=&quot;search-clear&quot; id=&quot;d-q-clear&quot; data-action=&quot;d-search-clear&quot; aria-label=&quot;검색어 지우기&quot;>✕</button></div></div>
+      <button class=&quot;btn btn-pri&quot; data-action=&quot;dict-search&quot;>조회</button>
+      <button class=&quot;btn&quot; data-action=&quot;dict-reset&quot;>초기화</button>
+      <div class=&quot;fbar-meta&quot; aria-live=&quot;polite&quot;><b id=&quot;d-result-info&quot;>0건 표시</b></div>
+    </div>
     <div class=&quot;panel&quot;>
       <div class=&quot;dict-add&quot;>
         <div class=&quot;f-field&quot;><label for=&quot;d-ko&quot;>한글 항목명</label><input class=&quot;inp&quot; id=&quot;d-ko&quot; placeholder=&quot;예: 내식성 등급&quot;></div>
         <div class=&quot;f-field&quot;><label for=&quot;d-code&quot;>시스템 코드</label><input class=&quot;inp mono&quot; id=&quot;d-code&quot; placeholder=&quot;예: CRS_GRD&quot; style=&quot;text-transform:uppercase&quot;></div>
+        <div class=&quot;f-field&quot;><label for=&quot;d-dtype&quot;>데이터 타입</label>
+          <select class=&quot;inp&quot; id=&quot;d-dtype&quot;><option value=&quot;VARCHAR2&quot;>VARCHAR2</option><option value=&quot;NUMBER&quot;>NUMBER</option><option value=&quot;CHAR&quot;>CHAR</option><option value=&quot;DATE&quot;>DATE</option></select></div>
+        <div class=&quot;f-field&quot;><label for=&quot;d-dlen&quot;>자리수</label><input class=&quot;inp mono&quot; id=&quot;d-dlen&quot; placeholder=&quot;예: 8&quot; style=&quot;width:70px&quot;></div>
         <div class=&quot;f-field&quot;><label for=&quot;d-kind&quot;>구분</label>
           <select class=&quot;inp&quot; id=&quot;d-kind&quot;><option value=&quot;COND&quot;>조건</option><option value=&quot;RESULT&quot;>설계결과</option><option value=&quot;BOTH&quot;>공통</option></select></div>
         <div class=&quot;f-field&quot;><label for=&quot;d-unit&quot;>단위</label><input class=&quot;inp&quot; id=&quot;d-unit&quot; placeholder=&quot;㎛, mm …&quot; style=&quot;width:80px&quot;></div>
@@ -1086,13 +1101,14 @@ select.page-size{padding:3px 6px;font-size:12px;height:auto;width:auto}
       <div class=&quot;tbl-scroll fixed-grid&quot;>
         <table class=&quot;grid slim&quot;>
           <thead><tr>
-            <th>한글 항목명</th><th>시스템 코드</th><th class=&quot;c&quot;>구분</th><th class=&quot;c&quot;>단위</th>
+            <th>한글 항목명</th><th>시스템 코드</th><th class=&quot;c&quot; style=&quot;width:104px&quot;>타입(자리수)</th><th class=&quot;c&quot;>구분</th><th class=&quot;c&quot;>단위</th>
             <th>설명</th><th class=&quot;c&quot;>사용 건수</th><th class=&quot;c&quot;>사용</th><th class=&quot;c&quot; style=&quot;width:80px&quot;>작업</th>
           </tr></thead>
           <tbody id=&quot;dict-tbody&quot;></tbody>
         </table>
       </div>
       <nav class=&quot;pager&quot; id=&quot;d-pager&quot; aria-label=&quot;코드 사전 페이지&quot;></nav>
+      <div id=&quot;d-empty&quot; class=&quot;empty&quot; style=&quot;display:none&quot;><div class=&quot;big&quot;>조건에 맞는 항목이 없습니다</div></div>
     </div>
   </section>
 
@@ -1213,7 +1229,7 @@ select.page-size{padding:3px 6px;font-size:12px;height:auto;width:auto}
 /* ============================================================
    Q-SPEC mock — state, parser, seed data
    ============================================================ */
-const LS_KEY='qspec-mock-v3';
+const LS_KEY='qspec-mock-v4';
 const DRAFT_KEY='qspec-draft-v2';
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
@@ -1227,20 +1243,20 @@ const normKo=s=>String(s).replace(/\s+/g,'');
 
 /* ---------- seed: 코드 사전 ---------- */
 const SEED_DICT=[
- {ko:'고객사',      code:'CUS_CD',   kind:'COND',   unit:'', desc:'고객사 코드 (SAP 거래처 번호)'},
- {ko:'품명',        code:'PRD_NM_CD',kind:'COND',   unit:'', desc:'제품군 코드 (L 라미나 · C 일반컬러 · G 고내후성 · H 고경도)'},
- {ko:'원재료 두께', code:'RAW_THK',  kind:'COND',   unit:'mm', desc:'소재 두께'},
- {ko:'원재료 폭',   code:'RAW_WID',  kind:'COND',   unit:'mm', desc:'소재 폭'},
- {ko:'색상코드',    code:'COLOR_CD', kind:'COND',   unit:'', desc:'고객 지정 색상 (RAL 등)'},
- {ko:'용도',        code:'USAGE_CD', kind:'COND',   unit:'', desc:'최종 용도 (지붕재·벽체재·가전 등)'},
- {ko:'BOM',         code:'CCL_BOM',  kind:'BOTH',   unit:'', desc:'도장 BOM 코드'},
- {ko:'원재료 재질', code:'RAW_MTRL', kind:'BOTH',   unit:'', desc:'소재 강종 (H32·H36·CQ 등)'},
- {ko:'통과공정',    code:'PROC_CD',  kind:'RESULT', unit:'', desc:'라인 통과공정 경로'},
- {ko:'상도 도막두께',code:'TOP_THK', kind:'RESULT', unit:'㎛', desc:'상도 도막 두께 기준'},
- {ko:'광택',        code:'GLOSS',    kind:'RESULT', unit:'GU', desc:'광택도 관리 기준'},
- {ko:'후처리',      code:'POST_TRT', kind:'RESULT', unit:'', desc:'보호필름·왁스코팅 등 후처리'},
- {ko:'포장방법',    code:'PACK_CD',  kind:'RESULT', unit:'', desc:'포장 사양 코드 (P01 내수 · P03 수출)'},
- {ko:'시험항목',    code:'TEST_CD',  kind:'RESULT', unit:'', desc:'추가 시험·검사 (T-BEND, MEK 등)'},
+ {ko:'고객사',      code:'CUS_CD',   kind:'COND',   unit:'', dtype:'VARCHAR2',dlen:'6', desc:'고객사 코드 (SAP 거래처 번호)'},
+ {ko:'품명',        code:'PRD_NM_CD',kind:'COND',   unit:'', dtype:'CHAR',dlen:'1', desc:'제품군 코드 (L 라미나 · C 일반컬러 · G 고내후성 · H 고경도)'},
+ {ko:'원재료 두께', code:'RAW_THK',  kind:'COND',   unit:'mm', dtype:'NUMBER',dlen:'4,2', desc:'소재 두께'},
+ {ko:'원재료 폭',   code:'RAW_WID',  kind:'COND',   unit:'mm', dtype:'NUMBER',dlen:'5', desc:'소재 폭'},
+ {ko:'색상코드',    code:'COLOR_CD', kind:'COND',   unit:'', dtype:'VARCHAR2',dlen:'10', desc:'고객 지정 색상 (RAL 등)'},
+ {ko:'용도',        code:'USAGE_CD', kind:'COND',   unit:'', dtype:'VARCHAR2',dlen:'10', desc:'최종 용도 (지붕재·벽체재·가전 등)'},
+ {ko:'BOM',         code:'CCL_BOM',  kind:'BOTH',   unit:'', dtype:'VARCHAR2',dlen:'6', desc:'도장 BOM 코드'},
+ {ko:'원재료 재질', code:'RAW_MTRL', kind:'BOTH',   unit:'', dtype:'VARCHAR2',dlen:'4', desc:'소재 강종 (H32·H36·CQ 등)'},
+ {ko:'통과공정',    code:'PROC_CD',  kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'12', desc:'라인 통과공정 경로'},
+ {ko:'상도 도막두께',code:'TOP_THK', kind:'RESULT', unit:'㎛', dtype:'NUMBER',dlen:'3', desc:'상도 도막 두께 기준'},
+ {ko:'광택',        code:'GLOSS',    kind:'RESULT', unit:'GU', dtype:'NUMBER',dlen:'3', desc:'광택도 관리 기준'},
+ {ko:'후처리',      code:'POST_TRT', kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'20', desc:'보호필름·왁스코팅 등 후처리'},
+ {ko:'포장방법',    code:'PACK_CD',  kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'3', desc:'포장 사양 코드 (P01 내수 · P03 수출)'},
+ {ko:'시험항목',    code:'TEST_CD',  kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'20', desc:'추가 시험·검사 (T-BEND, MEK 등)'},
 ].map((d,i)=>({id:'d'+(i+1),active:true,...d}));
 
 /* ---------- seed: 고객사 ---------- */
@@ -1485,7 +1501,7 @@ function loadState(){
    ============================================================ */
 const ui={tab:'list',fCus:'',fPrd:'',fStatus:'',fQ:'',sortKey:'updatedAt',sortDir:-1,
           sel:new Set(),editingId:null,selOrder:null,simRan:false,
-          ifDir:'',ifRes:'',ifQ:'',dictEditId:null,regMode:'text',page:1,histFrom:'',histTo:'',histQ:'',histPage:1,dictPage:1,ifPage:1,guideCus:'',guidePrd:'',guideConds:[],guideResults:[],guideSeq:1};
+          ifDir:'',ifRes:'',ifQ:'',dictKind:'',dictActive:'',dictQ:'',dictEditId:null,regMode:'text',page:1,histFrom:'',histTo:'',histQ:'',histPage:1,dictPage:1,ifPage:1,guideCus:'',guidePrd:'',guideConds:[],guideResults:[],guideSeq:1};
 const ST_CLS={'작성중':'draft','확정':'conf','전송완료':'sent','전송실패':'fail'};
 const pill=(st,title)=>`<span class=&quot;pill ${ST_CLS[st]||'draft'}&quot;${title?` title=&quot;${esc(title)}&quot;`:''}><span class=&quot;pdot&quot;></span>${esc(st)}</span>`;
 const FAIL_POOL=['OMS 응답 시간 초과 (RC=08)','필수 필드 누락: PROC_CD 매핑 없음','OMS 중복 사양 존재 (E-1042)'];
@@ -2194,16 +2210,40 @@ function dictUsage(code){
   return n;
 }
 const KIND_KO={COND:'조건',RESULT:'설계결과',BOTH:'공통'};
+const DTYPES=['VARCHAR2','NUMBER','CHAR','DATE'];
+const fmtDtype=d=>{const t=(d.dtype||'').toUpperCase();return t?(t==='DATE'?'DATE':t+(d.dlen?`(${d.dlen})`:'')):'';};
+const validDlen=(t,len)=>!len||(t==='NUMBER'?/^\d{1,4}(,\d{1,2})?$/.test(len):/^\d{1,4}$/.test(len));
+function dictRows(){
+  const q=(ui.dictQ||'').trim().toLowerCase();
+  return state.dict.filter(d=>{
+    if(ui.dictKind&amp;&amp;d.kind!==ui.dictKind)return false;
+    if(ui.dictActive==='on'&amp;&amp;!d.active)return false;
+    if(ui.dictActive==='off'&amp;&amp;d.active)return false;
+    if(q&amp;&amp;!(d.ko+' '+d.code+' '+(d.desc||'')+' '+fmtDtype(d)).toLowerCase().includes(q))return false;
+    return true;
+  });
+}
 function renderDict(){
   const tb=$('#dict-tbody');
-  const pagesD=Math.max(1,Math.ceil(state.dict.length/PAGE_SIZE));
+  const rows=dictRows();
+  const sigD=[ui.dictKind,ui.dictActive,ui.dictQ].join('|');
+  if(ui._dictSig!==sigD){ui._dictSig=sigD;ui.dictPage=1;}
+  const pagesD=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
   if(ui.dictPage>pagesD)ui.dictPage=pagesD;else if(ui.dictPage<1)ui.dictPage=1;
-  tb.innerHTML=state.dict.slice((ui.dictPage-1)*PAGE_SIZE,ui.dictPage*PAGE_SIZE).map(d=>{
+  $('#df-kind').value=ui.dictKind;$('#df-active').value=ui.dictActive;$('#d-q').value=ui.dictQ;
+  $('#d-q-clear').classList.toggle('on',!!ui.dictQ);
+  const cntD=rows.length===state.dict.length?`${rows.length}건`:`전체 ${state.dict.length}건 중 ${rows.length}건`;
+  $('#d-result-info').textContent=rows.length>PAGE_SIZE
+    ?`${cntD} · ${(ui.dictPage-1)*PAGE_SIZE+1}–${Math.min(rows.length,ui.dictPage*PAGE_SIZE)} 표시`
+    :`${cntD} 표시`;
+  tb.innerHTML=rows.slice((ui.dictPage-1)*PAGE_SIZE,ui.dictPage*PAGE_SIZE).map(d=>{
     const use=dictUsage(d.code);
     if(ui.dictEditId===d.id){
       return `<tr data-id=&quot;${d.id}&quot;>
         <td><input class=&quot;inp&quot; id=&quot;de-ko&quot; value=&quot;${esc(d.ko)}&quot; style=&quot;width:130px&quot;></td>
         <td><input class=&quot;inp mono&quot; id=&quot;de-code&quot; value=&quot;${esc(d.code)}&quot; style=&quot;width:110px;text-transform:uppercase&quot;></td>
+        <td class=&quot;c&quot;><span style=&quot;display:inline-flex;gap:4px;align-items:center;justify-content:center&quot;><select class=&quot;inp&quot; id=&quot;de-dtype&quot; aria-label=&quot;데이터 타입&quot;>
+          ${DTYPES.map(t=>`<option value=&quot;${t}&quot; ${(d.dtype||'VARCHAR2')===t?'selected':''}>${t}</option>`).join('')}</select><input class=&quot;inp mono&quot; id=&quot;de-dlen&quot; value=&quot;${esc(d.dlen||'')}&quot; style=&quot;width:52px&quot; placeholder=&quot;8&quot; aria-label=&quot;자리수&quot; ${d.dtype==='DATE'?'disabled':''}></span></td>
         <td class=&quot;c&quot;><select class=&quot;inp&quot; id=&quot;de-kind&quot;>
           ${['COND','RESULT','BOTH'].map(k=>`<option value=&quot;${k}&quot; ${d.kind===k?'selected':''}>${KIND_KO[k]}</option>`).join('')}</select></td>
         <td class=&quot;c&quot;><input class=&quot;inp&quot; id=&quot;de-unit&quot; value=&quot;${esc(d.unit)}&quot; style=&quot;width:60px&quot;></td>
@@ -2216,6 +2256,7 @@ function renderDict(){
     return `<tr data-id=&quot;${d.id}&quot; style=&quot;${d.active?'':'opacity:.5'}&quot;>
       <td class=&quot;cell-main&quot;>${esc(d.ko)}</td>
       <td><span class=&quot;code-badge&quot;>${esc(d.code)}</span></td>
+      <td class=&quot;c mono&quot; style=&quot;font-size:12px&quot;>${fmtDtype(d)||'—'}</td>
       <td class=&quot;c&quot;><span class=&quot;kind-tag ${d.kind}&quot;>${KIND_KO[d.kind]}</span></td>
       <td class=&quot;c&quot;>${esc(d.unit)||'—'}</td>
       <td class=&quot;cell-sub&quot; style=&quot;font-size:12.5px&quot;>${esc(d.desc)}</td>
@@ -2226,20 +2267,26 @@ function renderDict(){
         <button class=&quot;icon-btn danger&quot; data-action=&quot;dict-del&quot; data-id=&quot;${d.id}&quot; title=&quot;삭제&quot; aria-label=&quot;${esc(d.ko)} 삭제&quot;>✕</button>
       </td></tr>`;
   }).join('');
-  renderPagerEl($('#d-pager'),pagesD,ui.dictPage,'dpage',state.dict.length);
+  $('#d-empty').style.display=rows.length?'none':'block';
+  renderPagerEl($('#d-pager'),pagesD,ui.dictPage,'dpage',rows.length);
   syncStickyVars();
 }
 function dictAdd(){
   const ko=$('#d-ko').value.trim(),code=$('#d-code').value.trim().toUpperCase();
   const kind=$('#d-kind').value,unit=$('#d-unit').value.trim(),desc=$('#d-desc').value.trim();
+  const dtype=$('#d-dtype').value,dlen=$('#d-dlen').value.trim();
   if(!ko||!code){toast('한글 항목명과 시스템 코드는 필수입니다','err');return;}
+  if(dtype!=='DATE'&amp;&amp;!dlen){toast(`${dtype} 자리수를 입력하세요 — 예: 8`,'err');return;}
+  if(!validDlen(dtype,dlen)){toast(dtype==='NUMBER'?'자리수 형식이 올바르지 않습니다 — 예: 5 또는 5,2':'자리수는 숫자만 입력하세요 — 예: 8','err');return;}
   if(state.dict.some(d=>normKo(d.ko)===normKo(ko))){toast(`&quot;${ko}&quot; 은(는) 이미 등록된 항목명입니다`,'err');return;}
   if(state.dict.some(d=>d.code===code)){toast(`코드 ${code} 는 이미 사용 중입니다`,'err');return;}
-  state.dict.push({id:'d'+(state.dict.length+1)+'-'+Date.now(),ko,code,kind,unit,desc,active:true});
+  const item={id:'d'+(state.dict.length+1)+'-'+Date.now(),ko,code,kind,unit,desc,dtype,dlen:dtype==='DATE'?'':dlen,active:true};
+  state.dict.push(item);
+  ui.dictKind='';ui.dictActive='';ui.dictQ='';ui._dictSig='||';
   ui.dictPage=Math.ceil(state.dict.length/PAGE_SIZE);
   saveState();renderAll();
-  ['d-ko','d-code','d-unit','d-desc'].forEach(i=>$('#'+i).value='');
-  toast(`&quot;${ko}&quot; (${code}) 항목이 추가되었습니다 — 이제 텍스트 입력에서 인식됩니다`);
+  ['d-ko','d-code','d-unit','d-desc','d-dlen'].forEach(i=>$('#'+i).value='');
+  toast(`&quot;${ko}&quot; (${code} · ${fmtDtype(item)}) 항목이 추가되었습니다 — 이제 텍스트 입력에서 인식됩니다`);
 }
 
 /* ============================================================
@@ -2659,11 +2706,14 @@ document.addEventListener('click',e=>{
     case 'dict-save':{
       const d=state.dict.find(x=>x.id===id);if(!d)break;
       const ko=$('#de-ko').value.trim(),code=$('#de-code').value.trim().toUpperCase();
+      const dtype=$('#de-dtype').value,dlen=$('#de-dlen').value.trim();
       if(!ko||!code){toast('한글 항목명과 코드는 필수입니다','err');break;}
+      if(dtype!=='DATE'&amp;&amp;!dlen){toast(`${dtype} 자리수를 입력하세요 — 예: 8`,'err');break;}
+      if(!validDlen(dtype,dlen)){toast(dtype==='NUMBER'?'자리수 형식이 올바르지 않습니다 — 예: 5 또는 5,2':'자리수는 숫자만 입력하세요 — 예: 8','err');break;}
       if(state.dict.some(x=>x.id!==id&amp;&amp;normKo(x.ko)===normKo(ko))){toast('이미 존재하는 항목명입니다','err');break;}
       if(state.dict.some(x=>x.id!==id&amp;&amp;x.code===code)){toast('이미 존재하는 코드입니다','err');break;}
       if(dictUsage(d.code)>0&amp;&amp;code!==d.code){toast(`${d.code} 는 사양 ${dictUsage(d.code)}건에서 사용 중이라 코드를 변경할 수 없습니다`,'err');break;}
-      d.ko=ko;d.code=code;d.kind=$('#de-kind').value;d.unit=$('#de-unit').value.trim();d.desc=$('#de-desc').value.trim();
+      d.ko=ko;d.code=code;d.kind=$('#de-kind').value;d.unit=$('#de-unit').value.trim();d.desc=$('#de-desc').value.trim();d.dtype=dtype;d.dlen=dtype==='DATE'?'':dlen;
       ui.dictEditId=null;saveState();renderAll();toast('항목이 수정되었습니다');break;}
     case 'dict-del':{
       const d=state.dict.find(x=>x.id===id);if(!d)break;
@@ -2677,6 +2727,9 @@ document.addEventListener('click',e=>{
       const d=state.dict.find(x=>x.code===actEl.dataset.code);
       ui.fQ=d?d.ko:actEl.dataset.code;ui.fCus='';ui.fPrd='';ui.fStatus='';
       switchTab('list');renderList();break;}
+    case 'dict-search':ui.dictQ=$('#d-q').value;renderDict();break;
+    case 'dict-reset':ui.dictKind='';ui.dictActive='';ui.dictQ='';renderDict();break;
+    case 'd-search-clear':ui.dictQ='';renderDict();$('#d-q').focus();break;
     case 'if-reset':ui.ifDir='';ui.ifRes='';ui.ifQ='';renderIflog();break;
     case 'if-search-clear':ui.ifQ='';renderIflog();$('#if-q').focus();break;
     case 'pick-order':ui.selOrder=actEl.dataset.no;ui.simRan=false;renderSim();break;
@@ -2700,6 +2753,10 @@ document.addEventListener('change',e=>{
   else if(t.id==='f-status'){ui.fStatus=t.value;ui.sel.clear();renderList();}
   else if(t.id==='if-dir'){ui.ifDir=t.value;renderIflog();}
   else if(t.id==='if-res'){ui.ifRes=t.value;renderIflog();}
+  else if(t.id==='df-kind'){ui.dictKind=t.value;renderDict();}
+  else if(t.id==='df-active'){ui.dictActive=t.value;renderDict();}
+  else if(t.id==='d-dtype'){const l=$('#d-dlen');l.disabled=t.value==='DATE';if(l.disabled)l.value='';}
+  else if(t.id==='de-dtype'){const l=$('#de-dlen');l.disabled=t.value==='DATE';if(l.disabled)l.value='';}
   else if(t.id==='g-cus'){ui.guideCus=t.value;syncDslFromGuide();}
   else if(t.id==='g-prd'){ui.guidePrd=t.value;syncDslFromGuide();}
   else if(t.dataset.guideField){
@@ -2727,6 +2784,7 @@ document.addEventListener('input',debounce(e=>{
   if(t.id==='dsl'){renderPreview();persistDraft();}
   else if(t.id==='f-q'){ui.fQ=t.value;ui.sel.clear();renderList();}
   else if(t.id==='if-q'){ui.ifQ=t.value;renderIflog();}
+  else if(t.id==='d-q'){ui.dictQ=t.value;renderDict();}
   else if(t.id==='h-q'){ui.histQ=t.value;renderHist();}
   else if(t.dataset.guideField==='val'){
     const arr=t.dataset.kind==='COND'?ui.guideConds:ui.guideResults;
