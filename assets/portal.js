@@ -41,6 +41,13 @@
       crumbs: ['품질설계', '설계결과관리'],
       openLink: true
     },
+    'simulation': {
+      hash: '#/quality-design/simulation',
+      viewId: 'simulation-view',
+      title: '시뮬레이션',
+      crumbs: ['품질설계'],
+      openLink: false
+    },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',

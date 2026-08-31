@@ -380,6 +380,10 @@ noscript{
               품질설계결과
             </a>
           </div>
+
+          <a class="nav-link" href="#/quality-design/simulation" data-route="simulation">
+            시뮬레이션
+          </a>
         </div>
 
         <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
@@ -4360,6 +4364,14 @@ renderHist();
           </div>
         </section>
 
+        <section class="route-view placeholder-view" id="simulation-view" aria-labelledby="simulation-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">SIMULATION</p>
+            <h2 id="simulation-title">시뮬레이션</h2>
+            <p>시뮬레이션 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
         <section class="route-view placeholder-view" id="quality-certificate-view" aria-labelledby="quality-certificate-title" hidden>
           <div class="placeholder-copy">
             <p class="eyebrow">QUALITY CERTIFICATE</p>
@@ -4431,6 +4443,13 @@ renderHist();
       title: '품질설계결과',
       crumbs: ['품질설계', '설계결과관리'],
       openLink: true
+    },
+    'simulation': {
+      hash: '#/quality-design/simulation',
+      viewId: 'simulation-view',
+      title: '시뮬레이션',
+      crumbs: ['품질설계'],
+      openLink: false
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
