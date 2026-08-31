@@ -365,17 +365,8 @@ noscript{
             </a>
           </div>
 
-          <button class="nav-subparent" type="button" data-tree-toggle="result-management-tree" aria-expanded="true" aria-controls="result-management-tree">
-            <span>결과관리</span><span class="chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-tree nav-tree-inner open" id="result-management-tree">
-            <a class="nav-link" href="#/quality-design/result-management/quality-design-result" data-route="quality-design-result">
-              품질설계결과
-            </a>
-          </div>
-
           <button class="nav-subparent" type="button" data-tree-toggle="feasibility-management-tree" aria-expanded="true" aria-controls="feasibility-management-tree">
-            <span>가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
+            <span>생산가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
           </button>
           <div class="nav-tree nav-tree-inner open" id="feasibility-management-tree">
             <a class="nav-link" href="#/quality-design/feasibility-management/order-unit-weight-error" data-route="order-unit-weight-error">
@@ -386,6 +377,15 @@ noscript{
             </a>
             <a class="nav-link" href="#/quality-design/feasibility-management/production-feasibility" data-route="production-feasibility">
               생산가부관리
+            </a>
+          </div>
+
+          <button class="nav-subparent" type="button" data-tree-toggle="result-management-tree" aria-expanded="true" aria-controls="result-management-tree">
+            <span>설계결과관리</span><span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-tree nav-tree-inner open" id="result-management-tree">
+            <a class="nav-link" href="#/quality-design/result-management/quality-design-result" data-route="quality-design-result">
+              품질설계결과
             </a>
           </div>
         </div>
@@ -3096,7 +3096,7 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
 
 <header class=&quot;topbar&quot;>
   <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>MES · Q-DESIGN</span></div>
-  <div class=&quot;crumb&quot;>품질설계 › 결과관리 › <b>품질설계결과</b></div>
+  <div class=&quot;crumb&quot;>품질설계 › 설계결과관리 › <b>품질설계결과</b></div>
   <div class=&quot;topbar-right&quot;><span class=&quot;mock-flag&quot;>MOCK-UP</span></div>
 </header>
 
@@ -3698,33 +3698,33 @@ select('D260831014-010');
       crumbs: ['품질설계', '모듈관리'],
       openLink: true
     },
-    'quality-design-result': {
-      hash: '#/quality-design/result-management/quality-design-result',
-      viewId: 'quality-design-result-view',
-      title: '품질설계결과',
-      crumbs: ['품질설계', '결과관리'],
-      openLink: true
-    },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
       title: '주문단중에러관리',
-      crumbs: ['품질설계', '가부관리'],
+      crumbs: ['품질설계', '생산가부관리'],
       openLink: false
     },
     'order-consistency': {
       hash: '#/quality-design/feasibility-management/order-consistency',
       viewId: 'order-consistency-view',
       title: '주문정합성관리',
-      crumbs: ['품질설계', '가부관리'],
+      crumbs: ['품질설계', '생산가부관리'],
       openLink: false
     },
     'production-feasibility': {
       hash: '#/quality-design/feasibility-management/production-feasibility',
       viewId: 'production-feasibility-view',
       title: '생산가부관리',
-      crumbs: ['품질설계', '가부관리'],
+      crumbs: ['품질설계', '생산가부관리'],
       openLink: false
+    },
+    'quality-design-result': {
+      hash: '#/quality-design/result-management/quality-design-result',
+      viewId: 'quality-design-result-view',
+      title: '품질설계결과',
+      crumbs: ['품질설계', '설계결과관리'],
+      openLink: true
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
