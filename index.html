@@ -373,6 +373,21 @@ noscript{
               품질설계결과
             </a>
           </div>
+
+          <button class="nav-subparent" type="button" data-tree-toggle="feasibility-management-tree" aria-expanded="true" aria-controls="feasibility-management-tree">
+            <span>가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-tree nav-tree-inner open" id="feasibility-management-tree">
+            <a class="nav-link" href="#/quality-design/feasibility-management/order-unit-weight-error" data-route="order-unit-weight-error">
+              주문단중에러관리
+            </a>
+            <a class="nav-link" href="#/quality-design/feasibility-management/order-consistency" data-route="order-consistency">
+              주문정합성관리
+            </a>
+            <a class="nav-link" href="#/quality-design/feasibility-management/production-feasibility" data-route="production-feasibility">
+              생산가부관리
+            </a>
+          </div>
         </div>
 
         <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
@@ -3631,6 +3646,30 @@ select('D260831014-010');
 "></iframe>
         </section>
 
+        <section class="route-view placeholder-view" id="order-unit-weight-error-view" aria-labelledby="order-unit-weight-error-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">ORDER UNIT WEIGHT ERROR</p>
+            <h2 id="order-unit-weight-error-title">주문단중에러관리</h2>
+            <p>주문단중에러관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="order-consistency-view" aria-labelledby="order-consistency-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">ORDER CONSISTENCY</p>
+            <h2 id="order-consistency-title">주문정합성관리</h2>
+            <p>주문정합성관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="production-feasibility-view" aria-labelledby="production-feasibility-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">PRODUCTION FEASIBILITY</p>
+            <h2 id="production-feasibility-title">생산가부관리</h2>
+            <p>생산가부관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
         <section class="route-view placeholder-view" id="quality-judgment-view" aria-labelledby="judgment-title" hidden>
           <div class="placeholder-copy">
             <p class="eyebrow">QUALITY JUDGMENT</p>
@@ -3665,6 +3704,27 @@ select('D260831014-010');
       title: '품질설계결과',
       crumbs: ['품질설계', '결과관리'],
       openLink: true
+    },
+    'order-unit-weight-error': {
+      hash: '#/quality-design/feasibility-management/order-unit-weight-error',
+      viewId: 'order-unit-weight-error-view',
+      title: '주문단중에러관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
+    },
+    'order-consistency': {
+      hash: '#/quality-design/feasibility-management/order-consistency',
+      viewId: 'order-consistency-view',
+      title: '주문정합성관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
+    },
+    'production-feasibility': {
+      hash: '#/quality-design/feasibility-management/production-feasibility',
+      viewId: 'production-feasibility-view',
+      title: '생산가부관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
     },
     'quality-judgment': {
       hash: '#/quality-judgment',

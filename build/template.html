@@ -45,6 +45,21 @@
               품질설계결과
             </a>
           </div>
+
+          <button class="nav-subparent" type="button" data-tree-toggle="feasibility-management-tree" aria-expanded="true" aria-controls="feasibility-management-tree">
+            <span>가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="nav-tree nav-tree-inner open" id="feasibility-management-tree">
+            <a class="nav-link" href="#/quality-design/feasibility-management/order-unit-weight-error" data-route="order-unit-weight-error">
+              주문단중에러관리
+            </a>
+            <a class="nav-link" href="#/quality-design/feasibility-management/order-consistency" data-route="order-consistency">
+              주문정합성관리
+            </a>
+            <a class="nav-link" href="#/quality-design/feasibility-management/production-feasibility" data-route="production-feasibility">
+              생산가부관리
+            </a>
+          </div>
         </div>
 
         <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
@@ -90,6 +105,30 @@
             src="./modules/quality-design.html?embed=1"
             loading="lazy">
           </iframe>
+        </section>
+
+        <section class="route-view placeholder-view" id="order-unit-weight-error-view" aria-labelledby="order-unit-weight-error-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">ORDER UNIT WEIGHT ERROR</p>
+            <h2 id="order-unit-weight-error-title">주문단중에러관리</h2>
+            <p>주문단중에러관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="order-consistency-view" aria-labelledby="order-consistency-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">ORDER CONSISTENCY</p>
+            <h2 id="order-consistency-title">주문정합성관리</h2>
+            <p>주문정합성관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section class="route-view placeholder-view" id="production-feasibility-view" aria-labelledby="production-feasibility-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">PRODUCTION FEASIBILITY</p>
+            <h2 id="production-feasibility-title">생산가부관리</h2>
+            <p>생산가부관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
+          </div>
         </section>
 
         <section class="route-view placeholder-view" id="quality-judgment-view" aria-labelledby="judgment-title" hidden>
