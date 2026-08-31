@@ -20,6 +20,27 @@
       crumbs: ['품질설계', '결과관리'],
       openLink: true
     },
+    'order-unit-weight-error': {
+      hash: '#/quality-design/feasibility-management/order-unit-weight-error',
+      viewId: 'order-unit-weight-error-view',
+      title: '주문단중에러관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
+    },
+    'order-consistency': {
+      hash: '#/quality-design/feasibility-management/order-consistency',
+      viewId: 'order-consistency-view',
+      title: '주문정합성관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
+    },
+    'production-feasibility': {
+      hash: '#/quality-design/feasibility-management/production-feasibility',
+      viewId: 'production-feasibility-view',
+      title: '생산가부관리',
+      crumbs: ['품질설계', '가부관리'],
+      openLink: false
+    },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
