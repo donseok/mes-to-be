@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P-FEAS 생산가부관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   P-FEAS — MES 생산가부관리 목업
+   탭: B.D 생산범위(2CGL GI) — 참조 엑셀 시트를 그대로 옮긴 화면.
+   행: 폭(1260~650↑) · 열: Full Hard 두께(0.24~2.2) · 셀: 가부 상태.
+   상태 4종: 생산불가(백) · 생산가능(청) · 조건부 생산(황) · 생산불가 검증완료(적).
+   palette·타입은 Q-SPEC/W-ERR 모듈과 동일한 디자인 시스템 사용.
+   ============================================================ */
+:root{
+  --bg:#F4F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EDF1F6;
+  --surface-3:#E3E9F0;
+  --border:#D9E0E8;
+  --border-strong:#B9C4D0;
+  --ink:#18222F;
+  --ink-2:#4C5A6B;
+  --ink-3:#7C8798;
+  --accent:#1D5FBF;
+  --accent-strong:#174C99;
+  --accent-on:#FFFFFF;
+  --accent-soft:#E4EDFA;
+  --accent-soft-ink:#174C99;
+  --result:#B45309;
+  --result-soft:#F9EFE0;
+  --danger:#B91C1C;
+  --danger-bg:#FBE4E4;
+  --scrim:rgba(16,24,34,.44);
+  --shadow:0 8px 28px rgba(23,42,68,.14);
+  --topbar-bg:#14202E;
+  --topbar-ink:#D8E1EC;
+  --topbar-dim:#8DA0B5;
+  --focus:#1D5FBF;
+  /* 참조 엑셀 시트 색 (B.D 생산범위 원본) */
+  --xl-title-bg:#F2F2F2;     /* 제목 밴드 (흰색 배경 5% 어둡게) */
+  --xl-ok:#3366FF;           /* 생산가능 (청) */
+  --xl-cond:#FFFF00;         /* 조건부 생산 (황) */
+  --xl-no-verified:#FF0000;  /* 생산불가 · 검증 완료 (적) */
+  --xl-group:#000080;        /* 재질 그룹 헤더 (남색 바탕) */
+  --xl-group-ink:#FFFFFF;
+  --xl-code:#0000FF;         /* 재질코드 안내 (청색 글씨) */
+  --xl-warn:#FF0000;         /* 주의 문구 (적색 글씨) */
+  --xl-grid:#9AA5B1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-size:14px;line-height:1.55;min-height:100vh;
+}
+body.modal-open{overflow:hidden}
+.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+::placeholder{color:var(--ink-3)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* ---------- top bar ---------- */
+.topbar{
+  background:var(--topbar-bg);color:var(--topbar-ink);
+  display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
+  position:sticky;top:0;z-index:30;
+}
+.embedded .topbar{display:none}
+.embedded .tabs{top:0}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{
+  width:22px;height:22px;border-radius:5px;
+  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+}
+.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
+.crumb b{color:var(--topbar-ink);font-weight:500}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.mock-flag{
+  font-size:10.5px;letter-spacing:.14em;font-weight:700;color:#0E1622;
+  background:#E2A05B;border-radius:4px;padding:2px 7px;
+}
+@media (max-width:920px){.crumb{display:none}}
+
+/* ---------- tabs ---------- */
+.tabs{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;gap:2px;padding:0 20px;overflow-x:auto;
+  position:sticky;top:52px;z-index:29;scrollbar-width:thin;
+}
+.tab{
+  padding:11px 14px 9px;font-size:13.5px;font-weight:500;color:var(--ink-2);
+  border-bottom:2px solid transparent;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.tab .cnt{
+  font-size:11px;font-weight:600;padding:0 6px;border-radius:99px;min-width:20px;text-align:center;
+  background:var(--surface-2);color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+/* ---------- layout ---------- */
+.wrap{padding:16px 20px 60px;max-width:1180px;margin:0 auto}
+.screen{display:none}
+.screen.on{display:block}
+.panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;
+}
+.panel+.panel{margin-top:14px}
+
+/* ---------- filter bar ---------- */
+.fbar{
+  display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin-bottom:14px;
+}
+.f-field{display:flex;flex-direction:column;gap:4px}
+.f-field label{font-size:11.5px;font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.inp{
+  border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);
+  padding:7px 10px;font-size:13.5px;min-height:36px;
+}
+.inp:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{
+  border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);
+  padding:0 14px;min-height:36px;font-size:13.5px;font-weight:600;color:var(--ink);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-danger{color:var(--danger);border-color:#E2B4B4}
+.btn-danger:hover{background:var(--danger-bg)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-soft-ink)}
+.fbar-meta{margin-left:auto;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fbar-meta b{color:var(--ink)}
+.f-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
+
+/* 가부 간편조회 결과 chip */
+.lookup-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lchip{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  border:1px solid var(--border);border-radius:99px;padding:2px 10px 2px 4px;background:var(--surface);
+}
+.lchip .dot{width:14px;height:14px;border-radius:4px;border:1px solid var(--xl-grid);display:inline-block}
+
+/* ---------- 시트 재현 영역 ---------- */
+.sheet{padding:16px 18px 20px}
+.xl-title{
+  background:var(--xl-title-bg);border:1px solid var(--xl-grid);
+  text-align:center;font-weight:700;font-size:18px;padding:10px 14px;letter-spacing:.01em;
+}
+.xl-meta{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  margin:12px 2px 0;
+}
+.legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink);font-weight:700}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg .sw{
+  width:26px;height:16px;border:1px solid var(--xl-grid);border-radius:2px;display:inline-block;
+  background:var(--surface);
+}
+.lg .sw.p{background:var(--xl-ok)}
+.lg .sw.c{background:var(--xl-cond)}
+.lg .sw.x{background:var(--xl-no-verified)}
+.rev-date{margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+.xl-notes{margin:14px 2px 0;font-weight:700;font-size:13.5px}
+.xl-notes li{list-style:none;margin:2px 0}
+.post-tbl{
+  border-collapse:collapse;margin:6px 0 0 18px;font-size:12.5px;text-align:center;
+}
+.post-tbl th,.post-tbl td{
+  border:1px solid var(--xl-grid);padding:4px 14px;font-weight:700;white-space:nowrap;
+}
+.post-tbl th{background:var(--surface-2)}
+.post-tbl th small,.post-tbl td small{display:block;font-weight:500;color:var(--ink-2);font-size:11px}
+.xl-section{margin:20px 2px 0;font-weight:700;font-size:14.5px}
+
+/* 재질 그룹 블록 */
+.mgroup{margin:14px 2px 0}
+.mgroup-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.mgroup-name{
+  background:var(--xl-group);color:var(--xl-group-ink);
+  font-weight:700;font-size:13.5px;padding:4px 22px;text-align:center;min-width:230px;
+}
+.mgroup-codes{color:var(--xl-code);font-weight:700;font-size:12px}
+.mgroup-warn{color:var(--xl-warn);font-weight:700;font-size:12px}
+.mgroup-warnbox{
+  display:inline-block;border:1px solid var(--xl-grid);color:var(--xl-warn);
+  font-weight:700;font-size:12px;text-align:center;padding:5px 18px;margin-bottom:6px;
+}
+
+/* 가부 매트릭스 — 폭(행) × 두께(열·하단 라벨) : 엑셀 배치 그대로 */
+.m-scroll{overflow-x:auto}
+table.bdmx{
+  border-collapse:separate;border-spacing:0;
+  font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+  font-size:11.5px;
+}
+.bdmx th,.bdmx td{
+  border-right:1px solid var(--xl-grid);border-bottom:1px solid var(--xl-grid);
+  white-space:nowrap;
+}
+.bdmx tr:first-child th,.bdmx tr:first-child td{border-top:1px solid var(--xl-grid)}
+.bdmx th:first-child,.bdmx td:first-child{border-left:1px solid var(--xl-grid)}
+.bdmx tbody th{
+  background:var(--surface);font-weight:700;text-align:right;padding:0 8px;
+  font-variant-numeric:tabular-nums;min-width:52px;font-size:12px;
+}
+.bdmx td{width:31px;min-width:31px;height:23px;background:var(--surface);cursor:default}
+.bdmx td.p{background:var(--xl-ok)}
+.bdmx td.c{background:var(--xl-cond)}
+.bdmx td.x{background:var(--xl-no-verified)}
+.bdmx td.hl{outline:2px solid var(--result);outline-offset:-2px}
+.bdmx tfoot th{
+  background:var(--surface);font-weight:500;text-align:center;padding:3px 1px;
+  font-size:10.5px;color:var(--ink);letter-spacing:-.02em;
+}
+.bdmx tfoot th:first-child{
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:10.5px;color:var(--ink-3);
+  text-align:right;padding-right:8px;
+}
+.bdmx td.edited{position:relative}
+.bdmx td.edited::after{
+  content:'';position:absolute;right:0;top:0;
+  border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--result) transparent transparent;
+}
+.edit-on .bdmx td{cursor:cell}
+.edit-on .bdmx td:hover{outline:2px solid var(--accent);outline-offset:-2px}
+
+.panel-note{
+  padding:9px 14px;border-top:1px solid var(--border);
+  font-size:12px;color:var(--ink-2);background:var(--surface-2);
+  display:flex;gap:14px;flex-wrap:wrap;
+}
+.panel-note b{color:var(--ink)}
+
+/* ---------- 이력 테이블 ---------- */
+table.grid{border-collapse:collapse;width:100%;font-size:13px}
+.grid th,.grid td{border-bottom:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+.grid thead th{
+  background:var(--surface-2);font-size:12px;font-weight:700;color:var(--ink-2);
+  position:sticky;top:0;z-index:2;white-space:nowrap;
+}
+.grid td.c,.grid th.c{text-align:center}
+.grid tbody tr:hover td{background:var(--accent-soft)}
+.cell-sub{color:var(--ink-3);font-size:12px}
+.chip{
+  display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:1px 9px;white-space:nowrap;
+}
+.chip.cell{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.reset{background:var(--danger-bg);color:var(--danger)}
+.h-scroll{overflow:auto;max-height:calc(100vh - 290px)}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
+.empty .big{font-size:15px;font-weight:700;color:var(--ink-2);margin-bottom:4px}
+.search-wrap{position:relative;display:flex}
+.search-wrap .inp{width:100%;padding-right:30px}
+.search-clear{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border-radius:6px;color:var(--ink-3);display:none;
+  align-items:center;justify-content:center;font-size:12px;
+}
+.search-clear.on{display:inline-flex}
+.search-clear:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- 모달 ---------- */
+.modal-back{
+  position:fixed;inset:0;background:var(--scrim);z-index:60;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-back.on{display:flex}
+.modal{
+  background:var(--surface);border-radius:12px;box-shadow:var(--shadow);
+  width:min(480px,100%);max-height:86vh;display:flex;flex-direction:column;
+}
+.modal-h{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px}
+.modal-b{padding:16px 18px;overflow:auto;font-size:13.5px;color:var(--ink-2)}
+.modal-b b{color:var(--ink)}
+.modal-f{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#203042;color:#EAF1F8;
+  border-radius:9px;padding:10px 16px;font-size:13.5px;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:80;max-width:90vw;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background-color:#7C1D1D}
+</style>
+</head>
+<body>
+
+<!-- ================= top bar ================= -->
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">M</span><span class="brand-name">MES · P-FEAS</span></div>
+  <div class="crumb">품질설계 › 생산가부관리 › <b>생산가부관리</b></div>
+  <div class="topbar-right"><span class="mock-flag">MOCK-UP</span></div>
+</header>
+
+<!-- ================= tabs ================= -->
+<nav class="tabs" role="tablist">
+  <button class="tab on" id="tab-range" data-tab="range" role="tab" aria-selected="true" aria-controls="sc-range" tabindex="0">B.D 생산범위(2CGL GI)</button>
+  <button class="tab" id="tab-hist" data-tab="hist" role="tab" aria-selected="false" aria-controls="sc-hist" tabindex="-1">수정 이력 <span class="cnt" id="cnt-hist">0</span></button>
+</nav>
+
+<main class="wrap" id="main-content">
+
+  <!-- ================= B.D 생산범위(2CGL GI) ================= -->
+  <section class="screen on" id="sc-range" role="tabpanel" aria-labelledby="tab-range">
+    <div class="fbar">
+      <div class="f-field"><label for="lk-width">가부 간편조회 — 폭 (mm)</label>
+        <select class="inp" id="lk-width"></select></div>
+      <div class="f-field"><label for="lk-thick">두께 (mm)</label>
+        <select class="inp" id="lk-thick"></select></div>
+      <button class="btn btn-pri" data-action="lookup">조회</button>
+      <button class="btn" data-action="lookup-clear">해제</button>
+      <div class="lookup-chips" id="lookup-chips" aria-live="polite"></div>
+      <div class="f-sep" aria-hidden="true"></div>
+      <button class="btn" id="btn-edit" data-action="toggle-edit" aria-pressed="false">✎ 수정 모드</button>
+      <button class="btn btn-danger" data-action="reset-overrides">수정값 전체 초기화</button>
+      <div class="fbar-meta"><b id="range-info">—</b></div>
+    </div>
+
+    <div class="panel">
+      <div class="sheet">
+        <div class="xl-title">2CGL GI 생산가능 SIZE (Full Hard 치수 기준)</div>
+
+        <div class="xl-meta">
+          <span class="legend">
+            <span class="lg"><span class="sw"></span>생산불가</span>
+            <span class="lg"><span class="sw p"></span>생산가능</span>
+            <span class="lg"><span class="sw c"></span>조건부 생산</span>
+            <span class="lg"><span class="sw x"></span>생산불가 (검증 완료)</span>
+          </span>
+          <span class="rev-date" id="rev-date">[개정일 : '25.03.31]</span>
+        </div>
+
+        <ul class="xl-notes">
+          <li>-. 내경 508Py / 610Py 권취 가능</li>
+          <li>-. Back Marking 가능여부 : 불가 (설비 無)</li>
+          <li>-. 생산가능 도금량 : 80~310g/㎡</li>
+          <li>-. 생산가능 후처리</li>
+        </ul>
+        <table class="post-tbl" aria-label="생산가능 후처리">
+          <thead><tr>
+            <th>구분<small>(후처리 Code)</small></th>
+            <th>무처리/Oiling<small>(MX / MO)</small></th>
+            <th>크롬 6가<small>(CX / CO)</small></th>
+            <th>크롬 3가<small>(FX)</small></th>
+            <th>갈바크린<small>(SX)</small></th>
+          </tr></thead>
+          <tbody><tr><td>GI</td><td>O</td><td>O</td><td>O</td><td>O</td></tr></tbody>
+        </table>
+
+        <div class="xl-section">-. 생산가능 Size (재질별)</div>
+        <div id="mgroups"></div>
+      </div>
+
+      <div class="panel-note">
+        <span>행: <b>폭(mm)</b> 1260 ~ 650↑ · 열: <b>Full Hard 두께(mm)</b> 0.24 ~ 2.2 · 셀: <b>생산 가부 상태</b></span>
+        <span>출처: <b>B.D 생산범위(2CGL GI)</b> 기준 시트 (개정일 '25.03.31)</span>
+        <span id="edit-hint" hidden>수정 모드: 셀을 클릭하면 상태가 <b>생산불가 → 생산가능 → 조건부 생산 → 생산불가(검증 완료)</b> 순으로 바뀝니다</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 수정 이력 ================= -->
+  <section class="screen" id="sc-hist" role="tabpanel" aria-labelledby="tab-hist">
+    <div class="fbar">
+      <div class="f-field"><label for="h-from">변경기간</label><input type="date" class="inp" id="h-from"></div>
+      <span class="cell-sub" style="align-self:center">~</span>
+      <div class="f-field"><input type="date" class="inp" id="h-to" aria-label="변경기간 종료일"></div>
+      <div class="f-field"><label for="h-kind">구분</label>
+        <select class="inp" id="h-kind">
+          <option value="">전체</option><option>셀 수정</option><option>초기화</option>
+        </select></div>
+      <div class="f-field" style="flex:1;min-width:180px"><label for="h-q">키워드</label>
+        <div class="search-wrap"><input class="inp" id="h-q" type="search" autocomplete="off" placeholder="재질·폭·두께·작업자 검색">
+          <button class="search-clear" id="h-q-clear" data-action="h-search-clear" aria-label="검색어 지우기">✕</button></div></div>
+      <button class="btn btn-pri" data-action="h-search">조회</button>
+      <button class="btn" data-action="h-reset">초기화</button>
+      <div class="fbar-meta" aria-live="polite"><b id="h-result-info">0건 표시</b></div>
+    </div>
+    <div class="panel">
+      <div class="h-scroll">
+        <table class="grid" aria-label="수정 이력 목록">
+          <thead><tr>
+            <th style="width:150px">일시</th><th class="c" style="width:92px">구분</th>
+            <th>항목</th><th style="width:150px">변경 전</th><th style="width:150px">변경 후</th>
+            <th style="width:100px">작업자</th>
+          </tr></thead>
+          <tbody id="h-tbody"></tbody>
+        </table>
+        <div id="h-empty" class="empty" style="display:none"><div class="big">조건에 맞는 이력이 없습니다</div>기간·구분·키워드를 조정해 보세요.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= 확인 모달 ================= -->
+<div class="modal-back" id="modal-back" role="presentation">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-h" id="modal-title">수정값 전체 초기화</div>
+    <div class="modal-b" id="modal-body"></div>
+    <div class="modal-f">
+      <button class="btn" data-action="modal-close">취소</button>
+      <button class="btn btn-danger" data-action="modal-ok">초기화</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   상태 — localStorage에만 저장 (LS_KEY 버전을 올리면 시드로 초기화)
+   cells: {그룹키: ['24자 상태문자열' × 6행]}  행=폭, 열=두께
+   상태문자: '-' 생산불가 · 'P' 생산가능 · 'C' 조건부 생산 · 'X' 생산불가(검증 완료)
+   changelog: {id, ts, by, kind, item, before, after}
+   시드 = 참조 엑셀 'B.D 생산범위(2CGL GI)' 시트(개정일 '25.03.31) 원본 그대로
+   ============================================================ */
+var LS_KEY='pfeas-bd2cgl-gi-v1';
+var CUR_USER='주인';
+
+var THICKS=['0.24','0.25','0.28','0.30','0.35','0.4','0.5','0.6','0.7','0.8','0.9','1','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2','2.1','2.2'];
+var WIDTHS=['1260','1230','1150','1050','950','650↑'];
+var STATES={
+  '-':{name:'생산불가',cls:''},
+  'P':{name:'생산가능',cls:'p'},
+  'C':{name:'조건부 생산',cls:'c'},
+  'X':{name:'생산불가 (검증 완료)',cls:'x'}
+};
+var CYCLE=['-','P','C','X'];
+
+var GROUPS=[
+  {key:'cq',name:'CQ, Gr-A, B(G250)',codes:'재질코드(Material Code) = 1A, AA, BA',
+   warn:null,warnbox:null,
+   seed:['-----PPPPPPPPPPPPPPCCC--',
+         '---PPPPPPPPPPPPPPPPCCC--',
+         '--PPPPPPPPPPPPPPPPPCCC--',
+         '-PPPPPPPPPPPPPPPPPPCCC--',
+         'PPPPPPPPPPPPPPPPPPPCCC--',
+         'PPPPPPPPPPPPPPPPPPPCCC--']},
+  {key:'fa',name:'Full-Ann (DQ, DDQ, IF Steel)',codes:'재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B',
+   warn:'※ 폭 수축량 불균일(폭 미달/초과 가능성 높음)',warnbox:null,
+   seed:['------PPPPPPPPCCCC------',
+         '-----CPPPPPPPPCCCC------',
+         '----CCPPPPPPPPCCCC------',
+         '---CCCPPPPPPPPCCCC------',
+         '---CCCPPPPPPPPCCCC------',
+         '---CCCPPPPPPPPCCCC------']},
+  {key:'cd',name:'Gr-C(G300), D(G350)',codes:'재질코드(Material Code) = CA, CB, DA, DB, DC, DD',
+   warn:'※ 특수강종 : SAE1022材 적용 제품(SGC490, G450, S350GD, Gr-55) Trial 필요 - 물성 불안정',warnbox:null,
+   seed:['------PPPPPPPPPPPPPCCC--',
+         '----CPPPPPPPPPPPPPPCCC--',
+         '----CPPPPPPPPPPPPPPCCC--',
+         '----CPPPPPPPPPPPPPPCCC--',
+         '----CPPPPPPPPPPPPPPCCC--',
+         '----CPPPPPPPPPPPPPPCCC--']},
+  {key:'e',name:'Gr-E(G550)',codes:'재질코드(Material Code) = EA',
+   warn:null,warnbox:'PL-TCM 형상 제어 애로<br>(급준도 관리 제품 협의 후 진행)',
+   seed:['----PPP-----------------',
+         '---PPPP-----------------',
+         '---PPPP-----------------',
+         '---PPPP-----------------',
+         '---PPPP-----------------',
+         '---PPPP-----------------']}
+];
+
+var $=function(s){return document.querySelector(s);};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad2(n){return String(n).padStart(2,'0');}
+function now(){return Date.now();}
+function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function dateStr(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function groupOf(key){for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].key===key)return GROUPS[i];return null;}
+function cellLabel(gKey,w,t){return '['+groupOf(gKey).name+'] 폭 '+WIDTHS[w]+' × 두께 '+THICKS[t];}
+
+var toastTimer=null;
+function toast(msg,type){
+  var t=$('#toast');t.textContent=msg;
+  t.className='toast on'+(type==='err'?' err':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2600);
+}
+
+/* ---------- seed ---------- */
+function seedCells(){
+  var cells={};
+  GROUPS.forEach(function(g){cells[g.key]=g.seed.slice();});
+  return cells;
+}
+function seedState(){
+  return {v:LS_KEY,seq:1,cells:seedCells(),changelog:[]};
+}
+var state=null;
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function loadState(){
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(raw){var st=JSON.parse(raw);if(st&&st.v===LS_KEY)return st;}
+  }catch(e){}
+  return seedState();
+}
+state=loadState();saveState();
+function addLog(kind,item,before,after,by){
+  state.changelog.push({id:'c'+(state.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before,after:after});
+}
+function cellState(gKey,w,t){return state.cells[gKey][w].charAt(t);}
+function setCellState(gKey,w,t,st){
+  var row=state.cells[gKey][w];
+  state.cells[gKey][w]=row.substring(0,t)+st+row.substring(t+1);
+}
+function isEdited(gKey,w,t){return cellState(gKey,w,t)!==groupOf(gKey).seed[w].charAt(t);}
+function editedCount(){
+  var n=0;
+  GROUPS.forEach(function(g){
+    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++)
+      if(isEdited(g.key,w,t))n++;
+  });
+  return n;
+}
+
+/* ---------- ui 상태 ---------- */
+var ui={
+  edit:false,
+  histFrom:'',histTo:'',histKind:'',histQ:''
+};
+
+/* ============================================================
+   B.D 생산범위 매트릭스 — 엑셀 시트 배치 그대로
+   (재질 그룹 헤더 → 가부 매트릭스, 두께 라벨은 하단 행)
+   ============================================================ */
+function buildGroups(){ // 뼈대 1회 생성
+  $('#mgroups').innerHTML=GROUPS.map(function(g){
+    var head='<div class="mgroup-head">'
+      +'<span class="mgroup-name">'+esc(g.name)+'</span>'
+      +'<span class="mgroup-codes">'+esc(g.codes)+'</span>'
+      +(g.warn?'<span class="mgroup-warn">'+esc(g.warn)+'</span>':'')
+      +'</div>'
+      +(g.warnbox?'<div class="mgroup-warnbox">'+g.warnbox+'</div>':'');
+    var body=WIDTHS.map(function(wLabel,w){
+      return '<tr><th scope="row">'+esc(wLabel)+'</th>'+THICKS.map(function(tLabel,t){
+        return '<td data-g="'+g.key+'" data-w="'+w+'" data-t="'+t+'"></td>';
+      }).join('')+'</tr>';
+    }).join('');
+    var foot='<tr><th scope="row">두께(mm) →</th>'+THICKS.map(function(tLabel){
+      return '<th scope="col">'+esc(tLabel)+'</th>';
+    }).join('')+'</tr>';
+    return '<div class="mgroup">'+head
+      +'<div class="m-scroll"><table class="bdmx" aria-label="'+esc(g.name)+' 생산가능 Size 매트릭스">'
+      +'<tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot>'
+      +'</table></div></div>';
+  }).join('');
+}
+function renderGroups(){ // 상태·색만 갱신
+  $$('#mgroups td').forEach(function(td){
+    var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+    var st=cellState(g,w,t),edited=isEdited(g,w,t);
+    td.className=STATES[st].cls+(edited?' edited':'');
+    var label=cellLabel(g,w,t)+' : '+STATES[st].name+(edited?' (수정됨)':'');
+    td.title=label;td.setAttribute('aria-label',label);
+  });
+  var ed=editedCount();
+  $('#range-info').textContent='재질 그룹 '+GROUPS.length+'종 · 폭 '+WIDTHS.length+'단 × 두께 '+THICKS.length+'단 · 수정 '+ed+'셀';
+  $('#cnt-hist').textContent=state.changelog.length;
+}
+
+/* ---------- 가부 간편조회 ---------- */
+function buildLookup(){
+  $('#lk-width').innerHTML=WIDTHS.map(function(w,i){return '<option value="'+i+'">'+esc(w)+'</option>';}).join('');
+  $('#lk-thick').innerHTML=THICKS.map(function(t,i){return '<option value="'+i+'">'+esc(t)+'</option>';}).join('');
+}
+function stateColor(st){
+  return st==='P'?'var(--xl-ok)':st==='C'?'var(--xl-cond)':st==='X'?'var(--xl-no-verified)':'var(--surface)';
+}
+function runLookup(){
+  var w=Number($('#lk-width').value),t=Number($('#lk-thick').value);
+  $('#lookup-chips').innerHTML=GROUPS.map(function(g){
+    var st=cellState(g.key,w,t);
+    return '<span class="lchip"><span class="dot" style="background:'+stateColor(st)+'"></span>'
+      +esc(g.name)+' : <b>'+esc(STATES[st].name)+'</b></span>';
+  }).join('');
+  $$('#mgroups td').forEach(function(td){
+    td.classList.toggle('hl',
+      Number(td.getAttribute('data-w'))===w&&Number(td.getAttribute('data-t'))===t);
+  });
+}
+function clearLookup(){
+  $('#lookup-chips').innerHTML='';
+  $$('#mgroups td.hl').forEach(function(td){td.classList.remove('hl');});
+}
+
+/* ---------- 셀 수정 (수정 모드에서 클릭 → 상태 순환) ---------- */
+function setEditMode(on){
+  ui.edit=on;
+  document.body.classList.toggle('edit-on',on);
+  var b=$('#btn-edit');
+  b.classList.toggle('on',on);
+  b.setAttribute('aria-pressed',on?'true':'false');
+  b.textContent=on?'✓ 수정 모드 종료':'✎ 수정 모드';
+  $('#edit-hint').hidden=!on;
+}
+$('#mgroups').addEventListener('click',function(e){
+  if(!ui.edit)return;
+  var td=e.target.closest('td');
+  if(!td||!td.hasAttribute('data-g'))return;
+  var g=td.getAttribute('data-g'),w=Number(td.getAttribute('data-w')),t=Number(td.getAttribute('data-t'));
+  var prev=cellState(g,w,t);
+  var next=CYCLE[(CYCLE.indexOf(prev)+1)%CYCLE.length];
+  setCellState(g,w,t,next);
+  addLog('셀 수정',cellLabel(g,w,t),STATES[prev].name,STATES[next].name);
+  saveState();renderGroups();renderHist();
+  toast(cellLabel(g,w,t)+' : '+STATES[prev].name+' → '+STATES[next].name+' 저장 · 이력에 기록되었습니다');
+});
+
+/* ---------- 수정값 전체 초기화 ---------- */
+function openResetModal(){
+  var n=editedCount();
+  if(!n){toast('수정된 셀이 없습니다');return;}
+  $('#modal-body').innerHTML='수정된 셀 <b>'+n+'개</b>를 모두 기준 시트(개정일 &#39;25.03.31) 원본 상태로 되돌립니다.<br>'
+    +'초기화 내역도 <b>수정 이력</b>에 기록됩니다. 계속할까요?';
+  $('#modal-back').classList.add('on');document.body.classList.add('modal-open');
+}
+function closeModal(){$('#modal-back').classList.remove('on');document.body.classList.remove('modal-open');}
+function doReset(){
+  var n=0;
+  GROUPS.forEach(function(g){
+    for(var w=0;w<WIDTHS.length;w++)for(var t=0;t<THICKS.length;t++){
+      if(isEdited(g.key,w,t)){
+        addLog('초기화',cellLabel(g.key,w,t),STATES[cellState(g.key,w,t)].name,STATES[g.seed[w].charAt(t)].name);
+        n++;
+      }
+    }
+  });
+  state.cells=seedCells();
+  saveState();renderGroups();renderHist();closeModal();
+  toast('수정된 셀 '+n+'개를 기준 시트 원본으로 초기화했습니다 · 이력에 기록되었습니다');
+}
+
+/* ============================================================
+   수정 이력
+   ============================================================ */
+function histDefaults(){
+  ui.histFrom=dateStr(now()-7*24*60*60*1000);
+  ui.histTo=dateStr(now());
+  ui.histKind='';ui.histQ='';
+  $('#h-from').value=ui.histFrom;$('#h-to').value=ui.histTo;
+  $('#h-kind').value='';$('#h-q').value='';
+}
+function histRunQuery(){
+  ui.histFrom=$('#h-from').value;ui.histTo=$('#h-to').value;
+  ui.histKind=$('#h-kind').value;ui.histQ=$('#h-q').value;
+  renderHist();
+}
+function kindChip(kind){
+  var cls=kind==='셀 수정'?'cell':'reset';
+  return '<span class="chip '+cls+'">'+esc(kind)+'</span>';
+}
+function renderHist(){
+  var from=ui.histFrom?new Date(ui.histFrom+'T00:00:00').getTime():-Infinity;
+  var to=ui.histTo?new Date(ui.histTo+'T23:59:59').getTime():Infinity;
+  var q=(ui.histQ||'').trim().toLowerCase();
+  var arr=state.changelog.filter(function(r){
+    return r.ts>=from&&r.ts<=to
+      &&(!ui.histKind||r.kind===ui.histKind)
+      &&(!q||(r.item+' '+r.by+' '+r.kind).toLowerCase().indexOf(q)>=0);
+  }).sort(function(a,b){return b.ts-a.ts;});
+  $('#h-q-clear').classList.toggle('on',!!ui.histQ);
+  $('#h-result-info').textContent=arr.length+'건 표시';
+  $('#h-tbody').innerHTML=arr.map(function(r){
+    return '<tr>'
+      +'<td class="num mono">'+fmtDT(r.ts)+'</td>'
+      +'<td class="c">'+kindChip(r.kind)+'</td>'
+      +'<td>'+esc(r.item)+'</td>'
+      +'<td>'+esc(r.before)+'</td>'
+      +'<td><b>'+esc(r.after)+'</b></td>'
+      +'<td>'+esc(r.by)+'</td></tr>';
+  }).join('');
+  $('#h-empty').style.display=arr.length?'none':'block';
+  $('#cnt-hist').textContent=state.changelog.length;
+}
+
+/* ============================================================
+   탭 · 이벤트 위임
+   ============================================================ */
+function setTab(name){
+  $$('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===name;
+    t.classList.toggle('on',on);
+    t.setAttribute('aria-selected',on?'true':'false');
+    t.tabIndex=on?0:-1;
+  });
+  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
+  if(name==='hist')renderHist();
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-action]');if(!el)return;
+  switch(el.getAttribute('data-action')){
+    case 'toggle-edit':setEditMode(!ui.edit);break;
+    case 'reset-overrides':openResetModal();break;
+    case 'modal-close':closeModal();break;
+    case 'modal-ok':doReset();break;
+    case 'lookup':runLookup();break;
+    case 'lookup-clear':clearLookup();break;
+    case 'h-search':histRunQuery();break;
+    case 'h-reset':histDefaults();renderHist();break;
+    case 'h-search-clear':$('#h-q').value='';histRunQuery();break;
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&$('#modal-back').classList.contains('on'))closeModal();
+});
+$('#h-q').addEventListener('keydown',function(e){if(e.key==='Enter')histRunQuery();});
+
+/* ---------- init ---------- */
+buildLookup();
+buildGroups();
+renderGroups();
+histDefaults();
+renderHist();
+</script>
+</body>
+</html>

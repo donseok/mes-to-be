@@ -243,7 +243,7 @@ a{ color:inherit; }
   flex:1; min-height:0;
 }
 
-#module-frame, #module-frame-qd, #module-frame-owe{
+#module-frame, #module-frame-qd, #module-frame-owe, #module-frame-pf{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }

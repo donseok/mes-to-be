@@ -32,7 +32,7 @@
       viewId: 'production-feasibility-view',
       title: '생산가부관리',
       crumbs: ['품질설계', '생산가부관리'],
-      openLink: false
+      openLink: true
     },
     'quality-design-result': {
       hash: '#/quality-design/result-management/quality-design-result',
