@@ -754,9 +754,70 @@ var OC_PURE = (function(){
     return null;
   }
 
+  /* 값 하나 — 사전 라벨이 있으면 괄호로 병기. 없으면 코드 그대로(라벨 날조 금지). */
+  function valText(dict, field, v){
+    var l = valueLabel(dict, field, v);
+    return (l && l.text) ? String(v) + '(' + l.text + ')' : String(v);
+  }
+
+  /* 값 목록 — 4개 이상이면 앞 3개 + "외 N개" (스펙 5.2-2).
+     현행 condValsHtml은 NOT_IN 7개 이상만 접어 IN 16건이 통째로 전개된다. */
+  function valsText(dict, cond){
+    var vs = (cond.values || []).map(function(v){ return valText(dict, cond.field, v); });
+    if (vs.length >= 4) return vs.slice(0, 3).join('·') + ' 외 ' + (vs.length - 3) + '개';
+    return vs.join('·');
+  }
+
+  /* 조건 1개 -> 자립형 구절. 연산자 배지·조사·추정 배지·원값 병기는 넣지 않는다
+     (스펙 5.2-4 — 그것들은 상세 패널 몫). */
+  function condSeg(dict, cond){
+    var f = fieldLabel(dict, cond.field);
+    switch (cond.op) {
+      case 'IS_NULL':  return f + ' 비어 있음';
+      case 'NOT_NULL': return f + ' 입력됨';
+      case 'IN':       return f + ' ' + valsText(dict, cond) + ' 중 하나';
+      case 'NOT_IN':   return f + ' ' + valsText(dict, cond) + ' 외';
+      case 'EQ':       return f + ' ' + valsText(dict, cond);
+      case 'NE':       return f + ' ' + valsText(dict, cond) + ' 아님';
+      case 'GT': case 'GE': case 'LT': case 'LE': {
+        var w = {GT:'초과', GE:'이상', LT:'미만', LE:'이하'}[cond.op];
+        /* display가 있으면 경계 보정(±0.001)을 사람이 읽는 표기로 환산한 값이다 */
+        return f + ' ' + (cond.display ? String(cond.display) : valsText(dict, cond) + ' ' + w);
+      }
+      case 'BETWEEN':
+        return f + ' ' + cond.low + (cond.lowInclusive ? ' 이상' : ' 초과')
+             + '~' + cond.high + (cond.highInclusive ? ' 이하' : ' 미만');
+      default:         return f + ' ' + cond.op + ' ' + valsText(dict, cond);
+    }
+  }
+
+  /* 표 셀 한 줄 -> {tag, text, extra}
+     · 조건 3개 이상이면 문맥 첫 1개 + 대상 조건(when) + extra (스펙 5.2-1)
+     · 문맥이 없으면 tag: IS_NULL 단독이면 '필수값', 아니면 '모든 주문' (스펙 5.2-5)
+     · 구분자는 값 목록의 가운뎃점과 겹치지 않게 세로선을 쓴다 */
+  function condCellText(dict, rule){
+    var ctx = rule.context || [], when = rule.when || [];
+    var n = ctx.length + when.length, segs, extra = 0;
+    if (n >= 3) {
+      segs = [condSeg(dict, ctx[0])].concat(when.map(function(c){ return condSeg(dict, c); }));
+      extra = n - 1 - when.length;
+    } else {
+      segs = ctx.concat(when).map(function(c){ return condSeg(dict, c); });
+    }
+    var tag = '';
+    if (!ctx.length) {
+      tag = (when.length === 1 && when[0].op === 'IS_NULL') ? '필수값' : '모든 주문';
+    }
+    return {tag: tag, text: segs.join(' │ '), extra: extra};
+  }
+
   return {
     fieldLabel: fieldLabel,
-    valueLabel: valueLabel
+    valueLabel: valueLabel,
+    valText: valText,
+    valsText: valsText,
+    condSeg: condSeg,
+    condCellText: condCellText
   };
 })();
 /*__OC_PURE_END__*/
