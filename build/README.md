@@ -21,7 +21,7 @@
 DOM 없이 Node에서 직접 검증한다. 외부 의존성 없음.
 
 ```bash
-node --test build/tests/
+node --test build/tests/*.test.mjs
 ```
 
 `build/oc_pure.mjs` 가 HTML에서 시드 구역과 순수 구역만 잘라 `new Function`으로 로드한다.
