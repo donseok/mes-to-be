@@ -748,7 +748,7 @@ var OC_PURE = (function(){
     for (var i=0; i<vs.length; i++){
       var e = vs[i];
       if (e.field === field && String(e.code) === String(code)){
-        return {text: e.label != null ? e.label : '', certainty: e.certainty || '추정'};
+        return {text: e.label != null ? e.label : (e.text != null ? e.text : ''), certainty: e.certainty || '추정'};
       }
     }
     return null;
@@ -831,24 +831,11 @@ function addLog(kind,ruleId,before,after,by){
 /* ============================================================
    헬퍼 3종 — 필드 라벨 / 값 라벨 / 연산자 자연어화
    ============================================================ */
-function fieldLabel(key){
-  var f=null,i;
-  for(i=0;i<state.fields.length;i++){if(state.fields[i].key===key){f=state.fields[i];break;}}
-  return f&&f.label?f.label:String(key);
-}
+function fieldLabel(key){return OC_PURE.fieldLabel(state,key);}
 
 /* valueLabel(field,code) -> {text,certainty:'확정'|'추정'} | null
    사전에 없는 값은 null — 라벨을 지어내지 않는다. */
-function valueLabel(field,code){
-  var i,e;
-  for(i=0;i<state.valueLabels.length;i++){
-    e=state.valueLabels[i];
-    if(e.field===field&&String(e.code)===String(code)){
-      return {text:e.label!=null?e.label:(e.text!=null?e.text:''),certainty:e.certainty||'추정'};
-    }
-  }
-  return null;
-}
+function valueLabel(field,code){return OC_PURE.valueLabel(state,field,code);}
 
 /* opText(cond) -> 자연어 (플랜 Task 3 고정 사전)
    IS_NULL→"입력 없음" · NOT_NULL→"입력 있음" · IN→"a·b·c 중 하나"

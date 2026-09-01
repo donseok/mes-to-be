@@ -10,14 +10,15 @@ const HTML = readFileSync(join(ROOT, 'modules/order-consistency.html'), 'utf8');
 function region(startMark, endMark) {
   const a = HTML.indexOf(startMark);
   if (a < 0) throw new Error('마커 없음: ' + startMark);
+  if (HTML.indexOf(startMark, a + 1) >= 0) throw new Error('마커 중복: ' + startMark);
   const b = HTML.indexOf(endMark, a);
   if (b < 0) throw new Error('마커 없음: ' + endMark);
   return HTML.slice(a + startMark.length, b);
 }
 
 const seedSrc = region('/*__OC_SEED_START__*/', '/*__OC_SEED_END__*/');
-const pureSrc = region('/*__OC_PURE_START__*/', '/*__OC_PURE_END__*/');
-const loaded = new Function(seedSrc + '\n' + pureSrc + '\nreturn {OC_SEED:OC_SEED, OC_PURE:OC_PURE};')();
+export const pureSrc = region('/*__OC_PURE_START__*/', '/*__OC_PURE_END__*/');
+const loaded = new Function("'use strict';\n" + seedSrc + '\n' + pureSrc + '\nreturn {OC_SEED:OC_SEED, OC_PURE:OC_PURE};')();
 
 export const seed = loaded.OC_SEED;
 export const pure = loaded.OC_PURE;

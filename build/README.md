@@ -28,6 +28,10 @@ node --test build/tests/*.test.mjs
 따라서 **순수 구역 안에서는 `document`·`state`·`localStorage`를 참조하면 안 된다.**
 사전이 필요하면 `dict = {fields, valueLabels}` 를 인자로 받는다.
 
+시드를 재생성(`clean_rules.py --inject`)하면 테스트에 박힌 상수 4개(룰 138건·필드 66건·
+값 라벨 41건·`content_hash`)가 바뀔 수 있다 — 이때 나는 테스트 실패는 버그가 아니라
+새 숫자로 갱신해 달라는 확인 요청이다.
+
 ## 빌드
 
 ```bash
