@@ -5,3 +5,6 @@ docs/
 
 # 원본 기준정보 xlsx — clean_rules.py의 기본 입력 위치 (사내 원본이라 공개 저장소에 올리지 않음)
 sources/
+
+# 브레인스토밍 목업 서버 산출물 (로컬 전용)
+.superpowers/
