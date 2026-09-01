@@ -252,7 +252,8 @@ a{ color:inherit; }
   flex:1; min-height:0;
 }
 
-#module-frame, #module-frame-qd, #module-frame-owe, #module-frame-oc, #module-frame-pf{
+#module-frame, #module-frame-qd, #module-frame-owe, #module-frame-oc, #module-frame-pf,
+#module-frame-sim{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }
@@ -7958,12 +7959,1819 @@ renderHist();
           </div>
         </section>
 
-        <section class="route-view placeholder-view" id="simulation-view" aria-labelledby="simulation-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">SIMULATION</p>
-            <h2 id="simulation-title">시뮬레이션</h2>
-            <p>시뮬레이션 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="simulation-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-sim" title="시뮬레이션 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>시뮬레이션 — MES To-Be</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<style>
+:root{
+  --bg:#F4F6F9;--surface:#FFF;--surface-2:#EDF1F6;--surface-3:#E3E9F0;
+  --border:#D9E0E8;--border-strong:#B9C4D0;
+  --ink:#18222F;--ink-2:#4C5A6B;--ink-3:#7C8798;
+  --accent:#1D5FBF;--accent-strong:#174C99;--accent-soft:#E4EDFA;--accent-soft-ink:#174C99;
+  --result:#B45309;--result-soft:#F9EFE0;--result-soft-ink:#8F4408;
+  --code-bg:#EEF2F7;--focus:#1D5FBF;
+  --st-draft:#5B6774;--st-draft-bg:#E8ECF1;--st-conf:#0E7490;--st-conf-bg:#DFF2F7;
+  --st-sent:#15803D;--st-sent-bg:#DFF2E5;--st-fail:#B91C1C;--st-fail-bg:#FBE4E4;
+  --danger:#B91C1C;--danger-bg:#FBE4E4;
+  --edit-bg:#FFF9E8;--edit-bd:#EAD9A8;
+  --topbar-bg:#14202E;--topbar-ink:#D8E1EC;--topbar-dim:#8DA0B5;
+  --shadow:0 8px 28px rgba(23,42,68,.14);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.5;
+  font-family:-apple-system,BlinkMacSystemFont,&quot;Apple SD Gothic Neo&quot;,&quot;Malgun Gothic&quot;,&quot;Segoe UI&quot;,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+[hidden]{display:none!important}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.f-spacer{flex:1}
+.cell-sub{color:var(--ink-3);font-size:12px}
+
+/* 상단바 — 단독 실행 시에만 */
+.topbar{position:sticky;top:0;z-index:30;height:52px;display:flex;align-items:center;gap:12px;
+  padding:0 20px;background:var(--topbar-bg);color:var(--topbar-ink)}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700}
+.brand-mark{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#2f7ae0,#1D5FBF);color:#fff;font-size:13px}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+@media(max-width:920px){.crumb{display:none}}
+.mock-flag{margin-left:auto;background:var(--result);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:99px;letter-spacing:.04em}
+
+/* 출처 배지 바 */
+.srcbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 16px;
+  background:var(--surface);border-bottom:1px solid var(--border);font-size:12px}
+.embedded .srcbar{position:sticky;top:0;z-index:20}
+
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid}
+.pill.sent{background:var(--st-sent-bg);border-color:#8ecfa8;color:var(--st-sent)}
+.pill.fail{background:var(--st-fail-bg);border-color:#e8a5a5;color:var(--st-fail)}
+.pill.warn{background:var(--result-soft);border-color:#e5c795;color:var(--result-soft-ink)}
+.pill.draft{background:var(--st-draft-bg);border-color:#c9d2dc;color:var(--st-draft)}
+.pill.ac{background:var(--accent-soft);border-color:#a9c5e8;color:var(--accent-soft-ink)}
+.pill.gy{background:var(--surface-2);border-color:var(--border-strong);color:var(--ink-2)}
+
+.btn{border:1px solid var(--border-strong);background:var(--surface);border-radius:7px;
+  padding:5px 11px;font-size:12.5px;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-sm{padding:3px 8px;font-size:11.5px;border-radius:6px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.inp{border:1px solid var(--border-strong);background:var(--surface);border-radius:7px;
+  padding:4px 8px;font-size:12.5px;width:100%}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);outline:none}
+.code-badge{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var(--border);
+  background:var(--code-bg);border-radius:5px;padding:0 5px;color:var(--ink-2)}
+
+/* 3분할 */
+.simwrap{display:flex;align-items:stretch;height:calc(100vh - 52px - 33px)}
+.embedded .simwrap{height:calc(100vh - 33px)}
+.lpane{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:auto}
+.splitter{width:6px;flex:none;background:var(--surface-2);border-left:1px solid var(--border);
+  border-right:1px solid var(--border);cursor:col-resize}
+.splitter:hover,.splitter:focus{background:var(--accent-soft)}
+.cpane{flex:1;min-width:0;overflow:auto;padding:10px}
+.rpane{width:290px;flex:none;background:var(--surface);border-left:1px solid var(--border);overflow:auto}
+@media(max-width:1100px){
+  .simwrap{flex-direction:column;height:auto}
+  .lpane,.rpane{width:100%!important;border:none;border-bottom:1px solid var(--border)}
+  .splitter{display:none}
+}
+
+.sec-h{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface-2);
+  border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--ink-2);
+  position:sticky;top:0;z-index:5}
+.sec-h .n{margin-left:auto;font-weight:500;color:var(--ink-3);font-size:11.5px}
+.pad{padding:8px 10px}
+
+/* 케이스 목록 */
+.case-row{display:flex;align-items:center;gap:6px;width:100%;text-align:left;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);border-radius:7px;
+  padding:5px 8px;margin-bottom:4px;font-size:12.5px}
+.case-row:hover{background:var(--surface-2)}
+.case-row.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
+
+/* 주문 폼 */
+.fr{display:grid;grid-template-columns:1fr 1.15fr;gap:4px 6px;align-items:center;margin-bottom:4px}
+.fr label{font-size:11px;color:var(--ink-2);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fr .inp{padding:2px 6px;font-size:12px}
+.fr .inp.dirty{background:var(--edit-bg);border-color:var(--edit-bd)}
+.req{color:var(--danger);font-weight:700}
+.f-hint{font-size:11.5px;color:var(--ink-3);margin:6px 0 0}
+details>summary{cursor:pointer;font-size:12px;color:var(--ink-2);margin:6px 0 4px}
+
+/* 액션바 */
+.actbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--surface);
+  border:1px solid var(--border);border-radius:9px;padding:7px 10px;margin-bottom:8px}
+
+/* 파이프라인 */
+.pipe{display:flex;gap:4px;margin-bottom:10px}
+.st{flex:1;min-width:0;border:1px solid var(--border-strong);background:var(--surface);
+  border-radius:7px;padding:6px 4px;text-align:center;cursor:pointer;font-size:11px;line-height:1.4}
+.st .t{display:block;font-weight:700;font-size:11.5px}
+.st .v{display:block;color:var(--ink-2);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st.ok{background:var(--st-sent-bg);border-color:#8ecfa8}
+.st.no{background:var(--st-fail-bg);border-color:#e8a5a5}
+.st.wa{background:var(--result-soft);border-color:#e5c795}
+.st.gy{background:var(--surface-2)}
+.st.gh{opacity:.6;border-style:dashed}
+.st.on{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+.st .adv{display:block;font-size:9.5px;color:var(--result-soft-ink);font-weight:700}
+@media(max-width:760px){.pipe{flex-wrap:wrap}.st{flex:1 1 30%}}
+
+/* 패널 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;margin-bottom:10px}
+.panel-h{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surface-2);
+  border-bottom:1px solid var(--border)}
+.panel-h h3{margin:0;font-size:13px}
+.panel-h .sub{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+.empty{padding:32px 16px;text-align:center;color:var(--ink-3);font-size:12.5px}
+.empty .big{font-size:14px;color:var(--ink-2);font-weight:600;margin-bottom:4px}
+
+.pv-ok{background:var(--st-sent-bg);border:1px solid #8ecfa8;color:var(--st-sent);
+  border-radius:7px;padding:7px 10px;font-size:12.5px;margin-bottom:6px}
+.pv-issue{background:var(--st-fail-bg);border:1px solid #e8a5a5;color:var(--st-fail);
+  border-radius:7px;padding:7px 10px;font-size:12.5px;margin-bottom:6px}
+.pv-issue.wa{background:var(--result-soft);border-color:#e5c795;color:var(--result-soft-ink)}
+
+/* 표 */
+.grid{width:100%;border-collapse:collapse;font-size:12px}
+.grid th,.grid td{border-bottom:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}
+.grid thead th{background:var(--surface-2);font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.grid td.c,.grid th.c{text-align:center}
+.grid tr.ovr td{background:var(--accent-soft)}
+.tbl-scroll{overflow-x:auto}
+
+/* 룰/사양 카드 */
+.match-card{border:1px solid var(--border);border-radius:9px;margin-bottom:6px;overflow:hidden}
+.match-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 9px;
+  background:var(--surface-2);border-bottom:1px solid var(--border);font-size:12px}
+.cond-check{padding:5px 9px;font-size:12px}
+.cond-check .row{display:flex;gap:6px;align-items:baseline;padding:1px 0;flex-wrap:wrap}
+.cc-ok{color:var(--st-sent);font-weight:700}
+.cc-no{color:var(--st-fail);font-weight:700}
+.m-badge{margin-left:auto;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px}
+.m-badge.hit{background:var(--st-sent-bg);color:var(--st-sent)}
+.m-badge.miss{background:var(--surface-3);color:var(--ink-2)}
+.m-badge.skip{background:var(--result-soft);color:var(--result-soft-ink)}
+
+/* 설계결과 아코디언 */
+.acc{border-bottom:1px solid var(--border)}
+.acc-h{display:flex;align-items:center;gap:6px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:none;padding:6px 12px;font-size:12.5px;font-weight:700}
+.acc-h:hover{background:var(--surface-2)}
+.acc-h .s{margin-left:auto;font-weight:400;color:var(--ink-3);font-size:11.5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:52%}
+.acc-b{padding:6px 12px 10px;background:#FAFCFE;border-top:1px solid var(--border)}
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:3px 12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:baseline;font-size:12px}
+.kv.wide{grid-column:1/-1}
+.kv label{color:var(--ink-2);font-size:11.5px}
+.val{cursor:pointer;border-bottom:1px dotted var(--accent);color:var(--accent-strong);
+  background:none;border-left:none;border-right:none;border-top:none;padding:0;text-align:left;font-size:12px}
+.val:hover{background:var(--accent-soft)}
+.val.on{background:var(--accent-soft);font-weight:700}
+.val.bad{background:var(--st-fail-bg);border-bottom-color:var(--danger);color:var(--danger)}
+.band-title{font-size:11.5px;font-weight:700;color:var(--ink-2);margin:8px 0 3px;display:flex;gap:6px;align-items:center}
+
+/* 근거 패널 */
+.prv{border-left:3px solid var(--accent);background:var(--accent-soft);padding:6px 9px;
+  border-radius:0 6px 6px 0;font-size:12px;margin-bottom:6px;line-height:1.55}
+.prv.std{border-color:var(--border-strong);background:var(--surface-2)}
+.prv.asis{border-color:var(--result);background:var(--result-soft)}
+.jump{color:var(--accent-strong);font-weight:600;cursor:pointer;text-decoration:none}
+.jump:hover{text-decoration:underline}
+.exp-row{display:flex;gap:6px;align-items:baseline;padding:2px 0;font-size:12px;flex-wrap:wrap}
+
+/* 토스트 */
+.toasts{position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:6px;z-index:80}
+.toast{background:var(--topbar-bg);color:#fff;border-radius:8px;padding:8px 12px;font-size:12.5px;
+  box-shadow:var(--shadow);max-width:340px}
+.toast.err{background:var(--danger)}
+
+/* 모달 */
+.modal-back{position:fixed;inset:0;background:rgba(16,24,34,.44);display:none;
+  align-items:center;justify-content:center;z-index:70;padding:16px}
+.modal-back.on{display:flex}
+.modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);
+  width:min(720px,100%);max-height:84vh;display:flex;flex-direction:column}
+.modal-h{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700}
+.modal-b{padding:10px 14px;overflow:auto}
+.icon-btn{margin-left:auto;border:none;background:none;cursor:pointer;font-size:15px;color:var(--ink-2)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span>MES · Q-SIM</span></div>
+  <div class=&quot;crumb&quot;>품질설계 › <b>시뮬레이션</b></div>
+  <span class=&quot;mock-flag&quot;>MOCK-UP</span>
+</header>
+
+<div class=&quot;srcbar&quot;>
+  <span class=&quot;pill gy&quot; id=&quot;src-badge&quot;>기준 출처 확인 중…</span>
+  <span class=&quot;pill gy&quot; title=&quot;생산범위 시트는 Full Hard(도금 전 원판) 치수 기준이나, 주문두께→Full Hard 환산식이 기준정보에 없습니다&quot;>Full Hard 환산: 주문두께 그대로(가정)</span>
+  <span class=&quot;f-spacer&quot;></span>
+  <span class=&quot;cell-sub&quot; id=&quot;src-detail&quot;></span>
+</div>
+
+<div class=&quot;simwrap&quot;>
+  <aside class=&quot;lpane&quot; id=&quot;lpane&quot; aria-label=&quot;검증 케이스와 주문 입력&quot;>
+    <div class=&quot;sec-h&quot;>검증 케이스 <span class=&quot;n&quot; id=&quot;case-cnt&quot;>0건</span></div>
+    <div class=&quot;pad&quot;>
+      <div style=&quot;display:flex;gap:4px;margin-bottom:6px&quot;>
+        <button class=&quot;btn btn-sm&quot; data-action=&quot;case-new&quot;>＋ 신규</button>
+        <button class=&quot;btn btn-sm btn-pri&quot; data-action=&quot;run-all&quot;>전체 재실행</button>
+        <button class=&quot;btn btn-sm&quot; data-action=&quot;reset-all&quot; title=&quot;시드로 초기화&quot;>초기화</button>
+      </div>
+      <input class=&quot;inp&quot; id=&quot;case-q&quot; type=&quot;search&quot; placeholder=&quot;⌕ 케이스·주문번호&quot; style=&quot;margin-bottom:6px&quot;>
+      <div id=&quot;case-list&quot; role=&quot;listbox&quot; aria-label=&quot;검증 케이스 목록&quot;></div>
+    </div>
+
+    <div class=&quot;sec-h&quot;>주문 입력 <span class=&quot;n&quot; id=&quot;order-src&quot;></span></div>
+    <div class=&quot;pad&quot;>
+      <div class=&quot;fr&quot;>
+        <label for=&quot;order-load&quot;>OMS 주문 불러오기</label>
+        <select class=&quot;inp&quot; id=&quot;order-load&quot;><option value=&quot;&quot;>선택…</option></select>
+      </div>
+      <div id=&quot;order-core&quot;></div>
+      <details id=&quot;order-extra&quot;>
+        <summary>추가 항목 <span id=&quot;order-extra-n&quot;>0</span>개</summary>
+        <div id=&quot;order-extra-body&quot;></div>
+      </details>
+      <p class=&quot;f-hint&quot;>빈칸 = 미입력(NULL) · <b>0 은 0 으로 평가</b>됩니다</p>
+    </div>
+
+    <div class=&quot;sec-h&quot;>변경 이력 <span class=&quot;n&quot; id=&quot;log-cnt&quot;>0건</span></div>
+    <div class=&quot;pad&quot;><div id=&quot;log-list&quot;></div></div>
+  </aside>
+
+  <div class=&quot;splitter&quot; id=&quot;splitter&quot; role=&quot;separator&quot; aria-orientation=&quot;vertical&quot; tabindex=&quot;0&quot;
+       aria-label=&quot;목록 폭 조절 — 드래그 또는 ←/→ 키, 더블클릭 시 기본 폭&quot;></div>
+
+  <main class=&quot;cpane&quot; aria-label=&quot;시뮬레이션 결과&quot;>
+    <div class=&quot;actbar&quot;>
+      <b class=&quot;mono&quot; id=&quot;run-case&quot;>—</b>
+      <span class=&quot;cell-sub&quot; id=&quot;run-name&quot;></span>
+      <span id=&quot;run-badges&quot;></span>
+      <span class=&quot;f-spacer&quot;></span>
+      <button class=&quot;btn btn-sm&quot; data-action=&quot;promote&quot; disabled>승격</button>
+      <button class=&quot;btn btn-sm btn-pri&quot; data-action=&quot;run&quot;>▶ 실행</button>
+    </div>
+    <nav class=&quot;pipe&quot; id=&quot;pipe&quot; role=&quot;tablist&quot; aria-label=&quot;기준 파이프라인 6단계&quot;></nav>
+    <section class=&quot;panel&quot; id=&quot;stage-panel&quot; role=&quot;tabpanel&quot;></section>
+    <section class=&quot;panel&quot; id=&quot;expect-panel&quot;></section>
+  </main>
+
+  <aside class=&quot;rpane&quot; id=&quot;rpane&quot; aria-label=&quot;근거 추적&quot;></aside>
+</div>
+
+<div class=&quot;modal-back&quot; id=&quot;modal-back&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;modal&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-labelledby=&quot;modal-title&quot; tabindex=&quot;-1&quot;>
+    <div class=&quot;modal-h&quot;><span id=&quot;modal-title&quot;></span><button class=&quot;icon-btn&quot; data-action=&quot;modal-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+    <div class=&quot;modal-b&quot; id=&quot;modal-body&quot;></div>
+  </div>
+</div>
+
+<div class=&quot;toasts&quot; id=&quot;toasts&quot; role=&quot;status&quot; aria-live=&quot;polite&quot; aria-atomic=&quot;true&quot;></div>
+
+<script>
+'use strict';
+/* ---- 시드: 기존 모듈에서 발췌 (목업용 축약) ---- */
+var SEED_SHEETS=[{&quot;key&quot;:&quot;2cgl-gi&quot;,&quot;tab&quot;:&quot;B.D 생산범위(2CGL GI)&quot;,&quot;title&quot;:&quot;2CGL GI 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. Back Marking 가능여부 : 불가 (설비 無)&quot;,&quot;-. 생산가능 도금량 : 80~310g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A, B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA, BA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;-----PPPPPPPPPPPPPPCCC--&quot;,&quot;---PPPPPPPPPPPPPPPPCCC--&quot;,&quot;--PPPPPPPPPPPPPPPPPCCC--&quot;,&quot;-PPPPPPPPPPPPPPPPPPCCC--&quot;,&quot;PPPPPPPPPPPPPPPPPPPCCC--&quot;,&quot;PPPPPPPPPPPPPPPPPPPCCC--&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ, DDQ, IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B, 4A, 4B, 5A, 5B&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPCCCC------&quot;,&quot;-----CPPPPPPPPCCCC------&quot;,&quot;----CCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;,&quot;---CCCPPPPPPPPCCCC------&quot;]},{&quot;name&quot;:&quot;Gr-C(G300), D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB, DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;,&quot;----CPPPPPPPPPPPPPPCCC--&quot;]},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1260&quot;,&quot;1230&quot;,&quot;1150&quot;,&quot;1050&quot;,&quot;950&quot;,&quot;650↑&quot;],&quot;thicks&quot;:[&quot;0.24&quot;,&quot;0.25&quot;,&quot;0.28&quot;,&quot;0.30&quot;,&quot;0.35&quot;,&quot;0.4&quot;,&quot;0.5&quot;,&quot;0.6&quot;,&quot;0.7&quot;,&quot;0.8&quot;,&quot;0.9&quot;,&quot;1&quot;,&quot;1.1&quot;,&quot;1.2&quot;,&quot;1.3&quot;,&quot;1.4&quot;,&quot;1.5&quot;,&quot;1.6&quot;,&quot;1.7&quot;,&quot;1.8&quot;,&quot;1.9&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;],&quot;seed&quot;:[&quot;----PPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;,&quot;---PPPP-----------------&quot;]}]},{&quot;key&quot;:&quot;5cgl&quot;,&quot;tab&quot;:&quot;B.D 생산범위(5CGL GI.GL)&quot;,&quot;title&quot;:&quot;5CGL 생산가능 SIZE (Full Hard 치수 기준)&quot;,&quot;notes&quot;:[&quot;-. 내경 508Py / 610Py 권취 가능&quot;,&quot;-. 폭 1,570mm 초과 제품 조건부 생산 가능&quot;,&quot;-. Back Marking 가능여부 : 가능 (W/S Edge부)&quot;,&quot;-. 생산가능 도금량 : GI 80~600g/㎡ , GL 60~200g/㎡&quot;,&quot;-. 생산가능 후처리&quot;],&quot;groups&quot;:[{&quot;name&quot;:&quot;CQ, Gr-A&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 1A, AA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-----CPPPPPPPPPPPPPP-----&quot;,&quot;----PPPPPPPPPPPPPPPPP----&quot;,&quot;--CPPPPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;]},{&quot;name&quot;:&quot;Full-Ann (DQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 3A, 3B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1400&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;------PPPPPPPPPP---------&quot;,&quot;-----PPPPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;,&quot;--PPPPPPPPPPPPPPPPPPC----&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:6,&quot;text&quot;:&quot;[CQ와 물성 유사하나 안정 구간]&quot;,&quot;red&quot;:false}},{&quot;name&quot;:&quot;Full-Ann (DDQ)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 4A, 4B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1400&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.40&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;------CPPPPPPPPP---------&quot;,&quot;-----PPPPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;]},{&quot;name&quot;:&quot;Full-Ann (IF Steel)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = 5A, 5B&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1200&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPPP----------&quot;,&quot;-------PPPPPPPPP---------&quot;,&quot;-------PPPPPPPPPP--------&quot;,&quot;----PPPPPPPPPPPPPP-------&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;,&quot;---PPPPPPPPPPPPPPPPPC----&quot;]},{&quot;name&quot;:&quot;Gr-B(G250)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = BA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPPPP-----&quot;,&quot;------PPPPPPPPPPPPPPP----&quot;,&quot;-----PPPPPPPPPPPPPPPP----&quot;,&quot;--CPPPPPPPPPPPPPPPPPPP---&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;,&quot;-PPPPPPPPPPPPPPPPPPPPPPPP&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:5,&quot;text&quot;:&quot;SAE1008\nFurnace 온도 하향 작업 구간&quot;,&quot;red&quot;:true}},{&quot;name&quot;:&quot;Gr-C(G300)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = CA, CB&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1300&quot;,&quot;1260&quot;,&quot;1150&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;------PPPPPPPPPPPP-------&quot;,&quot;------PPPPPPPPPPPP-------&quot;,&quot;-----PPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPP----&quot;,&quot;--PPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;,&quot;-CPPPPPPPPPPPPPPPPPPPPPC-&quot;]},{&quot;name&quot;:&quot;Gr-D(G350)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) =DA, DB, DC, DD&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1300&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------PPPPPPP-----------&quot;,&quot;-------PPPPPPPP----------&quot;,&quot;-----CPPPPPPPPPP---------&quot;,&quot;----CCPPPPPPPPPPPPCCC----&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;,&quot;---PPPPPPPPPPPPPPPPPPCCC-&quot;]},{&quot;name&quot;:&quot;G450&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EC&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------------------------&quot;,&quot;---------PPPPPP----------&quot;,&quot;---------PPPPPPPPPPPC----&quot;,&quot;--------CPPPPPPPPPPPCCCCC&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;,&quot;--------CPPPPPPPPPPPPPPPP&quot;]},{&quot;name&quot;:&quot;Gr-E(G550)&quot;,&quot;codes&quot;:&quot;재질코드(Material Code) = EA&quot;,&quot;widths&quot;:[&quot;1570&quot;,&quot;1500&quot;,&quot;1450&quot;,&quot;1350&quot;,&quot;1260&quot;,&quot;1100&quot;,&quot;1000&quot;,&quot;900↑&quot;],&quot;thicks&quot;:[&quot;0.25&quot;,&quot;0.3&quot;,&quot;0.33&quot;,&quot;0.35&quot;,&quot;0.38&quot;,&quot;0.4&quot;,&quot;0.45&quot;,&quot;0.5&quot;,&quot;0.8&quot;,&quot;1&quot;,&quot;1.2&quot;,&quot;1.4&quot;,&quot;1.6&quot;,&quot;1.8&quot;,&quot;2&quot;,&quot;2.1&quot;,&quot;2.2&quot;,&quot;2.3&quot;,&quot;2.4&quot;,&quot;2.5&quot;,&quot;2.6&quot;,&quot;2.7&quot;,&quot;2.8&quot;,&quot;2.9&quot;,&quot;3&quot;],&quot;seed&quot;:[&quot;-------------------------&quot;,&quot;------PPPPPPPPC----------&quot;,&quot;-----PPPPPPPPPP----------&quot;,&quot;---CPPPPPPPPPPPP---------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;,&quot;--PPPPPPPPPPPPPPPC-------&quot;],&quot;overlay&quot;:{&quot;rows&quot;:2,&quot;cols&quot;:6,&quot;text&quot;:&quot;PL-TCM 형상 제어 애로\n(급준도 관리 제품 협의 후 진행)&quot;,&quot;red&quot;:true}}]}];
+var SEED_RULES=[{&quot;id&quot;:&quot;R-128&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[13000]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:0.8,&quot;high&quot;:0.999,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:true},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;values&quot;:[&quot;110196&quot;,&quot;110197&quot;,&quot;200088&quot;,&quot;300025&quot;,&quot;300027&quot;,&quot;300387&quot;,&quot;511677&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A455&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;컬러 코일형 단중 상한 최소 제약 조건, 0.8~1.0T Max 13톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:128,&quot;err_code&quot;:&quot;A455&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 컬러 코일형 단중 상한 최소 제약 조건, 0.8~1.0T Max 13톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;13000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;BETWEEN1&quot;,&quot;v1&quot;:&quot;0.8&quot;,&quot;v2&quot;:&quot;0.999&quot;},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;v1&quot;:&quot;110196,110197,300025,300027,300387,511677,200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-129&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[10000]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:0.6,&quot;high&quot;:0.799,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:true},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;values&quot;:[&quot;110196&quot;,&quot;110197&quot;,&quot;200088&quot;,&quot;300025&quot;,&quot;300027&quot;,&quot;300387&quot;,&quot;511677&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A456&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;컬러 코일형 단중 상한 최소 제약 조건, 0.6~0.8T Max 10톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:129,&quot;err_code&quot;:&quot;A456&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 컬러 코일형 단중 상한 최소 제약 조건, 0.6~0.8T Max 10톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;10000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;BETWEEN1&quot;,&quot;v1&quot;:&quot;0.6&quot;,&quot;v2&quot;:&quot;0.799&quot;},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;v1&quot;:&quot;110196,110197,300025,300027,300387,511677,200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-130&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[8500]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:0.45,&quot;high&quot;:0.599,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:true},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;values&quot;:[&quot;110196&quot;,&quot;110197&quot;,&quot;200088&quot;,&quot;300025&quot;,&quot;300027&quot;,&quot;300387&quot;,&quot;511677&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A457&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;컬러 코일형 단중 상한 최소 제약 조건, 0.45~0.6T Max 8.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:130,&quot;err_code&quot;:&quot;A457&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 컬러 코일형 단중 상한 최소 제약 조건, 0.45~0.6T Max 8.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;8500&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;BETWEEN1&quot;,&quot;v1&quot;:&quot;0.45&quot;,&quot;v2&quot;:&quot;0.599&quot;},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;v1&quot;:&quot;110196,110197,300025,300027,300387,511677,200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-131&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[6500]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.449]},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;values&quot;:[&quot;110196&quot;,&quot;110197&quot;,&quot;110198&quot;,&quot;200088&quot;,&quot;300025&quot;,&quot;300027&quot;,&quot;300387&quot;,&quot;510029&quot;,&quot;511677&quot;,&quot;603137&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A458&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;컬러 코일형 단중 상한 최소 제약 조건, 0.45T 미만 Max 6.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:131,&quot;err_code&quot;:&quot;A458&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 컬러 코일형 단중 상한 최소 제약 조건, 0.45T 미만 Max 6.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;6500&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.449&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;NOT_IN&quot;,&quot;v1&quot;:&quot;110196,110197,300025,300027,300387,511677,510029,110198,603137,200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-135&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[12500]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:0.501,&quot;high&quot;:1.6,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:true},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;200088&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A459&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;수요가 C향 컬러 코일형 단중 상한 협의 조건, 0.5T 초과 Max 12.5톤&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[&quot;truncated_message&quot;],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:135,&quot;err_code&quot;:&quot;A459&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 수요가 C향 컬러 코일형 단중 상한 협의 조건, 0.5T 초과 Max 12.5톤,&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;12500&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;BETWEEN1&quot;,&quot;v1&quot;:&quot;0.501&quot;,&quot;v2&quot;:&quot;1.6&quot;},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-136&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[8500]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.5]},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;200088&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A460&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;수요가 C향 컬러 코일형 단중 상한 협의 조건, 0.5T 이하 Max 8.5톤&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[&quot;truncated_message&quot;],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:136,&quot;err_code&quot;:&quot;A460&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 수요가 C향 컬러 코일형 단중 상한 협의 조건, 0.5T 이하 Max 8.5톤,&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;8500&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;200088&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-098&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[5000]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;op&quot;:&quot;NOT_NULL&quot;},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.4]},{&quot;field&quot;:&quot;ORD_EXC_WTH&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[1000]}],&quot;error&quot;:{&quot;code&quot;:&quot;A451&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;0.4T 이하, 1000폭 이상, 보호필름 부착 컬러제품, 단중 제한(MAX 5톤), 사유:좌굴&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M6&quot;,&quot;reason&quot;:&quot;A451 가족 재설계: cross#85(>8000 일반 상한)는 룰로 탑재하지 않고 본 룰 lineage + 이슈 I-C3으로만 기록. union 시 신정책이 허용한 주문을 구정책이 기각하는 역행 발생&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:98,&quot;err_code&quot;:&quot;A451&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 0.4T 이하, 1000폭 이상, 보호필름 부착 컬러제품, 단중 제한(MAX 5톤), 사유:좌굴&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;5000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;1,2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문보호필름상세코드&quot;,&quot;op&quot;:&quot;NOT_NULL&quot;,&quot;v1&quot;:null,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.4&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산폭&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;1000&quot;,&quot;v2&quot;:null}]},{&quot;source&quot;:&quot;cross&quot;,&quot;row&quot;:85,&quot;err_code&quot;:&quot;A451&quot;,&quot;raw_message&quot;:&quot;컬러 코일형 최대단중 준수&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;8000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;1,2,3,4,5,6&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;제품형태&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;C&quot;,&quot;v2&quot;:null}],&quot;diff&quot;:&quot;M6 폐기: 구 일반상한 >8000(품명 1~6·제품형태 C) — 룰 미탑재. A451~A460 두께·수요가별 세분 가족(5000~16000)으로 대체(union 금지 · 이슈 I-C3)&quot;}]},{&quot;id&quot;:&quot;R-132&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[2201],&quot;display&quot;:&quot;2200 초과&quot;}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;5&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.7]},{&quot;field&quot;:&quot;ORD_EXC_WTH&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:800,&quot;high&quot;:1101,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:false}],&quot;error&quot;:{&quot;code&quot;:&quot;A454&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;선택오류&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:132,&quot;err_code&quot;:&quot;A454&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;2201&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.7&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산폭&quot;,&quot;op&quot;:&quot;BETWEEN2&quot;,&quot;v1&quot;:&quot;800&quot;,&quot;v2&quot;:&quot;1101&quot;}]}]},{&quot;id&quot;:&quot;R-133&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[2401],&quot;display&quot;:&quot;2400 초과&quot;}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;5&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.7]},{&quot;field&quot;:&quot;ORD_EXC_WTH&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:1101,&quot;high&quot;:1301,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:false}],&quot;error&quot;:{&quot;code&quot;:&quot;A454&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;선택오류&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:133,&quot;err_code&quot;:&quot;A454&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;2401&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.7&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산폭&quot;,&quot;op&quot;:&quot;BETWEEN2&quot;,&quot;v1&quot;:&quot;1101&quot;,&quot;v2&quot;:&quot;1301&quot;}]}]},{&quot;id&quot;:&quot;R-134&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[2601],&quot;display&quot;:&quot;2600 초과&quot;}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;5&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;LE&quot;,&quot;values&quot;:[0.7]},{&quot;field&quot;:&quot;ORD_EXC_WTH&quot;,&quot;op&quot;:&quot;BETWEEN&quot;,&quot;low&quot;:1301,&quot;high&quot;:1601,&quot;lowInclusive&quot;:true,&quot;highInclusive&quot;:false}],&quot;error&quot;:{&quot;code&quot;:&quot;A454&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;선택오류&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:134,&quot;err_code&quot;:&quot;A454&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 복합판넬, 지붕판금용 CCAI 코일형 0.7T 이하 최대단중 지정, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;2601&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;<=&quot;,&quot;v1&quot;:&quot;0.7&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산폭&quot;,&quot;op&quot;:&quot;BETWEEN2&quot;,&quot;v1&quot;:&quot;1301&quot;,&quot;v2&quot;:&quot;1601&quot;}]}]},{&quot;id&quot;:&quot;R-095&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;label&quot;:&quot;주문포장단중하한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;op&quot;:&quot;LT&quot;,&quot;values&quot;:[1]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;C&quot;,&quot;D&quot;,&quot;E&quot;,&quot;G&quot;,&quot;K&quot;,&quot;L&quot;,&quot;V&quot;,&quot;W&quot;]},{&quot;field&quot;:&quot;PRD_SHP&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;C&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A441&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;도금 코일형 최소단중 준수&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;needs_review&quot;,&quot;rule&quot;:&quot;M5&quot;,&quot;reason&quot;:&quot;범위 축소 드리프트: A441 최소단중 임계 2000→1 (룰 사실상 무력화)·품명 +K,V,W — 오입력 여부 확인 필수&quot;,&quot;review_alternatives&quot;:[{&quot;source&quot;:&quot;cross&quot;,&quot;row&quot;:82,&quot;err_code&quot;:&quot;A441&quot;,&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;op&quot;:&quot;LT&quot;,&quot;values&quot;:[2000]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;C&quot;,&quot;D&quot;,&quot;E&quot;,&quot;G&quot;,&quot;L&quot;]},{&quot;field&quot;:&quot;PRD_SHP&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;C&quot;]}]}]},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:95,&quot;err_code&quot;:&quot;A441&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자]도금 코일형 최소단중 준수&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;<&quot;,&quot;v1&quot;:&quot;1&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;G,K,L,E,C,D,V,W&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;제품형태&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;C&quot;,&quot;v2&quot;:null}]},{&quot;source&quot;:&quot;cross&quot;,&quot;row&quot;:82,&quot;err_code&quot;:&quot;A441&quot;,&quot;raw_message&quot;:&quot;도금 코일형 최소단중 준수&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;<&quot;,&quot;v1&quot;:&quot;2000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;G,L,E,C,D&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;제품형태&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;C&quot;,&quot;v2&quot;:null}],&quot;diff&quot;:&quot;M5 축소 · 주문포장단중하한값: cross[LT 2000] → order[LT 1] · 품명코드: cross[IN C,D,E,G,L] → order[IN C,D,E,G,K,L,V,W]&quot;}]},{&quot;id&quot;:&quot;R-115&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;label&quot;:&quot;주문보호필름상세코드&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;op&quot;:&quot;NOT_NULL&quot;}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;5&quot;]},{&quot;field&quot;:&quot;ORD_SLV_KND_TP&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;N&quot;]},{&quot;field&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;15SZG&quot;]},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;110091&quot;]}],&quot;error&quot;:{&quot;code&quot;:&quot;A664&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;알루미늄 보호필름제품 확인&quot;,&quot;category&quot;:&quot;선택오류&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[&quot;co_fire_pair&quot;],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:115,&quot;err_code&quot;:&quot;A664&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자]알루미늄 보호필름제품 확인&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;NOT_NULL&quot;,&quot;v1&quot;:null,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문내경링종류구분&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;N&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문보호필름상세코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;15SZG&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;최종수요가코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;110091&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-099&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[16000]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;values&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;6&quot;,&quot;7&quot;,&quot;8&quot;,&quot;9&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[1]}],&quot;error&quot;:{&quot;code&quot;:&quot;A452&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;컬러 코일형 최대단중 준수, 1.0T 이상 Max 16톤&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:99,&quot;err_code&quot;:&quot;A452&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] 컬러 코일형 최대단중 준수, 1.0T 이상 Max 16톤&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;16000&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;IN&quot;,&quot;v1&quot;:&quot;1,2,3,4,6,7,8,9&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;1.0&quot;,&quot;v2&quot;:null}]}]},{&quot;id&quot;:&quot;R-127&quot;,&quot;enabled&quot;:true,&quot;source&quot;:&quot;order&quot;,&quot;target&quot;:{&quot;item&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;},&quot;when&quot;:[{&quot;field&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;op&quot;:&quot;GT&quot;,&quot;values&quot;:[6500]}],&quot;context&quot;:[{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;op&quot;:&quot;EQ&quot;,&quot;values&quot;:[&quot;5&quot;]},{&quot;field&quot;:&quot;ORD_EXC_THK&quot;,&quot;op&quot;:&quot;GE&quot;,&quot;values&quot;:[0.701],&quot;display&quot;:&quot;0.7 초과&quot;}],&quot;error&quot;:{&quot;code&quot;:&quot;A453&quot;,&quot;legacy_codes&quot;:[],&quot;message&quot;:&quot;CCAI 코일형 단중 상한 최소 제약 조건, 0.7T 초과 Max 6.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;category&quot;:&quot;한도위반&quot;,&quot;severity&quot;:&quot;error&quot;,&quot;severity_candidate&quot;:&quot;warn&quot;,&quot;owner_dept&quot;:&quot;품질설계&quot;,&quot;actor&quot;:&quot;등록자&quot;},&quot;merge&quot;:{&quot;status&quot;:&quot;auto&quot;,&quot;rule&quot;:&quot;M9&quot;,&quot;reason&quot;:&quot;order 고유 룰 — 그대로 탑재&quot;},&quot;flags&quot;:[],&quot;lineage&quot;:[{&quot;source&quot;:&quot;order&quot;,&quot;row&quot;:127,&quot;err_code&quot;:&quot;A453&quot;,&quot;raw_message&quot;:&quot;[품질설계][등록자] CCAI 코일형 단중 상한 최소 제약 조건, 0.7T 초과 Max 6.5톤, 초과 필요 시 담당 설계원과 협의 요망&quot;,&quot;conds&quot;:[{&quot;field&quot;:&quot;주문항목코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문항목값&quot;,&quot;op&quot;:&quot;>&quot;,&quot;v1&quot;:&quot;6500&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;품명코드&quot;,&quot;op&quot;:&quot;=&quot;,&quot;v1&quot;:&quot;5&quot;,&quot;v2&quot;:null},{&quot;field&quot;:&quot;주문환산두께&quot;,&quot;op&quot;:&quot;>=&quot;,&quot;v1&quot;:&quot;0.701&quot;,&quot;v2&quot;:null}]}]}];
+var SEED_FIELDS=[{&quot;key&quot;:&quot;FNL_CUS_CD&quot;,&quot;label&quot;:&quot;최종수요가코드&quot;,&quot;type&quot;:&quot;code&quot;},{&quot;key&quot;:&quot;ORD_EXC_THK&quot;,&quot;label&quot;:&quot;주문환산두께&quot;,&quot;type&quot;:&quot;number&quot;},{&quot;key&quot;:&quot;ORD_EXC_WTH&quot;,&quot;label&quot;:&quot;주문환산폭&quot;,&quot;type&quot;:&quot;number&quot;},{&quot;key&quot;:&quot;ORD_PAK_UNT_WGT_LLV&quot;,&quot;label&quot;:&quot;주문포장단중하한값&quot;,&quot;type&quot;:&quot;number&quot;},{&quot;key&quot;:&quot;ORD_PAK_UNT_WGT_ULV&quot;,&quot;label&quot;:&quot;주문포장단중상한값&quot;,&quot;type&quot;:&quot;number&quot;},{&quot;key&quot;:&quot;ORD_PTT_FLM_CD&quot;,&quot;label&quot;:&quot;주문보호필름상세코드&quot;,&quot;type&quot;:&quot;code&quot;},{&quot;key&quot;:&quot;ORD_SLV_KND_TP&quot;,&quot;label&quot;:&quot;주문내경링종류구분&quot;,&quot;type&quot;:&quot;code&quot;},{&quot;key&quot;:&quot;PRD_NM_CD&quot;,&quot;label&quot;:&quot;품명코드&quot;,&quot;type&quot;:&quot;code&quot;},{&quot;key&quot;:&quot;PRD_SHP&quot;,&quot;label&quot;:&quot;제품형태&quot;,&quot;type&quot;:&quot;string&quot;}];
+var SEED_VLABELS=[{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;code&quot;:&quot;110123&quot;,&quot;label&quot;:&quot;수요가 D&quot;},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;code&quot;:&quot;110141&quot;,&quot;label&quot;:&quot;수요가 A&quot;},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;code&quot;:&quot;200088&quot;,&quot;label&quot;:&quot;수요가 C&quot;},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;code&quot;:&quot;510391&quot;,&quot;label&quot;:&quot;수요가 D&quot;},{&quot;field&quot;:&quot;FNL_CUS_CD&quot;,&quot;code&quot;:&quot;603034&quot;,&quot;label&quot;:&quot;수요가 B&quot;},{&quot;field&quot;:&quot;ORD_SLV_KND_TP&quot;,&quot;code&quot;:&quot;N&quot;,&quot;label&quot;:&quot;지관 미삽입&quot;},{&quot;field&quot;:&quot;ORD_SLV_KND_TP&quot;,&quot;code&quot;:&quot;S&quot;,&quot;label&quot;:&quot;STEEL RING&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;3&quot;,&quot;label&quot;:&quot;CCGI&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;4&quot;,&quot;label&quot;:&quot;CCLI&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;5&quot;,&quot;label&quot;:&quot;CCAI&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;6&quot;,&quot;label&quot;:&quot;CCGI&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;D&quot;,&quot;label&quot;:&quot;F/H&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;G&quot;,&quot;label&quot;:&quot;GI&quot;},{&quot;field&quot;:&quot;PRD_NM_CD&quot;,&quot;code&quot;:&quot;L&quot;,&quot;label&quot;:&quot;G/L&quot;},{&quot;field&quot;:&quot;PRD_SHP&quot;,&quot;code&quot;:&quot;C&quot;,&quot;label&quot;:&quot;코일형&quot;},{&quot;field&quot;:&quot;PRD_SHP&quot;,&quot;code&quot;:&quot;S&quot;,&quot;label&quot;:&quot;시트(SHEET)형&quot;}];
+var SEED_RULEMETA={&quot;R-128&quot;:&quot;auto&quot;,&quot;R-129&quot;:&quot;auto&quot;,&quot;R-130&quot;:&quot;auto&quot;,&quot;R-131&quot;:&quot;auto&quot;,&quot;R-135&quot;:&quot;auto&quot;,&quot;R-136&quot;:&quot;auto&quot;,&quot;R-098&quot;:&quot;auto&quot;,&quot;R-132&quot;:&quot;auto&quot;,&quot;R-133&quot;:&quot;auto&quot;,&quot;R-134&quot;:&quot;auto&quot;,&quot;R-095&quot;:&quot;needs_review&quot;,&quot;R-115&quot;:&quot;auto&quot;,&quot;R-099&quot;:&quot;auto&quot;,&quot;R-127&quot;:&quot;auto&quot;};
+var SEED_ORDERS=[{&quot;no&quot;:&quot;D260831014&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;3&quot;,&quot;edge&quot;:&quot;N&quot;,&quot;spec&quot;:&quot;KS3-CGCC&quot;,&quot;use&quot;:&quot;G0493P : 생활가전&quot;,&quot;useF&quot;:&quot;G0493P : 생활가전 - 냉장고 - 측면,측판(SIDE)&quot;,&quot;buyer&quot;:&quot;110197 : LG전자 창원1공장&quot;,&quot;thk&quot;:0.45,&quot;wid&quot;:1490.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;CONF&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831020&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSL-SGLCC&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.4,&quot;wid&quot;:915.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;ING&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831021&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGC340&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.44,&quot;wid&quot;:1225.0,&quot;mat&quot;:&quot;BA&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831023&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGC340&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.44,&quot;wid&quot;:1225.0,&quot;mat&quot;:&quot;BA&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831024&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSL-SGLC570&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.37,&quot;wid&quot;:1221.0,&quot;mat&quot;:&quot;EA&quot;,&quot;st&quot;:&quot;ING&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831025&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGCC&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.44,&quot;wid&quot;:1306.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831026&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGCC&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.49,&quot;wid&quot;:1437.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831027&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSL-SGLCC&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.8,&quot;wid&quot;:1224.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;ING&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831028&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGC340&quot;,&quot;use&quot;:&quot;B01000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B01000 : 건재 내장 - 판넬&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.51,&quot;wid&quot;:1064.0,&quot;mat&quot;:&quot;BA&quot;,&quot;st&quot;:&quot;CONF&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831032&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;4&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KS4-CGLCC&quot;,&quot;use&quot;:&quot;Q18090 : 외장재(건재)&quot;,&quot;useF&quot;:&quot;Q18090 : 외장재(건재) - 지붕재&quot;,&quot;buyer&quot;:&quot;115462 : (주)신우산업&quot;,&quot;thk&quot;:0.5,&quot;wid&quot;:1070.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;ING&quot;,&quot;urgent&quot;:true,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831035&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGC570&quot;,&quot;use&quot;:&quot;A02000 : 건재 구조&quot;,&quot;useF&quot;:&quot;A02000 : 건재 구조용&quot;,&quot;buyer&quot;:&quot;110545 : (주)동진스틸&quot;,&quot;thk&quot;:0.41,&quot;wid&quot;:1219.0,&quot;mat&quot;:&quot;EA&quot;,&quot;st&quot;:&quot;CONF&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831052&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSL-SGLC570&quot;,&quot;use&quot;:&quot;L03000 : 기타(자가)&quot;,&quot;useF&quot;:&quot;L03000 : 기타(자가소비)&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.363,&quot;wid&quot;:1040.0,&quot;mat&quot;:&quot;EA&quot;,&quot;st&quot;:&quot;HOLD&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831053&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSL-SGLC570&quot;,&quot;use&quot;:&quot;L03000 : 기타(자가)&quot;,&quot;useF&quot;:&quot;L03000 : 기타(자가소비)&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.462,&quot;wid&quot;:1094.0,&quot;mat&quot;:&quot;EA&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831054&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;W&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSW-SGLC570&quot;,&quot;use&quot;:&quot;L03000 : 기타(자가)&quot;,&quot;useF&quot;:&quot;L03000 : 기타(자가소비)&quot;,&quot;buyer&quot;:&quot;320104 : 부산공장 일반용&quot;,&quot;thk&quot;:0.398,&quot;wid&quot;:1046.0,&quot;mat&quot;:&quot;EA&quot;,&quot;st&quot;:&quot;ING&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831059&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGCC&quot;,&quot;use&quot;:&quot;B09000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B09000 : 건재 내장 - 일반&quot;,&quot;buyer&quot;:&quot;320100 : 일반시판용&quot;,&quot;thk&quot;:1.6,&quot;wid&quot;:1096.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;D260831059&quot;,&quot;ln&quot;:&quot;020&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;KSG-SGCC&quot;,&quot;use&quot;:&quot;B09000 : 건재 내장&quot;,&quot;useF&quot;:&quot;B09000 : 건재 내장 - 일반&quot;,&quot;buyer&quot;:&quot;320100 : 일반시판용&quot;,&quot;thk&quot;:1.6,&quot;wid&quot;:1219.0,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;WAIT&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-31&quot;},{&quot;no&quot;:&quot;E260814004&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;L&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;AML-CS-B&quot;,&quot;use&quot;:&quot;C04000P : 건재 외장&quot;,&quot;useF&quot;:&quot;C04000P : 건재 외장 - 판넬&quot;,&quot;buyer&quot;:&quot;603410 : KLOECKNER METALS&quot;,&quot;thk&quot;:0.457,&quot;wid&quot;:1217.6,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;CONF&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-30&quot;},{&quot;no&quot;:&quot;E260814011&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;G&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;AMG-CS-B&quot;,&quot;use&quot;:&quot;M02000 : 소재용 -&quot;,&quot;useF&quot;:&quot;M02000 : 소재용 - 재압연&quot;,&quot;buyer&quot;:&quot;605551 : Global metal resources&quot;,&quot;thk&quot;:0.488,&quot;wid&quot;:1219.2,&quot;mat&quot;:&quot;1A&quot;,&quot;st&quot;:&quot;CONF&quot;,&quot;urgent&quot;:false,&quot;reqD&quot;:&quot;08-30&quot;},{&quot;no&quot;:&quot;E260827001&quot;,&quot;ln&quot;:&quot;010&quot;,&quot;prd&quot;:&quot;W&quot;,&quot;edge&quot;:&quot;M&quot;,&quot;spec&quot;:&quot;ASW-G300&quot;,&quot;use&quot;:&quot;M02000 : 소재용 -&quot;,&quot;useF&quot;:&quot;M02000 : 소재용 - 재압연&quot;,&quot;buyer&quot;:&quot;205202 : PCC&quot;,&quot;thk&quot;:0.55,&quot;wid&quot;:938.0,&quot;mat&quot;:&quot;CB&quot;,&quot;st&quot;:&quot;HOLD&quot;,&quot;urgent&quot;:true,&quot;reqD&quot;:&quot;08-30&quot;}];
+/* ============================================================
+   공통 헬퍼
+   ============================================================ */
+var $=function(s,el){return (el||document).querySelector(s);};
+var $$=function(s,el){return [].slice.call((el||document).querySelectorAll(s));};
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){
+  return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+function num(v){if(v==null)return null;var s=String(v).trim();if(s==='')return null;
+  var n=Number(s);return isFinite(n)?n:null;}
+function pad2(n){return (n<10?'0':'')+n;}
+function fmtDT(ts){if(!ts)return '—';var d=new Date(ts);
+  return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function toast(msg,type){var t=document.createElement('div');
+  t.className='toast'+(type==='err'?' err':'');t.textContent=msg;$('#toasts').appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .25s';
+    setTimeout(function(){t.remove();},260);},2800);}
+function circled(n){return '①②③④⑤⑥'.charAt(n-1);}
+
+/* ============================================================
+   기준 데이터 — 라이브(다른 모듈 localStorage) 우선, 내장 시드 폴백
+   ============================================================ */
+var CRIT_KEYS={consistency:'oc-state-v1',feasibility:'pfeas-bd-range-v2',
+               weight:'owe-mock-v1',spec:'qspec-mock-v4'};
+function readLS(k){try{var r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
+
+/* 내장 시드에서 생산가부 셀 초기값 만들기 */
+function seedCells(){var c={};SEED_SHEETS.forEach(function(s){
+  c[s.key]=s.groups.map(function(g){return g.seed.slice();});});return c;}
+
+var CRIT=null;
+function loadCriteria(){
+  var oc=readLS(CRIT_KEYS.consistency), pf=readLS(CRIT_KEYS.feasibility),
+      ow=readLS(CRIT_KEYS.weight), qs=readLS(CRIT_KEYS.spec);
+  var live={consistency:!!(oc&amp;&amp;oc.rules&amp;&amp;oc.rules.length),
+            feasibility:!!(pf&amp;&amp;pf.cells),
+            weight:!!(ow&amp;&amp;ow.min!=null),
+            spec:!!(qs&amp;&amp;qs.specs&amp;&amp;qs.specs.length)};
+  /* 생산가부: 라이브 셀은 전 시트를 담고 있으므로 내장 시트 정의와 키가 겹치는 것만 채택 */
+  var cells=seedCells();
+  if(live.feasibility){SEED_SHEETS.forEach(function(s){
+    if(pf.cells[s.key]&amp;&amp;pf.cells[s.key].length===s.groups.length)cells[s.key]=pf.cells[s.key];});}
+  var n=0;for(var k in live)if(live[k])n++;
+  CRIT={
+    rules:  live.consistency?oc.rules:SEED_RULES,
+    fields: live.consistency?oc.fields:SEED_FIELDS,
+    vlabels:live.consistency?(oc.valueLabels||SEED_VLABELS):SEED_VLABELS,
+    ruleMeta:SEED_RULEMETA,
+    sheets: SEED_SHEETS,
+    cells:  cells,
+    weight: live.weight?{min:ow.min,max:ow.max,overrides:ow.overrides||{}}
+                       :{min:4.0,max:5.0,overrides:{}},
+    specs:  live.spec?qs.specs:SEED_SPECS,
+    dict:   live.spec?qs.dict:SEED_DICT,
+    base:   SEED_BASE,
+    live:live, mode:(n===4?'live':(n===0?'fallback':'mixed')), ruleTotal:138
+  };
+  return CRIT;
+}
+function renderSrcBadge(){
+  var b=$('#src-badge'), d=$('#src-detail');
+  if(CRIT.mode==='live'){b.className='pill sent';b.textContent='기준 출처: 라이브';
+    d.textContent='다른 모듈에서 수정한 기준이 그대로 반영됩니다 · 룰 '+CRIT.rules.length+'건';}
+  else if(CRIT.mode==='fallback'){b.className='pill warn';b.textContent='기준 출처: 내장 시드';
+    d.textContent='룰 '+CRIT.rules.length+'/'+CRIT.ruleTotal+'건 · 생산범위 2시트만 평가합니다';}
+  else{b.className='pill warn';b.textContent='기준 출처: 일부 라이브';
+    var miss=[];var nm={consistency:'정합성',feasibility:'생산가부',weight:'주문단중',spec:'품질사양'};
+    for(var k in CRIT.live)if(!CRIT.live[k])miss.push(nm[k]);
+    d.textContent='내장 시드로 대체된 기준: '+miss.join(' · ')+' · 룰 '+CRIT.rules.length+'건';}
+}
+function fieldLabel(key){
+  for(var i=0;i<CRIT.fields.length;i++)if(CRIT.fields[i].key===key)return CRIT.fields[i].label||key;
+  return FALLBACK_LABEL[key]||key;
+}
+function fieldType(key){
+  for(var i=0;i<CRIT.fields.length;i++)if(CRIT.fields[i].key===key)return CRIT.fields[i].type||'string';
+  return NUM_FIELDS.indexOf(key)>=0?'number':'string';
+}
+function valueLabel(field,code){
+  for(var i=0;i<CRIT.vlabels.length;i++){var v=CRIT.vlabels[i];
+    if(v.field===field&amp;&amp;String(v.code)===String(code))return v.label;}
+  return null;
+}
+
+/* ============================================================
+   ④ 생산가부 — 축 매퍼 (신규: 원본 모듈에 없던 변환)
+   ============================================================ */
+function axisNum(label){if(label==null)return NaN;
+  var s=String(label).replace(/[↑↓]/g,'').replace(/,/g,'').trim();
+  return s===''?NaN:Number(s);}
+
+/* widths 는 내림차순 라벨. 행 i = [L(i), L(i-1)) — &quot;그 값 이상, 위 행 값 미만&quot; */
+function widthRow(widths,W){
+  var w=typeof W==='number'?W:axisNum(W);
+  if(!isFinite(w))return {row:null,out:'nan'};
+  var L=widths.map(axisNum);
+  if(w>L[0])return {row:0,out:'above'};
+  for(var i=0;i<L.length;i++)if(w>=L[i])return {row:i,out:null};
+  return {row:null,out:'below'};
+}
+/* thicks 는 오름차순. 열 j = [T(j), T(j+1)) */
+function thickCol(thicks,T){
+  var t=typeof T==='number'?T:axisNum(T);
+  if(!isFinite(t))return {col:null,out:'nan'};
+  var A=thicks.map(axisNum), last=A.length-1;
+  if(t<A[0])return {col:null,out:'below'};
+  if(t>A[last])return {col:last,out:'above'};
+  for(var j=last;j>=0;j--)if(t>=A[j])return {col:j,out:null};
+  return {col:null,out:'below'};
+}
+var CODE_RE=/^[0-9A-Z]{2}$/;
+/* '재질코드(Material Code) = 1A, AA, BA' → 코드 집합. 'EC 외 Code' 같은 자유 텍스트는 fuzzy */
+function parseCodes(txt){
+  var s=String(txt==null?'':txt), eq=s.indexOf('=');
+  if(eq<0)return {codes:[],fuzzy:true};
+  var toks=s.slice(eq+1).split(','), codes=[], fuzzy=false;
+  for(var i=0;i<toks.length;i++){
+    var t=toks[i].trim().toUpperCase();
+    if(t==='')continue;
+    if(CODE_RE.test(t)){codes.push(t);continue;}
+    var head=t.split(/\s+/)[0];
+    if(CODE_RE.test(head))codes.push(head);
+    fuzzy=true;
+  }
+  return {codes:codes,fuzzy:fuzzy};
+}
+function matGroup(sheet,matCd){
+  var m=String(matCd==null?'':matCd).trim().toUpperCase();
+  if(m==='')return {gi:null,fuzzy:false};
+  var fuzzy=false;
+  for(var i=0;i<sheet.groups.length;i++){
+    var p=parseCodes(sheet.groups[i].codes);
+    if(p.fuzzy)fuzzy=true;
+    if(p.codes.indexOf(m)>=0)return {gi:i,fuzzy:p.fuzzy};
+  }
+  return {gi:null,fuzzy:fuzzy};
+}
+var STATES={'-':'생산불가','P':'생산가능','C':'조건부 생산','X':'생산불가 (검증 완료)'};
+function isOverlay(g,w,t){return !!(g.overlay&amp;&amp;w<g.overlay.rows&amp;&amp;t<g.overlay.cols);}
+
+function feasibilityForSheet(sheet,cells,fo){
+  var out={sheetKey:sheet.key,sheetTab:sheet.tab,gi:null,groupName:null,
+           row:null,col:null,rowLabel:null,colLabel:null,
+           state:null,stateName:null,reason:null,flags:[]};
+  var mg=matGroup(sheet,fo.MAT_CD);
+  if(mg.fuzzy)out.flags.push('codes-fuzzy');
+  if(mg.gi==null){out.reason='group-unknown';return out;}
+  out.gi=mg.gi;
+  var g=sheet.groups[mg.gi];
+  out.groupName=g.name;
+  var wr=widthRow(g.widths,fo.width);
+  if(wr.row==null){out.reason='width-'+wr.out;return out;}
+  if(wr.out)out.flags.push('width-'+wr.out);
+  out.row=wr.row;out.rowLabel=g.widths[wr.row];
+  var tc=thickCol(g.thicks,fo.thick);
+  if(tc.col==null){out.reason='thick-'+tc.out;return out;}
+  out.col=tc.col;out.colLabel=g.thicks[tc.col];
+  if(isOverlay(g,wr.row,tc.col)){out.reason='overlay';return out;}
+  var grid=cells[sheet.key];
+  if(!grid||!grid[mg.gi]||!grid[mg.gi][wr.row]){out.reason='no-data';return out;}
+  out.state=grid[mg.gi][wr.row].charAt(tc.col)||null;
+  out.stateName=out.state?(STATES[out.state]||null):null;
+  if(tc.out){out.flags.push('thick-'+tc.out);}
+  return out;
+}
+function scanAllSheets(sheets,cells,fo){
+  return sheets.map(function(s){return feasibilityForSheet(s,cells,fo);});
+}
+
+/* ============================================================
+   ② 주문 정합성 — 룰 평가 (원본 modules/order-consistency.html 규칙 그대로)
+   ============================================================ */
+var ORDINAL_OPS={GT:1,GE:1,LT:1,LE:1,BETWEEN:1};
+var NUM_RE=/^-?(\d+(\.\d+)?|\.\d+)$/;
+function isNumStr(s){return NUM_RE.test(String(s).trim());}
+function isNullVal(v){return v==null||String(v).trim()==='';}
+
+/* state: P 충족 · F 불충족 · N NULL(룰 스킵) · X 형식오류 · T 타입부적합(룰 스킵) */
+function evalCond(cond,order){
+  var raw=order[cond.field];
+  var r={cond:cond,orderValue:raw,pass:false,state:'F'};
+  if(cond.op==='IS_NULL'){r.pass=isNullVal(raw);r.state=r.pass?'P':'F';return r;}
+  if(cond.op==='NOT_NULL'){r.pass=!isNullVal(raw);r.state=r.pass?'P':'F';return r;}
+  if(isNullVal(raw)){r.state='N';return r;}
+
+  var type=fieldType(cond.field), numeric=false, x=null;
+  if(type==='number'){
+    x=Number(String(raw).trim());
+    if(!isFinite(x)){r.state='X';return r;}
+    numeric=true;
+  }else if(ORDINAL_OPS[cond.op]){
+    /* 사전식 문자열 비교 금지 — 양쪽이 숫자 문자열일 때만 숫자로 본다 */
+    var cmp=(cond.op==='BETWEEN')?[cond.low,cond.high]:(cond.values||[]);
+    var allNum=isNumStr(raw)&amp;&amp;cmp.every(function(v){return isNumStr(v);});
+    if(!allNum){r.state='T';return r;}
+    x=Number(String(raw).trim());numeric=true;
+  }
+
+  var vs=cond.values||[];
+  switch(cond.op){
+    case 'EQ':  r.pass=numeric?(x===Number(vs[0])):(String(raw)===String(vs[0]));break;
+    case 'NE':  r.pass=numeric?(x!==Number(vs[0])):(String(raw)!==String(vs[0]));break;
+    case 'IN':  r.pass=vs.some(function(v){return numeric?(x===Number(v)):(String(raw)===String(v));});break;
+    case 'NOT_IN':r.pass=!vs.some(function(v){return numeric?(x===Number(v)):(String(raw)===String(v));});break;
+    case 'GT':  r.pass=x>Number(vs[0]);break;
+    case 'GE':  r.pass=x>=Number(vs[0]);break;
+    case 'LT':  r.pass=x<Number(vs[0]);break;
+    case 'LE':  r.pass=x<=Number(vs[0]);break;
+    case 'BETWEEN':
+      r.pass=(cond.lowInclusive?x>=cond.low:x>cond.low)&amp;&amp;
+             (cond.highInclusive?x<=cond.high:x<cond.high);break;
+    default: r.pass=false;
+  }
+  r.state=r.pass?'P':'F';
+  return r;
+}
+
+function evaluateRules(rules,order){
+  var fired=[],skipN=0,skipX=0,skipT=0,nullMap={},evaluated=0;
+  rules.forEach(function(rule){
+    if(rule.enabled===false)return;
+    evaluated++;
+    var conds=(rule.context||[]).concat(rule.when||[]);
+    var results=conds.map(function(c){return evalCond(c,order);});
+    var hasX=results.some(function(r){return r.state==='X';});
+    var hasT=results.some(function(r){return r.state==='T';});
+    var hasF=results.some(function(r){return r.state==='F';});
+    var hasN=results.some(function(r){return r.state==='N';});
+    if(hasX){skipX++;return;}
+    if(hasT){skipT++;return;}
+    if(hasN){
+      if(!hasF){ /* 미입력 탓에 판정 못 한 것만 집계 */
+        skipN++;
+        results.forEach(function(r){
+          if(r.state!=='N')return;
+          var f=r.cond.field;
+          nullMap[f]=nullMap[f]||{field:f,label:fieldLabel(f),rules:0,ids:[]};
+          nullMap[f].rules++;
+          if(nullMap[f].ids.length<8)nullMap[f].ids.push(rule.id);
+        });
+      }
+      return;
+    }
+    if(results.every(function(r){return r.state==='P';}))fired.push({rule:rule,condResults:results});
+  });
+  var nullFields=Object.keys(nullMap).map(function(k){return nullMap[k];})
+    .sort(function(a,b){return b.rules-a.rules||a.label.localeCompare(b.label,'ko');});
+  /* 같은 항목에서 서로 다른 에러코드가 2건 이상이면 동시발화 */
+  var byItem={};
+  fired.forEach(function(f){var it=(f.rule.target||{}).item||'';(byItem[it]=byItem[it]||[]).push(f);});
+  Object.keys(byItem).forEach(function(it){
+    var g=byItem[it];if(g.length<2)return;
+    var codes={};g.forEach(function(f){codes[(f.rule.error||{}).code]=1;});
+    if(Object.keys(codes).length>=2)g.forEach(function(f){f.coGroup=it;});
+  });
+  var CAT={'누락':0,'사용불가':1,'불필요':2,'한도위반':3,'선택오류':4};
+  fired.sort(function(a,b){
+    var ca=CAT[(a.rule.error||{}).category], cb=CAT[(b.rule.error||{}).category];
+    if(ca==null)ca=9;if(cb==null)cb=9;
+    return ca-cb||String(a.rule.id).localeCompare(String(b.rule.id));
+  });
+  return {fired:fired,skippedByNull:skipN,skippedByFormat:skipX,skippedByType:skipT,
+          nullFields:nullFields,evaluated:evaluated};
+}
+
+/* ============================================================
+   ③ 주문단중
+   ============================================================ */
+function baseSplitVal(row,col){return Math.round(row/col*100)/100;}
+function weightCellVal(st,row,col){
+  var key=Number(row).toFixed(1)+'-'+col;
+  var o=st.overrides[key];
+  return typeof o==='number'?o:baseSplitVal(row,col);
+}
+function inWeightRange(st,v){
+  var lo=Number(st.min),hi=Number(st.max);
+  if(!isFinite(lo)||!isFinite(hi))return false;
+  return v>=lo-1e-9&amp;&amp;v<=hi+1e-9;
+}
+function judgeWeight(st,w){
+  var out={value:null,pass:false,okSplits:[],reason:null};
+  if(w.weight==null){out.reason='weight-null';return out;}
+  if(w.split==null){out.reason='split-null';return out;}
+  if(w.split===0){out.reason='split-zero';return out;}
+  for(var c=2;c<=10;c++)if(inWeightRange(st,weightCellVal(st,w.weight,c)))out.okSplits.push(c);
+  out.value=weightCellVal(st,w.weight,w.split);
+  out.pass=inWeightRange(st,out.value);
+  return out;
+}
+
+/* ============================================================
+   ⑤ 품질사양 매칭 — 원본 modules/quality-spec.html 규칙 유지
+      · 조건 0개 사양은 무조건 매칭 (every() 성질)
+      · 오버라이드는 specNo 오름차순, 나중 사양이 이긴다 (우선순위 필드 없음)
+   ============================================================ */
+function stripQ(s){return String(s==null?'':s).replace(/^['&quot;]|['&quot;]$/g,'').trim();}
+function specAttr(o,code){
+  if(code==='CUS_CD'||code==='FNL_CUS_CD')return o.cus;
+  if(code==='PRD_NM_CD')return o.prd;
+  var v=o.attrs[code];return v==null?null:v;
+}
+function cmpVal(op,ov,val){
+  if(ov==null||ov==='')return false;
+  var n=parseFloat(ov), sval=stripQ(val);
+  switch(op){
+    case '=': return String(ov).trim().toUpperCase()===sval.toUpperCase()||
+                     (isFinite(n)&amp;&amp;isFinite(parseFloat(sval))&amp;&amp;n===parseFloat(sval));
+    case '~': var m=sval.match(/^(-?[\d.]+)\s*~\s*(-?[\d.]+)$/);
+              return !!m&amp;&amp;isFinite(n)&amp;&amp;n>=parseFloat(m[1])&amp;&amp;n<=parseFloat(m[2]);
+    case '≥': return isFinite(n)&amp;&amp;n>=parseFloat(sval);
+    case '≤': return isFinite(n)&amp;&amp;n<=parseFloat(sval);
+    case '>': return isFinite(n)&amp;&amp;n>parseFloat(sval);
+    case '<': return isFinite(n)&amp;&amp;n<parseFloat(sval);
+  }
+  return false;
+}
+function matchSpecs(ctx,o){
+  var related=ctx.specs.filter(function(s){return s.cusCd===o.cus&amp;&amp;s.prdNm===o.prd;});
+  var evals=related.map(function(s){
+    var checks=(s.conds||[]).map(function(c){
+      var ov=specAttr(o,c.code);
+      return {c:c,ov:ov,pass:c.code?cmpVal(c.op,ov,c.val):false};
+    });
+    var matched=checks.every(function(ch){return ch.pass;});
+    var eligible=(s.status==='확정'||s.status==='전송완료');
+    return {s:s,checks:checks,matched:matched,eligible:eligible,applied:matched&amp;&amp;eligible};
+  });
+  var applied=evals.filter(function(e){return e.applied;})
+                   .sort(function(a,b){return a.s.specNo>b.s.specNo?1:-1;});
+  var draftHit=evals.filter(function(e){return e.matched&amp;&amp;!e.eligible;});
+  var order=[],map={};
+  ctx.base.forEach(function(b){
+    var d=ctx.dict.filter(function(x){return x.code===b.code;})[0];
+    map[b.code]={code:b.code,ko:d?d.ko:b.code,unit:d?d.unit:'',base:b.val,val:b.val,srcs:[]};
+    order.push(b.code);
+  });
+  applied.forEach(function(e){(e.s.results||[]).forEach(function(r){
+    var key=r.code||r.ko;
+    if(!map[key]){map[key]={code:key,ko:r.ko,unit:r.unit||'',base:'—',val:'',srcs:[]};order.push(key);}
+    var row=map[key];
+    row.val=(r.op==='='||r.op==='~'?'':r.op+' ')+r.val;
+    row.srcs.push(e.s.specNo);
+  });});
+  var rows=order.map(function(k){return map[k];});
+  return {evals:evals,applied:applied,draftHit:draftHit,rows:rows,
+          conflicts:rows.filter(function(r){return r.srcs.length>1;})};
+}
+
+/* ============================================================
+   ⑥ 설계값 산출 — 원본 modules/quality-design.html 상수·분기 유지
+   ============================================================ */
+var PRD_NM={'3':'3 : CCGI','4':'4 : CCLI','G':'G : GI','L':'L : G/L','W':'W : GLX'};
+var MAT_NM={'1A':'1A : SAE1008','BA':'BA : SAE1006','EA':'EA : SAE1015','CB':'CB : SGC570급',
+            'AA':'AA : SAE1008','CA':'CA : SGC340급','EC':'EC : G450급'};
+var MAT_HR={'1A':'H32 - 1 종 : SAE 1008','BA':'H34 - 2 종 : SAE 1006',
+            'EA':'H36 - 3 종 : SAE 1015','CB':'H38 - 고강도 : SGC570급'};
+var COAT_CD={'3':'E : 80 g/㎡','4':'A10 : AZ100','G':'Z12 : 120 g/㎡','L':'A15 : AZ150','W':'M12 : AM120'};
+var COAT_RANGE={'3':[80,120,84,12],'4':[100,150,104,12],'G':[120,180,124,17],
+                'L':[150,200,153,12],'W':[120,170,125,12]};
+function isColor(o){return o.prd==='3'||o.prd==='4';}
+function specName(s){
+  return /^KS3/.test(s)?'도장 용융 아연 도금 강판 및 강대'
+    :/^KS4/.test(s)?'도장 용융 알루미늄 아연 합금 도금 강판'
+    :/^(KSG|AMG)/.test(s)?'용융 아연 도금 강판 및 강대'
+    :/^(KSL|AML)/.test(s)?'용융 55% 알루미늄 아연 합금 도금 강판'
+    :'용융 알루미늄 아연 마그네슘 합금 도금 강판';
+}
+function matBands(spec){
+  if(/SGC340/.test(spec))return {yp:[245,''],ts:[340,510],el:[20,''],bend:'1T'};
+  if(/570|G300/.test(spec))return {yp:[560,''],ts:[570,''],el:['',''],bend:'3T'};
+  return {yp:[205,380],ts:[270,500],el:[22,''],bend:'1T'};
+}
+function fmtW(n){return Number(n||0).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});}
+
+function genDetail(o){
+  var t=Number(o.thk)||0, w=Number(o.wid)||0;
+  var mb=matBands(o.spec), co=COAT_RANGE[o.prd]||[0,0,0,0];
+  var target=+(t-0.02).toFixed(3);
+  var isExp=/^E/.test(o.no);
+  var d={
+    head:{buyer:o.buyer,spec:o.spec,size:t.toFixed(3)+' x '+fmtW(w)+' x 0.0',
+          prd:PRD_NM[o.prd]||o.prd,use:o.useF,mat:MAT_NM[o.mat]||o.mat,
+          bom:isColor(o)?(o.prd==='3'?'L2000E':'L4000C'):''},
+    common:[
+      ['품질설계상태','B : 설계중','b'],
+      ['주문유형',isExp?'Z03 : 수출 일반':'Z01 : 내수 일반'],
+      ['유통경로 / 국가코드',isExp?'12 : 수출 · US':'11 : 민수 · KR : 한국'],
+      ['제품형태 / EDGE','C : Coil · '+(o.edge||'')],
+      ['규격명',specName(o.spec)],
+      ['인수도규격 / 규격년도',/^A/.test(o.spec)?'ASTM A755M · 2020':'KSD3520A · 2008'],
+      ['수요가',o.buyer],
+      ['주문 Actual Size',t.toFixed(2)+' X '+Math.round(w)+' X COIL'],
+      ['도금량코드',COAT_CD[o.prd]||''],
+      ['조질도','4 : EXTR'],
+      ['주문두께구분','1 : BMT'],
+      ['두께관리코드','D : 규격일반:(-)보정20'],
+      ['폭관리코드','A : No S/T: 0~미보증'],
+      ['주문내경/종류','508 · P : PAPER'],
+      ['포장방법',isExp?'ARSE00 : 수출Coil+방청+목재':'ARSX00 : 내수Coil+일반+철판'],
+      ['권취방법','S : Stagger']
+    ],
+    mat:{bands:[
+      ['고객사양','','','','','','','','','','',''],
+      ['규격사양','','',mb.yp[0],'',mb.ts[0],'','','','','',''],
+      ['사내사양','','',mb.yp[0],mb.yp[1],mb.ts[0],mb.ts[1],mb.el[0],'','','',mb.bend],
+      ['보증사양','','',mb.yp[0],mb.yp[1],mb.ts[0],mb.ts[1],mb.el[0],'','','',mb.bend+' - 간격 1.0t']
+    ]},
+    tol:{tols:[['고객사양','-0.05','0.1','0','30','0','0'],
+               ['규격사양','-0.05','0.1','0','','',''],
+               ['보증사양','-0.05','0.1','0','30','0','0']],
+         base:[['설계기준','BMT',(t-0.008).toFixed(3),(t+0.142).toFixed(3),String(Math.round(w)),String(Math.round(w)+30)],
+               ['규격기준','BMT',(t-0.003).toFixed(3),(t+0.147).toFixed(3),'외관검사기준','32']]},
+    cgl:{
+      lines:[['적정',MAT_HR[o.mat]||MAT_NM[o.mat]||o.mat,'L - 일반(중)',(t*4).toFixed(1),(t*4).toFixed(1),(t*4+0.2).toFixed(1),String(Math.round(w)+3)],
+             ['차선1','G32 - 구매GR','L - 일반(중)',(t-0.008).toFixed(3),(t-0.03).toFixed(2),(t+0.01).toFixed(2),String(Math.round(w)-1)],
+             ['차선2','','','','','','']],
+      pltcm:[['5Stand WRType','B'],['내경링 사용여부','Y - 사용'],['S/T유무','N - 무'],
+             ['X-Ray Set두께값',target.toFixed(2)],
+             ['Side Trimming Set값(주공정)',String(Math.round(w)+6)],
+             ['폭수축값','3'],['BigData 분석값','4'],
+             ['두께목표값',target.toFixed(2)+' ('+(target-0.015).toFixed(3)+' ~ '+(target+0.015).toFixed(3)+')'],
+             ['폭목표값(주공정)',String(Math.round(w)+3)]],
+      ops:(o.prd==='W'||o.prd==='L')
+        ?[['5 CGL','1 - CQ','730','','','150'],['7 CGL','1 - CQ','730','','','150']]
+        :[['2 CGL','1 - CQ','680','','','180'],['3 CGL','1 - CQ','680','','','180'],['5 CGL','1 - CQ','730','','','150']],
+      coat:{min:co[0],max:co[1],target:co[2],thk:co[3],
+            spangle:o.prd==='G'?'0 : MINI':'4 : EXTRA SMOOTH',lv:'Y - Leveling',skin:'Y',
+            sizeT:(t-0.008).toFixed(3),sizeW:Math.round(w)}},
+    egl:null,
+    post:{t2c:'N - 무',st:'N - 무',wMin:Math.round(w),wMax:Math.round(w)+30,
+          pack:isExp?'ARSE00 : 수출Coil+방청+목재+없음+없음':'ARSX00 : 내수Coil+일반+철판+없음+없음',
+          packMsg:'',qMsg:''},
+    color:null,
+    route:{no:isColor(o)?'35A000':(o.prd==='G'?'21A000':'27A000'),
+           rows:isColor(o)
+             ?[['1','1P - PLTCM','HD81AND-AR03724'],['2','85 - 5CGL','HG81A4E-MX00272'],['3','A5 - 5CCL','H381A4E-4ZH22A0006']]
+             :o.prd==='G'
+               ?[['1','1P - PLTCM','HD81AND-AR03724'],['2','31 - 2CGL','HG81A4E-GX'+String(o.no).slice(-5)]]
+               :[['1','1P - PLTCM','HD81AND-AR03724'],['2','87 - 7CGL','HW81A4E-LX'+String(o.no).slice(-5)]]},
+    comp:(function(){
+      var hi=/570|G300/.test(o.spec);
+      var inh=hi?['사내사양','','0.2500','','0.5000','','1.7000','','0.0300','','0.0350']
+                :['사내사양','0.0200','0.0800','','0.5000','','0.5000','','0.0300','','0.0350'];
+      return {g1:[['고객사양','','','','','','','','','',''],
+                  ['규격사양','','','','','','','','','',''],
+                  inh,['보증사양'].concat(inh.slice(1))]};
+    })()
+  };
+  if(isColor(o)){
+    var top=o.prd==='3'?['L2001','W0034','C9015']:['L2003','W0034','C9012'];
+    d.color={
+      matrix:[['품질수지','H2 : HI-POLYMER','PC : Primer','B1 : EPOXY'],
+              ['색상코드',top[0],top[1],top[2]],
+              ['광택코드','2 : 무광(30%↓)','4 : 반광(40~60)','2 : 무광(30%↓)'],
+              ['도막두께','20','5','5'],
+              ['PMT','232','216','224'],
+              ['시너','THN04','THN04','THN02']],
+      sum:{way:'4 : TOP = 2 COAT / BACK = 1 COAT',cT:top[0],cB:top[2],thkT:'25',thkB:'5',
+           glossT:'2',glossB:'2',resinT:'H2',resinB:'B1',
+           szT:(t+0.022).toFixed(3),szW:Math.round(w),chem:'CHNCR',
+           name:o.prd==='3'?'딤그레이 b상향(5CCL)':'화이트 g상향(5CCL)'},
+      test:[['Bending','2T'],['M.E.K','250'],['연필경도','1H'],['색차','0.3']]};
+    d.common.push(['색상코드(T/B)',top[0]+' · '+top[2]],
+                  ['수지구분(T/B)','H2 : HPP(SEL · B1 : EPOXY'],
+                  ['도막두께(T/B)','25 · 5'],
+                  ['Material Code','F381A4E-4ZH22A0006']);
+  }
+  return d;
+}
+
+/* ============================================================
+   정본 주문 모델 → 엔진별 어댑터
+   ============================================================ */
+var CORE_FIELDS=['PRD_NM_CD','PRD_SHP','SPC_AVR','MAT_CD','ORD_EXC_THK','ORD_EXC_WTH',
+  'FNL_CUS_CD','ORD_USG_CD','ORD_EDG_ASG_TP','ORD_LN_WGT','ORD_SLIT_GRP_CNT',
+  'ORD_PAK_UNT_WGT_ULV','ORD_PAK_UNT_WGT_LLV','ORD_PTT_FLM_CD','ORD_SLV_KND_TP'];
+/* 정합성 룰 사전(66필드)에 없는 것만. SPC_AVR·ORD_LN_WGT 는 사전에 있으므로 제외하면
+   '규격약호 누락' 같은 거짓 에러가 난다 — MAT_CD 하나뿐이다. */
+var DESIGN_ONLY=['MAT_CD'];
+var NUM_FIELDS=['ORD_EXC_THK','ORD_EXC_WTH','ORD_LN_WGT','ORD_SLIT_GRP_CNT',
+  'ORD_PAK_UNT_WGT_ULV','ORD_PAK_UNT_WGT_LLV'];
+var FALLBACK_LABEL={MAT_CD:'재질코드',SPC_AVR:'규격약호',ORD_LN_WGT:'주문행번중량',
+  ORD_SLIT_GRP_CNT:'주문Slit조수',ORD_USG_CD:'주문용도코드',ORD_EDG_ASG_TP:'주문Edge지정구분',
+  ORD_REQ_NO:'주문요청번호',ORD_REQ_LN:'주문요청행번'};
+
+function orderKey(o){return String(o.ORD_REQ_NO||'')+'-'+String(o.ORD_REQ_LN||'');}
+function toConsistency(o){
+  var out={};
+  for(var k in o){
+    if(!o.hasOwnProperty(k))continue;
+    if(k.charAt(0)==='_')continue;
+    if(DESIGN_ONLY.indexOf(k)>=0)continue;
+    out[k]=o[k];
+  }
+  return out;
+}
+function toWeight(o){return {weight:num(o.ORD_LN_WGT),split:num(o.ORD_SLIT_GRP_CNT),
+  weightField:'ORD_LN_WGT',splitField:'ORD_SLIT_GRP_CNT'};}
+function toFeasibility(o){return {MAT_CD:String(o.MAT_CD||'').trim(),
+  width:num(o.ORD_EXC_WTH),thick:num(o.ORD_EXC_THK)};}
+function toSpecMatch(o){
+  var attrs={},skip=['FNL_CUS_CD','PRD_NM_CD'];
+  for(var k in o){if(!o.hasOwnProperty(k)||k.charAt(0)==='_')continue;
+    if(skip.indexOf(k)<0)attrs[k]=o[k];}
+  return {cus:String(o.FNL_CUS_CD||''),prd:String(o.PRD_NM_CD||''),attrs:attrs};
+}
+function toDesign(o){return {
+  no:String(o.ORD_REQ_NO||''),ln:String(o.ORD_REQ_LN||''),
+  prd:String(o.PRD_NM_CD||''),spec:String(o.SPC_AVR||''),
+  thk:num(o.ORD_EXC_THK),wid:num(o.ORD_EXC_WTH),
+  mat:String(o.MAT_CD||''),edge:String(o.ORD_EDG_ASG_TP||''),
+  buyer:String(o.FNL_CUS_CD||''),useF:String(o.ORD_USG_CD||'')};}
+
+/* ============================================================
+   근거 매핑과 이상징후
+   ============================================================ */
+/* 사양 어휘(BASE_DESIGN 8항목) 중 설계결과 어휘에 의미가 확실히 대응되는 것만 */
+var SPEC_TO_DESIGN={CCL_BOM:'head.bom',PACK_CD:'post.pack',
+  TOP_THK:'color.sum.thkT',RAW_MTRL:'cgl.lines.적정.1'};
+/* 기준이 관장해야 마땅한 설계값만 「미커버」로 본다 — 전수 감시는 잡음 */
+var GOVERNED_PATHS=['common.도금량코드','common.조질도','common.주문두께구분',
+  'common.두께관리코드','common.폭관리코드','common.포장방법','common.권취방법',
+  'head.bom','post.pack','color.sum.thkT','cgl.lines.적정.1'];
+
+function mapSpecOverrides(rows){
+  var mapped=[],unmapped=[];
+  (rows||[]).forEach(function(r){
+    if(!r.srcs||!r.srcs.length)return;
+    var p=SPEC_TO_DESIGN[r.code];
+    if(p)mapped.push({code:r.code,ko:r.ko,path:p,val:r.val,base:r.base,srcs:r.srcs});
+    else unmapped.push({code:r.code,ko:r.ko,val:r.val,base:r.base,srcs:r.srcs});
+  });
+  return {mapped:mapped,unmapped:unmapped};
+}
+function anomaly(kind,sev,label,detail,ref){
+  return {kind:kind,severity:sev,label:label,detail:detail,ref:ref};
+}
+function detectAnomalies(ctx){
+  var out=[];
+  /* 값이 비어 있는데 아무 기준도 지시하지 않은 것 = 진짜 구멍. 개별로 올린다. */
+  var stdOnly=[];
+  (ctx.designValues||[]).forEach(function(v){
+    if(v.prov&amp;&amp;v.prov.length)return;
+    var blank=(v.value==null||String(v.value).trim()==='');
+    if(blank)out.push(anomaly('uncovered','error','미커버',
+      '값이 비어 있고 이를 지시하는 기준도 없습니다.',v.path));
+    else stdOnly.push(v.path);
+  });
+  /* 표준 디폴트만 있는 항목은 한 건으로 묶는다 — 개별로 올리면 매 실행 10건씩 쌓여 잡음이 된다 */
+  if(stdOnly.length)
+    out.push(anomaly('standard-only','info','표준값만',
+      stdOnly.length+'개 항목이 고객 사양 없이 표준 기준값으로만 결정됐습니다: '+
+      stdOnly.slice(0,4).join(' · ')+(stdOnly.length>4?' 외 '+(stdOnly.length-4)+'건':''),null));
+  ((ctx.specMatch||{}).conflicts||[]).forEach(function(c){
+    out.push(anomaly('conflict','warn','충돌',
+      (c.ko||c.code)+' — 사양 '+c.srcs.join(' → ')+' (나중 사양이 이깁니다)',c.code));
+  });
+  (ctx.feasibility||[]).forEach(function(f){
+    (f.flags||[]).forEach(function(fl){
+      if(fl.indexOf('-above')>0||fl.indexOf('-below')>0)
+        out.push(anomaly('range','warn','범위 위반',
+          f.sheetTab+' — '+fl+' (생산범위 축을 벗어나 참고값입니다)',f.sheetKey));
+    });
+  });
+  var co=ctx.consistency||{};
+  var skipped=(co.skippedByNull||0)+(co.skippedByFormat||0)+(co.skippedByType||0);
+  if(skipped>0){
+    var causes=(co.nullFields||[]).slice(0,4).map(function(n){return n.label||n.field;});
+    out.push(anomaly('unevaluated','warn','미평가',
+      skipped+'건의 룰을 판정하지 못했습니다 — 통과가 아닙니다.'+
+      (causes.length?' 원인: '+causes.join(' · '):''),null));
+  }
+  var meta=ctx.ruleMeta||{};
+  (co.fired||[]).forEach(function(f){
+    var id=f.rule&amp;&amp;f.rule.id;
+    if(id&amp;&amp;meta[id]&amp;&amp;meta[id]!=='auto')
+      out.push(anomaly('lineage','warn','계보 경고',
+        id+' 룰이 '+meta[id]+' 상태입니다 — 이 판정의 근거 자체를 확인해야 합니다.',id));
+  });
+  if(ctx.missingSheet)
+    out.push(anomaly('no-criteria','warn','기준 부재',
+      ctx.missingSheet+' 생산범위 시트가 없어 주공정을 판정하지 못했습니다.',ctx.missingSheet));
+  mapSpecOverrides((ctx.specMatch||{}).rows).unmapped.forEach(function(u){
+    out.push(anomaly('spec-unmapped','warn','사양 미연결',
+      (u.ko||u.code)+' — 사양은 '+u.val+' 를 지시하지만 설계결과에 대응 항목이 없습니다.',u.code));
+  });
+  return out;
+}
+
+/* ============================================================
+   파이프라인 ①~⑥ — 차단돼도 멈추지 않는다
+   ============================================================ */
+var ROUTE_TO_SHEET={'21A000':'2cgl-gi','35A000':'5cgl','27A000':null};
+var ROUTE_TO_LINE ={'21A000':'2CGL','35A000':'5CGL','27A000':'7CGL'};
+var REQUIRED=['PRD_NM_CD','SPC_AVR','MAT_CD','ORD_EXC_THK','ORD_EXC_WTH','FNL_CUS_CD'];
+
+function stage(no,name,verdict,detail,extra){
+  var s={no:no,name:name,verdict:verdict,detail:detail,blocked:false,advisory:false,missingSheet:null};
+  if(extra)for(var k in extra)s[k]=extra[k];
+  return s;
+}
+function runPipeline(ctx,order){
+  var stages=[];
+  var missing=REQUIRED.filter(function(k){return order[k]==null||String(order[k]).trim()==='';});
+  stages.push(stage(1,'주문 입력 검증',missing.length?'F':'P',{missing:missing}));
+
+  var co=evaluateRules(ctx.rules,toConsistency(order));
+  stages.push(stage(2,'주문 정합성',co.fired.length?'F':'P',co));
+
+  var wj=judgeWeight(ctx.weight,toWeight(order));
+  stages.push(stage(3,'주문단중 에러',wj.reason?null:(wj.pass?'P':'F'),wj));
+
+  /* 통과공정을 알아야 주공정 시트를 고를 수 있어 ⑥을 먼저 계산한다 */
+  var design=genDetail(toDesign(order));
+  var routeNo=design.route.no;
+  var mainKey=ROUTE_TO_SHEET[routeNo];
+  var missingSheet=mainKey?null:(ROUTE_TO_LINE[routeNo]||routeNo);
+
+  var fo=toFeasibility(order);
+  var scan=scanAllSheets(ctx.sheets,ctx.cells,fo);
+  var mine=mainKey?scan.filter(function(r){return r.sheetKey===mainKey;})[0]:null;
+  var s4=stage(4,'생산 가부',mine?mine.state:null,
+    {scan:scan,main:mine,mainLine:ROUTE_TO_LINE[routeNo]||null},{missingSheet:missingSheet});
+  s4.blocked=!!(mine&amp;&amp;(mine.state==='-'||mine.state==='X'));
+  stages.push(s4);
+
+  var sm=matchSpecs({specs:ctx.specs,dict:ctx.dict,base:ctx.base},toSpecMatch(order));
+  stages.push(stage(5,'품질사양 매칭',sm.applied.length?'P':null,sm));
+  stages.push(stage(6,'설계값 산출','P',{design:design}));
+
+  var blockedAt=-1;
+  for(var i=0;i<stages.length;i++)if(stages[i].blocked){blockedAt=i;break;}
+  if(blockedAt>=0)for(var j=blockedAt+1;j<stages.length;j++)stages[j].advisory=true;
+
+  var ovr={};
+  mapSpecOverrides(sm.rows).mapped.forEach(function(m){ovr[m.path]=m;});
+  var designValues=GOVERNED_PATHS.map(function(p){
+    return {path:p,value:pinResolve(design,p),prov:ovr[p]?[{kind:'사양'}]:[]};
+  }).filter(function(v){
+    /* 도장 제품이 아니면 칼라·BOM 경로는 애초에 감시 대상이 아니다 */
+    if(!design.color&amp;&amp;(v.path.indexOf('color.')===0||v.path==='head.bom'))return false;
+    return true;
+  });
+
+  var anomalies=detectAnomalies({designValues:designValues,specMatch:sm,consistency:co,
+    feasibility:mine?[mine]:[],ruleMeta:ctx.ruleMeta,missingSheet:missingSheet});
+
+  return {stages:stages,design:design,specMatch:sm,anomalies:anomalies,
+          mainLine:ROUTE_TO_LINE[routeNo]||null,missingSheet:missingSheet,blockedAt:blockedAt};
+}
+
+/* ============================================================
+   케이스 — pin 조회 · 기대값 합불 · 골든 스냅샷/diff
+   ============================================================ */
+function isRowArray(v){return Object.prototype.toString.call(v)==='[object Array]'&amp;&amp;
+  v.length>0&amp;&amp;Object.prototype.toString.call(v[0])==='[object Array]';}
+
+/* path 문법: <섹션>.<블록>.<라벨>[.<열번호>] — 마지막 마디는 인덱스가 아니라 라벨 */
+function pinResolve(d,path){
+  var parts=String(path||'').split('.'), cur=d;
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i];
+    if(cur==null)return undefined;
+    if(isRowArray(cur)){
+      var hit=null;
+      for(var j=0;j<cur.length;j++)if(String(cur[j][0])===p){hit=cur[j];break;}
+      if(!hit)return undefined;
+      var nxt=parts[i+1];
+      if(nxt!=null&amp;&amp;/^\d+$/.test(nxt)){cur=hit[Number(nxt)];i++;}
+      else cur=hit[1];
+      continue;
+    }
+    if(typeof cur!=='object')return undefined;
+    cur=cur[p];
+  }
+  return cur;
+}
+function pinCompare(op,actual,expected){
+  var a=actual==null?'':String(actual).trim(), e=String(expected==null?'':expected).trim();
+  if(op==='~')return a.indexOf(e)>=0;
+  if(op==='≠')return a!==e;
+  var na=parseFloat(a), ne=parseFloat(e);
+  if(isFinite(na)&amp;&amp;isFinite(ne)&amp;&amp;a!==''&amp;&amp;e!=='')return na===ne;
+  return a===e;
+}
+function checkPins(d,pins){
+  var results=(pins||[]).map(function(p){
+    var actual=pinResolve(d,p.path);
+    return {pin:p,actual:actual,ok:pinCompare(p.op||'=',actual,p.val)};
+  });
+  return {results:results,pass:results.filter(function(r){return r.ok;}).length,total:results.length};
+}
+function checkVerdicts(run,verdicts){
+  var results=(verdicts||[]).map(function(v){
+    var st=run.stages.filter(function(s){return s.no===v.stage;})[0];
+    if(!st)return {verdict:v,actual:null,ok:false};
+    if(v.expectErrorCode){
+      var codes=((st.detail||{}).fired||[]).map(function(f){return (f.rule.error||{}).code;});
+      return {verdict:v,actual:codes,ok:codes.indexOf(v.expectErrorCode)>=0};
+    }
+    return {verdict:v,actual:st.verdict,ok:st.verdict===v.expect};
+  });
+  return {results:results,pass:results.filter(function(r){return r.ok;}).length,total:results.length};
+}
+function goldenSnapshot(d,prefix,acc){
+  acc=acc||{};prefix=prefix||'';
+  if(d==null)return acc;
+  if(isRowArray(d)){
+    d.forEach(function(row){
+      var head=String(row[0]);
+      if(row.length<=3&amp;&amp;(row.length===2||typeof row[2]==='string'&amp;&amp;row[2].length<=4))
+        acc[prefix+head]=row[1];
+      else for(var c=1;c<row.length;c++)acc[prefix+head+'.'+c]=row[c];
+    });
+    return acc;
+  }
+  if(Object.prototype.toString.call(d)==='[object Array]'){
+    d.forEach(function(v,i){goldenSnapshot(v,prefix+i+'.',acc);});return acc;
+  }
+  if(typeof d==='object'){
+    for(var k in d)if(d.hasOwnProperty(k))goldenSnapshot(d[k],prefix+k+'.',acc);
+    return acc;
+  }
+  acc[prefix.replace(/\.$/,'')]=d;
+  return acc;
+}
+function goldenDiff(before,after){
+  var keys={},out=[],k;
+  for(k in before)keys[k]=1;
+  for(k in after)keys[k]=1;
+  Object.keys(keys).sort().forEach(function(k){
+    if(String(before[k])!==String(after[k]))out.push({path:k,before:before[k],after:after[k]});
+  });
+  return out;
+}
+function caseStatus(c){
+  if((c.pinFail||0)>0||(c.verdictFail||0)>0||(c.goldenDiff||0)>0)return 'FAIL';
+  if((c.anomalies||0)>0)return '경고';
+  return 'PASS';
+}
+
+/* ============================================================
+   품질사양 시드 (내장 폴백) — modules/quality-spec.html 구조와 동일
+   ============================================================ */
+var SEED_DICT=[
+  {code:'RAW_MTRL',ko:'원재료 재질',unit:''},
+  {code:'CCL_BOM', ko:'칼라 BOM',  unit:''},
+  {code:'PROC_CD', ko:'통과공정',  unit:''},
+  {code:'TOP_THK', ko:'상도 도막두께',unit:'㎛'},
+  {code:'GLOSS',   ko:'광택',      unit:'GU'},
+  {code:'POST_TRT',ko:'후처리',    unit:''},
+  {code:'PACK_CD', ko:'포장방법',  unit:''},
+  {code:'TEST_CD', ko:'시험항목',  unit:''}
+];
+var SEED_BASE=[
+  {code:'RAW_MTRL',val:'CQ',          note:'표준 소재'},
+  {code:'CCL_BOM', val:'S00001',      note:'표준 도장 BOM'},
+  {code:'PROC_CD', val:'1P-31-81-A1', note:'표준 통과공정'},
+  {code:'TOP_THK', val:'18',          note:'표준 상도 도막'},
+  {code:'GLOSS',   val:'40',          note:'표준 광택'},
+  {code:'POST_TRT',val:'없음',        note:'-'},
+  {code:'PACK_CD', val:'P01',         note:'내수 표준포장'},
+  {code:'TEST_CD', val:'표준검사',    note:'출하 기본검사'}
+];
+var SEED_SPECS=[
+  {specNo:'110197-301',cusCd:'110197',prdNm:'3',status:'확정',rev:2,author:'김민석',
+   conds:[{code:'ORD_EXC_THK',ko:'주문환산두께',op:'~',val:'0.4~0.6'}],
+   results:[{code:'TOP_THK',ko:'상도 도막두께',op:'=',val:'25',unit:'㎛'}]},
+  {specNo:'110197-302',cusCd:'110197',prdNm:'3',status:'확정',rev:1,author:'박서연',
+   conds:[],
+   results:[{code:'PACK_CD',ko:'포장방법',op:'=',val:'P03'},
+            {code:'TOP_THK',ko:'상도 도막두께',op:'=',val:'30',unit:'㎛'}]},
+  {specNo:'110197-303',cusCd:'110197',prdNm:'3',status:'작성중',rev:1,author:'이도현',
+   conds:[],
+   results:[{code:'GLOSS',ko:'광택',op:'=',val:'25~35',unit:'GU'}]},
+  {specNo:'320104-G01',cusCd:'320104',prdNm:'G',status:'전송완료',rev:1,author:'김민석',
+   conds:[{code:'ORD_EXC_WTH',ko:'주문환산폭',op:'≥',val:'1100'}],
+   results:[{code:'RAW_MTRL',ko:'원재료 재질',op:'=',val:'H34'},
+            {code:'PROC_CD',ko:'통과공정',op:'=',val:'1P-33-81-A2'}]},
+  {specNo:'320104-L01',cusCd:'320104',prdNm:'L',status:'확정',rev:1,author:'정하윤',
+   conds:[{code:'ORD_EXC_THK',ko:'주문환산두께',op:'≤',val:'0.5'}],
+   results:[{code:'POST_TRT',ko:'후처리',op:'=',val:'보호필름'}]}
+];
+
+/* ============================================================
+   상태 · 시드 케이스
+   ============================================================ */
+var LS_KEY='sim-mock-v1';
+var state=null, run=null;
+var ui={stage:6,provPath:null,openSec:{common:true},q:''};
+
+function orderFromSeed(so){
+  var isExp=/^E/.test(so.no);
+  var cus=String(so.buyer).split(' :')[0];
+  return {
+    ORD_REQ_NO:so.no, ORD_REQ_LN:so.ln,
+    PRD_NM_CD:so.prd, PRD_SHP:'C', SPC_AVR:so.spec, MAT_CD:so.mat,
+    ORD_EXC_THK:String(so.thk.toFixed(3)), ORD_EXC_WTH:String(so.wid.toFixed(1)),
+    FNL_CUS_CD:String(so.buyer).split(' :')[0],
+    ORD_USG_CD:String(so.use||'').split(' :')[0],
+    ORD_EDG_ASG_TP:so.edge,
+    ORD_LN_WGT:'24.0', ORD_SLIT_GRP_CNT:'6',
+    ORD_PAK_UNT_WGT_ULV:'8000', ORD_PAK_UNT_WGT_LLV:'5000',
+    ORD_PTT_FLM_CD:'', ORD_SLV_KND_TP:'P',
+    /* 아래는 정합성 룰이 NOT NULL 을 요구하는 항목들 — 영업이 OMS 에서 채워 넣는 값 */
+    FLOW_CHL:'11', NAT_CD:isExp?'US':'KR', ORD_KND:isExp?'Z03':'Z01',
+    CUS_CD:cus, ACT_CUS_CD:cus,
+    SPC_YR:/^A/.test(so.spec)?'2020':'2008',
+    ORD_SZ:so.thk.toFixed(2)+'X'+so.wid.toFixed(0)+'XCOIL',
+    ORD_THK_TP:'1', WGT_DCS_MTH_TP:'NA', ORD_WGT_UNT:'MT',
+    ORD_PAK_MTH:isExp?'ARSE00':'ARSX00',
+    ORD_THK_MNG_CD:'D', ORD_WTH_MNG_CD:'A',
+    ORD_RGS_PRS_ID:'sales01', ORD_TEM_CD:'T01',
+    ORD_COIL_IDIA:'508', ORD_COILG_MTH:'S',
+    GW_ASG_CD:(COAT_CD[so.prd]||'').split(' :')[0],
+    CCL_BOM_NO:(so.prd==='3'?'L2000E':so.prd==='4'?'L4000C':''),
+    ORD_SPNL_TP:'4',
+    __src:'oms'
+  };
+}
+function seedCases(){
+  var o1=orderFromSeed(SEED_ORDERS[0]);                       /* CCGI 0.45 × 1490 · 2CGL 아님(5CGL) */
+  var gi=SEED_ORDERS.filter(function(o){return o.prd==='G';})[0];
+  var gl=SEED_ORDERS.filter(function(o){return o.prd==='L';})[0];
+  return [
+    {id:'TC-014',name:'컬러 0.45 — 도금량·생산가부 확인',baseOrderRef:orderKey(o1),
+     order:o1,
+     expect:{pins:[{path:'cgl.coat.min',label:'도금 하한',op:'=',val:'80'},
+                   {path:'common.도금량코드',label:'도금량코드',op:'~',val:'E'}],
+             verdicts:[{stage:4,expect:'P'}],golden:null,goldenAt:null},
+     lastRun:null,author:'목업 사용자'},
+    {id:'TC-021',name:'GI 후물 — 2CGL 주공정',baseOrderRef:orderKey(orderFromSeed(gi)),
+     order:orderFromSeed(gi),
+     expect:{pins:[],verdicts:[{stage:4,expect:'P'},{stage:2,expectErrorCode:'A803'}],
+             golden:null,goldenAt:null},
+     lastRun:null,author:'목업 사용자'},
+    {id:'TC-024',name:'G/L — 7CGL 생산범위 시트 부재',baseOrderRef:orderKey(orderFromSeed(gl)),
+     order:orderFromSeed(gl),
+     /* 이 케이스는 의도적으로 FAIL 한다 — 7CGL 기준이 없다는 사실을 회귀로 잡아두기 위한 것 */
+     expect:{pins:[],verdicts:[{stage:4,expect:'P'}],golden:null,goldenAt:null},
+     lastRun:null,author:'목업 사용자'}
+  ];
+}
+function freshState(){
+  return {v:LS_KEY,seq:1,cases:seedCases(),changelog:[],sel:'TC-014'};
+}
+function loadState(){
+  var raw=readLS(LS_KEY);
+  if(raw&amp;&amp;raw.v===LS_KEY&amp;&amp;raw.cases&amp;&amp;raw.cases.length)return raw;
+  return freshState();
+}
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function currentCase(){
+  for(var i=0;i<state.cases.length;i++)if(state.cases[i].id===state.sel)return state.cases[i];
+  return state.cases[0]||null;
+}
+function pushLog(kind,item,before,after){
+  state.changelog.unshift({id:'c'+(state.seq++),ts:Date.now(),by:'목업 사용자',
+    kind:kind,item:item,before:before,after:after});
+  if(state.changelog.length>60)state.changelog.length=60;
+  saveState();
+}
+
+/* ============================================================
+   실행
+   ============================================================ */
+function computeCase(c){
+  var r=runPipeline(CRIT,c.order);
+  var pins=checkPins(r.design,c.expect.pins);
+  var vers=checkVerdicts(r,c.expect.verdicts);
+  var gd=c.expect.golden?goldenDiff(c.expect.golden,goldenSnapshot(r.design)):[];
+  c.lastRun={at:Date.now(),
+    status:caseStatus({pinFail:pins.total-pins.pass,verdictFail:vers.total-vers.pass,
+                       goldenDiff:gd.length,
+                       anomalies:r.anomalies.filter(function(a){return a.severity!=='info';}).length}),
+    pinPass:pins.pass,pinTotal:pins.total,
+    verdictPass:vers.pass,verdictTotal:vers.total,
+    goldenDiff:gd,anomalies:r.anomalies};
+  return r;
+}
+function doRun(){
+  var c=currentCase();if(!c)return;
+  run=computeCase(c);
+  ui.stage=run.blockedAt>=0?run.blockedAt+1:6;
+  ui.provPath=null;
+  saveState();renderAll();
+  toast('실행 완료 — '+c.lastRun.status);
+}
+function runAll(){
+  var keep=state.sel,n=0;
+  state.cases.forEach(function(c){computeCase(c);n++;});
+  state.sel=keep;
+  run=computeCase(currentCase());
+  saveState();renderAll();
+  toast(n+'건 재실행 완료');
+}
+
+/* ============================================================
+   렌더 — 좌측
+   ============================================================ */
+function statusPill(st){
+  var cls=st==='PASS'?'sent':st==='FAIL'?'fail':st==='경고'?'warn':'draft';
+  return '<span class=&quot;pill '+cls+'&quot;>'+esc(st)+'</span>';
+}
+function renderCaseList(){
+  var q=ui.q.trim().toLowerCase();
+  var list=state.cases.filter(function(c){
+    return !q||(c.id+' '+c.name+' '+(c.baseOrderRef||'')).toLowerCase().indexOf(q)>=0;});
+  $('#case-cnt').textContent=list.length+'건';
+  $('#case-list').innerHTML=list.length?list.map(function(c){
+    var st=c.lastRun?c.lastRun.status:'미실행';
+    return '<button type=&quot;button&quot; class=&quot;case-row'+(state.sel===c.id?' sel':'')+
+      '&quot; data-action=&quot;case-pick&quot; data-id=&quot;'+esc(c.id)+'&quot; role=&quot;option&quot; aria-selected=&quot;'+
+      (state.sel===c.id)+'&quot;>'+statusPill(st)+
+      '<b class=&quot;mono&quot;>'+esc(c.id)+'</b>'+
+      '<span class=&quot;cell-sub&quot; style=&quot;overflow:hidden;text-overflow:ellipsis;white-space:nowrap&quot;>'+
+      esc(c.name)+'</span></button>';
+  }).join(''):'<div class=&quot;empty&quot;><div class=&quot;big&quot;>케이스가 없습니다</div>＋ 신규로 만드세요.</div>';
+}
+function orderFieldRow(key,val,dirty){
+  var label=fieldLabel(key);
+  var star=(DESIGN_ONLY.indexOf(key)>=0)?' <span class=&quot;req&quot; title=&quot;정합성 룰 사전에 없는 설계 전용 항목&quot;>★</span>':'';
+  return '<div class=&quot;fr&quot;><label for=&quot;of-'+esc(key)+'&quot; title=&quot;'+esc(key)+'&quot;>'+esc(label)+star+'</label>'+
+    '<input class=&quot;inp'+(dirty?' dirty':'')+'&quot; id=&quot;of-'+esc(key)+'&quot; data-order-field=&quot;'+esc(key)+
+    '&quot; value=&quot;'+esc(val==null?'':val)+'&quot; placeholder=&quot;빈칸=미입력&quot;></div>';
+}
+function renderOrderForm(){
+  var c=currentCase();if(!c)return;
+  var base=c.baseOrderRef?null:null;
+  $('#order-src').textContent=c.order.__src==='oms'?'OMS 수신':'직접 입력';
+  $('#order-core').innerHTML=CORE_FIELDS.map(function(k){
+    return orderFieldRow(k,c.order[k],false);}).join('');
+  var extra=Object.keys(c.order).filter(function(k){
+    return k.charAt(0)!=='_'&amp;&amp;CORE_FIELDS.indexOf(k)<0;});
+  $('#order-extra-n').textContent=extra.length;
+  $('#order-extra-body').innerHTML=extra.map(function(k){
+    return orderFieldRow(k,c.order[k],false);}).join('');
+}
+function renderLog(){
+  $('#log-cnt').textContent=state.changelog.length+'건';
+  $('#log-list').innerHTML=state.changelog.length
+    ? '<div class=&quot;tbl-scroll&quot;><table class=&quot;grid&quot;><tbody>'+
+      state.changelog.slice(0,12).map(function(l){
+        return '<tr><td style=&quot;white-space:nowrap&quot;><span class=&quot;cell-sub&quot;>'+fmtDT(l.ts)+'</span><br>'+
+          '<b>'+esc(l.kind)+'</b></td><td>'+esc(l.item)+
+          '<br><span class=&quot;cell-sub&quot;>'+esc(l.before)+' → '+esc(l.after)+'</span></td></tr>';
+      }).join('')+'</tbody></table></div>'
+    : '<div class=&quot;cell-sub&quot;>아직 변경 이력이 없습니다.</div>';
+}
+
+/* ============================================================
+   렌더 — 파이프라인 바
+   ============================================================ */
+function stageSummary(s){
+  var d=s.detail||{};
+  if(s.no===1)return d.missing.length?'누락 '+d.missing.length:'OK';
+  if(s.no===2)return d.fired.length?('에러 '+d.fired.length+(d.skippedByNull?' · 미평가 '+d.skippedByNull:''))
+                                   :(d.skippedByNull?'미평가 '+d.skippedByNull:'통과');
+  if(s.no===3)return d.reason?'판정 불가':(d.pass?'분할 '+d.okSplits.length+'종 가능':'범위 밖');
+  if(s.no===4)return s.missingSheet?(s.missingSheet+' 시트 없음')
+    :(d.main?(d.main.stateName||d.main.reason||'판정 없음'):'판정 없음');
+  if(s.no===5)return d.applied.length+'건 적용'+(d.conflicts.length?' · 충돌 '+d.conflicts.length:'');
+  return '9섹션 산출';
+}
+function renderPipe(){
+  if(!run){$('#pipe').innerHTML='';return;}
+  $('#pipe').innerHTML=run.stages.map(function(s){
+    var cls=s.blocked?'no':s.verdict==='F'?'no':s.verdict==='P'?'ok'
+           :s.verdict==='C'?'wa':s.verdict==null?'gy':'wa';
+    return '<button type=&quot;button&quot; class=&quot;st '+cls+(s.advisory?' gh':'')+(ui.stage===s.no?' on':'')+
+      '&quot; role=&quot;tab&quot; data-action=&quot;stage&quot; data-no=&quot;'+s.no+'&quot; aria-selected=&quot;'+(ui.stage===s.no)+'&quot;>'+
+      '<span class=&quot;t&quot;>'+circled(s.no)+' '+esc(s.name)+'</span>'+
+      '<span class=&quot;v&quot;>'+esc(stageSummary(s))+'</span>'+
+      (s.advisory?'<span class=&quot;adv&quot;>참고값</span>':'')+'</button>';
+  }).join('');
+}
+function renderBadges(){
+  var c=currentCase(), el=$('#run-badges');
+  $('#run-case').textContent=c?c.id:'—';
+  $('#run-name').textContent=c?c.name:'';
+  if(!c||!c.lastRun){el.innerHTML='<span class=&quot;pill draft&quot;>미실행</span>';
+    $('[data-action=&quot;promote&quot;]').disabled=true;return;}
+  var r=c.lastRun, an=r.anomalies||[];
+  var err=an.filter(function(a){return a.severity==='error';}).length;
+  var wa=an.filter(function(a){return a.severity==='warn';}).length;
+  var info=an.filter(function(a){return a.severity==='info';}).length;
+  el.innerHTML=statusPill(r.status)+
+    (err?' <span class=&quot;pill fail&quot;>이상 '+err+'</span>':'')+
+    (wa?' <span class=&quot;pill warn&quot;>경고 '+wa+'</span>':'')+
+    (info?' <span class=&quot;pill gy&quot;>참고 '+info+'</span>':'')+
+    ' <span class=&quot;pill ac&quot;>기대값 '+(r.pinPass+r.verdictPass)+'/'+(r.pinTotal+r.verdictTotal)+'</span>'+
+    (r.goldenDiff&amp;&amp;r.goldenDiff.length?' <span class=&quot;pill warn&quot;>골든 diff '+r.goldenDiff.length+'</span>':'');
+  $('[data-action=&quot;promote&quot;]').disabled=(r.status==='FAIL');
+}
+
+/* ============================================================
+   렌더 — ①~⑤ 단계 상세
+   ============================================================ */
+function condPhrase(c){
+  var v=(c.values||[]).map(function(x){
+    var lb=valueLabel(c.field,x);return lb?(x+' ('+lb+')'):String(x);}).join(', ');
+  switch(c.op){
+    case 'IS_NULL':return '이(가) 비어 있음';
+    case 'NOT_NULL':return '이(가) 입력됨';
+    case 'IN':return '이(가) ['+v+'] 중 하나';
+    case 'NOT_IN':return '이(가) ['+v+'] 에 없음';
+    case 'BETWEEN':return '이(가) '+c.low+(c.lowInclusive?' ≤':' <')+' x '+
+                          (c.highInclusive?'≤ ':'< ')+c.high;
+    case 'GT':return '> '+v; case 'GE':return '≥ '+v;
+    case 'LT':return '< '+v; case 'LE':return '≤ '+v;
+    case 'NE':return '≠ '+v; default:return '= '+v;
+  }
+}
+function firedCard(f){
+  var e=f.rule.error||{};
+  var meta=CRIT.ruleMeta[f.rule.id];
+  return '<div class=&quot;match-card&quot;><div class=&quot;match-h&quot;>'+
+    '<span class=&quot;cc-no&quot;>✕</span><span class=&quot;code-badge&quot;>'+esc(e.code)+'</span>'+
+    '<span>'+esc(e.message||'')+'</span>'+
+    (f.coGroup?'<span class=&quot;pill warn&quot;>동시발화</span>':'')+
+    (meta&amp;&amp;meta!=='auto'?'<span class=&quot;pill warn&quot;>'+esc(meta)+'</span>':'')+
+    '<span class=&quot;m-badge miss mono&quot;>'+esc(f.rule.id)+'</span></div>'+
+    '<div class=&quot;cond-check&quot;>'+f.condResults.map(function(r){
+      var val=r.orderValue;
+      var lb=val==null||val===''?null:valueLabel(r.cond.field,val);
+      return '<div class=&quot;row&quot;><span class=&quot;'+(r.pass?'cc-ok':'cc-no')+'&quot;>'+(r.pass?'✓':'✕')+'</span>'+
+        '<span>'+esc(fieldLabel(r.cond.field))+' '+esc(condPhrase(r.cond))+'</span>'+
+        '<span class=&quot;cell-sub&quot;>주문값: <b class=&quot;mono&quot;>'+
+        (val==null||val===''?'(미입력)':esc(val)+(lb?' ('+esc(lb)+')':''))+'</b></span></div>';
+    }).join('')+
+    '<div class=&quot;cell-sub&quot; style=&quot;margin-top:3px&quot;>조치: '+esc(e.actor||'미지정')+
+    ' · 유형: '+esc(e.category||'')+'</div></div></div>';
+}
+function specCard(e){
+  var badge=e.applied?'<span class=&quot;m-badge hit&quot;>✓ 적용</span>'
+    :e.matched?'<span class=&quot;m-badge skip&quot;>△ 조건 충족 · 미확정 제외</span>'
+    :'<span class=&quot;m-badge miss&quot;>✕ 조건 불일치</span>';
+  return '<div class=&quot;match-card&quot;><div class=&quot;match-h&quot;>'+
+    '<span class=&quot;mono&quot;>'+esc(e.s.specNo)+'</span>'+
+    '<span class=&quot;pill '+(e.s.status==='확정'?'sent':e.s.status==='전송완료'?'ac':'draft')+'&quot;>'+
+    esc(e.s.status)+'</span>'+badge+'</div><div class=&quot;cond-check&quot;>'+
+    (e.checks.length?e.checks.map(function(ch){
+      return '<div class=&quot;row&quot;><span class=&quot;'+(ch.pass?'cc-ok':'cc-no')+'&quot;>'+(ch.pass?'✓':'✕')+'</span>'+
+        '<span>'+esc(ch.c.ko)+' '+esc(ch.c.op)+' <b class=&quot;mono&quot;>'+esc(ch.c.val)+'</b></span>'+
+        '<span class=&quot;cell-sub&quot;>주문값: <b class=&quot;mono&quot;>'+
+        (ch.ov==null||ch.ov===''?'(없음)':esc(ch.ov))+'</b></span></div>';
+    }).join(''):'<div class=&quot;cell-sub&quot;>조건 없음 — 이 고객사·품명이면 무조건 적용됩니다.</div>')+
+    (e.matched&amp;&amp;!e.eligible?'<div class=&quot;pv-issue wa&quot; style=&quot;margin-top:4px&quot;>'+
+      '△ 작성중 상태 — 확정·전송 후 실제 설계에 반영됩니다</div>':'')+
+    '<div style=&quot;margin-top:4px&quot;>'+(e.s.results||[]).map(function(r){
+      return '<span class=&quot;code-badge&quot;>'+esc(r.ko)+' '+esc(r.op)+' '+esc(r.val)+'</span> ';
+    }).join('')+'</div></div></div>';
+}
+
+/* ============================================================
+   렌더 — 설계결과 9섹션
+   ============================================================ */
+var SECS=[
+ {id:'common',t:'공통',
+  sum:function(d){return d.common[0][1]+' · 도금량 '+(kvOf(d.common,'도금량코드')||'-');},
+  body:function(d){return kvGrid(d.common,'common');}},
+ {id:'mat',t:'재질',
+  sum:function(d){var b=d.mat.bands[3];return 'YP '+(b[3]||'-')+'~'+(b[4]||'')+' · TS '+(b[5]||'-')+'~'+(b[6]||'')+' · 굴곡 '+(b[11]||'-');},
+  body:function(d){return bandTable([{t:'HRB',s:['하한','상한']},{t:'YP(MPa)',s:['하한','상한']},
+    {t:'TS(MPa)',s:['하한','상한']},{t:'EL(%)',s:['하한','상한']},{t:'ERI(mm)',s:['하한','상한']},{t:'굴곡'}],
+    d.mat.bands);}},
+ {id:'tol',t:'인수도',
+  sum:function(d){var b=d.tol.base[0];return '설계기준 BMT '+b[2]+'~'+b[3]+' · 폭 '+b[4]+'~'+b[5];},
+  body:function(d){return bandTable([{t:'두께공차(mm)',s:['하한','상한']},{t:'폭공차(mm)',s:['하한','상한']},
+    {t:'길이공차(mm)',s:['하한','상한']}],d.tol.tols)+
+    '<div class=&quot;band-title&quot;>적용기준</div>'+
+    bandTable([{t:'두께구분'},{t:'제품 두께 범위',s:['하한','상한']},{t:'제품 폭 범위',s:['하한','상한']}],
+      d.tol.base,'적용기준');}},
+ {id:'cgl',t:'용융도금 — 제조표준',
+  sum:function(d){return '두께목표 '+String(kvOf(d.cgl.pltcm,'두께목표값')).split(' ')[0]+
+    ' · 폭 '+kvOf(d.cgl.pltcm,'폭목표값(주공정)')+' · 도금 '+d.cgl.coat.min+'~'+d.cgl.coat.max+'g/㎡';},
+  body:function(d){return bandTable([{t:'원자재 코드'},{t:'원자재 선호도'},
+      {t:'두께',s:['목표','하한','상한']},{t:'폭 목표'}],d.cgl.lines,'적차선')+
+    '<div class=&quot;band-title&quot;>PLTCM</div>'+kvGrid(d.cgl.pltcm,'cgl.pltcm')+
+    '<div class=&quot;band-title&quot;>CGL 소둔·라인</div>'+
+    bandTable([{t:'소둔Cycle'},{t:'HT(℃)'},{t:'CT(℃)'},{t:'ST(℃)'},{t:'Line Speed'}],d.cgl.ops,'Line')+
+    '<div class=&quot;band-title&quot;>도금 부착량·목표</div>'+
+    kvGrid([['도금 부착량(하한/상한)',d.cgl.coat.min+' · '+d.cgl.coat.max],
+            ['도금목표(도금량/두께)',d.cgl.coat.target+' · '+d.cgl.coat.thk],
+            ['Spangle',d.cgl.coat.spangle],['L/V',d.cgl.coat.lv],['Skin Pass',d.cgl.coat.skin],
+            ['목표 Size(두께 × 폭)',d.cgl.coat.sizeT+' × '+d.cgl.coat.sizeW]],'cgl.coatkv');}},
+ {id:'egl',t:'전기도금 — 제조표준',sum:function(d){return d.egl?'설계값 있음':'설계값 없음';},
+  body:function(d){return d.egl?'':'<div class=&quot;empty&quot;>이 주문은 용융도금(CGL) 경유 제품으로 EGL 설계값이 없습니다.</div>';}},
+ {id:'post',t:'후공정 — 제조표준',
+  sum:function(d){return '제품폭범위 '+d.post.wMin+'~'+d.post.wMax+' · '+String(d.post.pack).split(' : ')[0];},
+  body:function(d){return kvGrid([['1T2C유무',d.post.t2c],['S/T유무',d.post.st],
+    ['제품폭범위(하한/상한)',d.post.wMin+' · '+d.post.wMax],
+    ['포장방법',d.post.pack,'wide'],['품질메세지',d.post.qMsg,'wide']],'post');}},
+ {id:'color',t:'칼라제조사양',
+  sum:function(d){return d.color?(String(d.color.sum.way).split(' : ')[1]+' · TOP '+d.color.sum.cT+' / BACK '+d.color.sum.cB):'해당 없음';},
+  body:function(d){return d.color
+    ?bandTable([{t:'Top 2Coat'},{t:'Primer'},{t:'Back 1Coat'}],d.color.matrix,'구분')+
+     '<div class=&quot;band-title&quot;>도장 요약</div>'+
+     kvGrid([['도장방식',d.color.sum.way],['색상코드(Top/Back)',d.color.sum.cT+' · '+d.color.sum.cB],
+             ['도막두께 Total(Top/Back)',d.color.sum.thkT+' · '+d.color.sum.thkB],
+             ['수지코드(Top/Back)',d.color.sum.resinT+' · '+d.color.sum.resinB],
+             ['목표 Size(두께 × 폭)',d.color.sum.szT+' · '+d.color.sum.szW],
+             ['상세색상명',d.color.sum.name,'wide']],'color.sum')+
+     '<div class=&quot;band-title&quot;>시험기준</div>'+bandTable([{t:'기준값'}],d.color.test,'시험항목')
+    :'<div class=&quot;empty&quot;>도장(CCGI·CCLI) 제품에서만 표시되는 섹션입니다.</div>';}},
+ {id:'route',t:'통과공정',
+  sum:function(d){return d.route.rows.map(function(r){return String(r[1]).split(' - ')[1];}).join(' → ');},
+  body:function(d){return '<div class=&quot;band-title&quot;>통과공정번호 <span class=&quot;code-badge&quot;>'+esc(d.route.no)+'</span></div>'+
+    bandTable([{t:'공정'},{t:'Material Code'}],d.route.rows,'순서');}},
+ {id:'comp',t:'성분',
+  sum:function(d){var i=d.comp.g1[2];return i[2]?('C ≤ '+i[2]+' · Mn ≤ '+(i[6]||'-')):'기준 없음';},
+  body:function(d){return bandTable([{t:'C(%)',s:['하한','상한']},{t:'Si(%)',s:['하한','상한']},
+    {t:'Mn(%)',s:['하한','상한']},{t:'P(%)',s:['하한','상한']},{t:'S(%)',s:['하한','상한']}],d.comp.g1);}}
+];
+function kvOf(rows,label){
+  for(var i=0;i<rows.length;i++)if(rows[i][0]===label)return rows[i][1];
+  return '';
+}
+function kvGrid(items,sectionId){
+  return '<div class=&quot;kv-grid&quot;>'+items.map(function(it){
+    var path=sectionId+'.'+it[0];
+    var cls='val'+(ui.provPath===path?' on':'')+(isUncovered(path)?' bad':'');
+    return '<div class=&quot;kv'+(it[2]==='wide'?' wide':'')+'&quot;><label>'+esc(it[0])+'</label>'+
+      '<button type=&quot;button&quot; class=&quot;'+cls+'&quot; data-action=&quot;prov&quot; data-path=&quot;'+esc(path)+'&quot;>'+
+      esc(it[1])+'</button></div>';
+  }).join('')+'</div>';
+}
+function bandTable(groups,rows,first){
+  var two=groups.some(function(g){return g.s;});
+  var h1='<tr><th'+(two?' rowspan=&quot;2&quot;':'')+'>'+esc(first||'사양구분')+'</th>', h2='<tr>';
+  groups.forEach(function(g){
+    if(g.s){h1+='<th class=&quot;c&quot; colspan=&quot;'+g.s.length+'&quot;>'+esc(g.t)+'</th>';
+      g.s.forEach(function(s){h2+='<th class=&quot;c&quot;>'+esc(s)+'</th>';});}
+    else h1+='<th'+(two?' rowspan=&quot;2&quot;':'')+'>'+esc(g.t)+'</th>';
+  });
+  h1+='</tr>';h2+='</tr>';
+  var body=rows.map(function(r){
+    return '<tr><td><b>'+esc(r[0])+'</b></td>'+r.slice(1).map(function(c){
+      return '<td class=&quot;c&quot;>'+esc(c)+'</td>';}).join('')+'</tr>';
+  }).join('');
+  return '<div class=&quot;tbl-scroll&quot;><table class=&quot;grid&quot;><thead>'+h1+(two?h2:'')+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+function isUncovered(path){
+  return !!(run&amp;&amp;run.anomalies.some(function(a){return a.kind==='uncovered'&amp;&amp;a.ref===path;}));
+}
+function renderDesign(){
+  var d=run.design;
+  return SECS.map(function(s){
+    var open=!!ui.openSec[s.id];
+    var an=run.anomalies.filter(function(a){return a.ref&amp;&amp;String(a.ref).indexOf(s.id+'.')===0;});
+    return '<div class=&quot;acc&quot;><button type=&quot;button&quot; class=&quot;acc-h&quot; data-action=&quot;sec&quot; data-id=&quot;'+s.id+'&quot;'+
+      ' aria-expanded=&quot;'+open+'&quot;>'+(open?'▾':'▸')+' '+esc(s.t)+
+      (an.length?' <span class=&quot;pill fail&quot;>이상 '+an.length+'</span>':'')+
+      '<span class=&quot;s&quot;>'+esc(s.sum(d))+'</span></button>'+
+      (open?'<div class=&quot;acc-b&quot;>'+s.body(d)+'</div>':'')+'</div>';
+  }).join('');
+}
+
+/* ============================================================
+   렌더 — 단계 상세 디스패처
+   ============================================================ */
+function renderStage(){
+  var p=$('#stage-panel');
+  if(!run){p.innerHTML='<div class=&quot;empty&quot;><div class=&quot;big&quot;>아직 실행 전입니다</div>'+
+    '왼쪽에서 케이스를 고르고 [▶ 실행]을 누르세요.</div>';return;}
+  var s=run.stages[ui.stage-1], d=s.detail||{};
+  var head='<div class=&quot;panel-h&quot;><h3>'+circled(s.no)+' '+esc(s.name)+'</h3>'+
+    (s.advisory?'<span class=&quot;sub&quot;>차단 이후 단계 · 참고값</span>':'')+'</div>';
+
+  if(s.no===1){
+    p.innerHTML=head+'<div class=&quot;pad&quot;>'+(d.missing.length
+      ? '<div class=&quot;pv-issue&quot;>필수 항목 누락: <b>'+d.missing.map(function(k){
+          return esc(fieldLabel(k));}).join(' · ')+'</b></div>'
+      : '<div class=&quot;pv-ok&quot;>필수 항목이 모두 채워졌습니다.</div>')+'</div>';
+
+  }else if(s.no===2){
+    p.innerHTML=head+'<div class=&quot;pad&quot;>'+
+      (d.fired.length?d.fired.map(firedCard).join(''):'<div class=&quot;pv-ok&quot;>발화한 룰이 없습니다.</div>')+
+      ((d.skippedByNull||d.skippedByFormat||d.skippedByType)
+        ? '<div class=&quot;pv-issue wa&quot;>미평가 '+(d.skippedByNull+d.skippedByFormat+d.skippedByType)+
+          '건 — <b>통과가 아닙니다</b>.'+(d.nullFields.length?' 원인: '+
+          d.nullFields.slice(0,4).map(function(n){return esc(n.label)+'('+n.rules+')';}).join(' · '):'')+
+          '</div>':'')+
+      '<p class=&quot;f-hint&quot;>평가 '+d.evaluated+'건 · 전 룰 평가(우선순위 중단 없음) · '+
+      '<a class=&quot;jump&quot; href=&quot;#/quality-design/feasibility-management/order-consistency&quot; data-action=&quot;jump&quot;>주문정합성관리 열기 →</a></p>'+
+      '</div>';
+
+  }else if(s.no===3){
+    var w=toWeight(currentCase().order);
+    p.innerHTML=head+'<div class=&quot;pad&quot;>'+(d.reason
+      ? '<div class=&quot;pv-issue wa&quot;>판정 불가 — '+esc(d.reason)+'</div>'
+      : (d.pass?'<div class=&quot;pv-ok&quot;>분할단중 '+d.value+' 이 허용범위 '+CRIT.weight.min+'~'+CRIT.weight.max+' 안에 있습니다.</div>'
+               :'<div class=&quot;pv-issue&quot;>분할단중 '+d.value+' 이 허용범위 '+CRIT.weight.min+'~'+CRIT.weight.max+' 밖입니다.</div>'))+
+      '<div class=&quot;kv-grid&quot;>'+
+      '<div class=&quot;kv&quot;><label>주문단중</label><span class=&quot;mono&quot;>'+(w.weight==null?'(미입력)':w.weight)+'</span></div>'+
+      '<div class=&quot;kv&quot;><label>분할 수</label><span class=&quot;mono&quot;>'+(w.split==null?'(미입력)':w.split)+'</span></div>'+
+      '<div class=&quot;kv&quot;><label>가능 분할수</label><span class=&quot;mono&quot;>'+(d.okSplits||[]).join(' · ')+'</span></div>'+
+      '<div class=&quot;kv wide&quot;><label>필드 매핑</label><span class=&quot;cell-sub&quot;>단중='+esc(w.weightField)+
+      ' · 분할수='+esc(w.splitField)+' <b>(가정 — 기준정보에 명시 없음)</b></span></div></div>'+
+      '<p class=&quot;f-hint&quot;><a class=&quot;jump&quot; href=&quot;#/quality-design/feasibility-management/order-unit-weight-error&quot; data-action=&quot;jump&quot;>주문단중에러관리 열기 →</a></p></div>';
+
+  }else if(s.no===4){
+    p.innerHTML=head+'<div class=&quot;pad&quot;>'+
+      (s.missingSheet?'<div class=&quot;pv-issue wa&quot;><b>'+esc(s.missingSheet)+
+        ' 생산범위 시트가 없습니다.</b> 통과공정 '+esc(run.design.route.no)+
+        ' 의 주공정을 다루는 기준이 기준정보에 존재하지 않습니다 — 아래는 참고용 타 라인 판정입니다.</div>':'')+
+      '<div class=&quot;tbl-scroll&quot;><table class=&quot;grid&quot;><thead><tr><th>라인</th><th>재질그룹</th>'+
+      '<th class=&quot;c&quot;>폭 밴드</th><th class=&quot;c&quot;>두께 밴드</th><th class=&quot;c&quot;>판정</th><th>비고</th></tr></thead><tbody>'+
+      d.scan.map(function(r){
+        var main=d.main&amp;&amp;r.sheetKey===d.main.sheetKey;
+        return '<tr class=&quot;'+(main?'ovr':'')+'&quot;><td>'+esc(r.sheetTab)+
+          (main?' <span class=&quot;pill ac&quot;>주공정</span>':'')+'</td>'+
+          '<td>'+esc(r.groupName||'—')+'</td>'+
+          '<td class=&quot;c mono&quot;>'+esc(r.rowLabel||'—')+'</td>'+
+          '<td class=&quot;c mono&quot;>'+esc(r.colLabel||'—')+'</td>'+
+          '<td class=&quot;c&quot;>'+(r.state?'<b>'+esc(r.stateName)+'</b>':'<span class=&quot;cell-sub&quot;>판정 없음</span>')+'</td>'+
+          '<td class=&quot;cell-sub&quot;>'+esc([r.reason||''].concat(r.flags||[]).filter(Boolean).join(' · '))+'</td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      '<p class=&quot;f-hint&quot;>셀을 고치려면 <a class=&quot;jump&quot; href=&quot;#/quality-design/feasibility-management/production-feasibility&quot; data-action=&quot;jump&quot;>생산가부관리</a>로 이동하세요 — 고친 값은 다음 실행에 바로 반영됩니다.</p></div>';
+
+  }else if(s.no===5){
+    p.innerHTML=head+'<div class=&quot;pad&quot;>'+
+      (d.evals.length?d.evals.map(specCard).join('')
+        :'<div class=&quot;pv-issue wa&quot;>이 수요가·품명에 등록된 품질사양이 없습니다 — 표준 기준으로 설계합니다.</div>')+
+      (d.rows.length?'<div class=&quot;band-title&quot;>적용 결과</div><div class=&quot;tbl-scroll&quot;><table class=&quot;grid&quot;>'+
+        '<thead><tr><th>설계 항목</th><th>표준 기준값</th><th>최종 적용값</th><th>근거</th></tr></thead><tbody>'+
+        d.rows.map(function(r){
+          return '<tr class=&quot;'+(r.srcs.length?'ovr':'')+'&quot;><td><b>'+esc(r.ko)+'</b> <span class=&quot;code-badge&quot;>'+
+            esc(r.code)+'</span></td><td class=&quot;mono&quot;>'+esc(r.base)+'</td>'+
+            '<td class=&quot;mono&quot;><b>'+esc(r.srcs.length?r.val:r.base)+'</b> '+esc(r.unit||'')+'</td>'+
+            '<td>'+(r.srcs.length?r.srcs.map(function(s){return '<span class=&quot;code-badge&quot;>'+esc(s)+'</span>';}).join(' ')
+                                :'<span class=&quot;cell-sub&quot;>표준</span>')+'</td></tr>';
+        }).join('')+'</tbody></table></div>':'')+
+      '<p class=&quot;f-hint&quot;><a class=&quot;jump&quot; href=&quot;#/quality-design/module-management/quality-spec&quot; data-action=&quot;jump&quot;>품질사양관리 열기 →</a></p></div>';
+
+  }else{
+    p.innerHTML=head+renderDesign();
+  }
+}
+
+/* ============================================================
+   렌더 — 근거 패널
+   ============================================================ */
+function provFor(path){
+  var out=[], c=currentCase();
+  if(c.asisSnapshot&amp;&amp;c.asisSnapshot[path]!==undefined)
+    out.push({cls:'prv asis',label:'AS-IS 실제값',detail:String(c.asisSnapshot[path])+
+      ' · '+(c.baseOrderRef||'')+' 최초 실행 스냅샷',
+      jump:'#/quality-design/result-management/quality-design-result'});
+  out.push({cls:'prv std',label:'표준 기준값',
+    detail:'규격약호 · 품명 · 재질코드에서 산출 (설계 엔진)',jump:null});
+  mapSpecOverrides(run.specMatch.rows).mapped.forEach(function(m){
+    if(m.path!==path)return;
+    out.push({cls:'prv',label:'사양 오버라이드',
+      detail:m.srcs.join(' → ')+' → '+m.val+(m.srcs.length>1?' (나중 사양이 이깁니다)':''),
+      jump:'#/quality-design/module-management/quality-spec'});
+  });
+  return out;
+}
+function renderProv(){
+  var r=$('#rpane');
+  var anHtml=run?('<div class=&quot;sec-h&quot;>이상징후 <span class=&quot;n&quot;>'+run.anomalies.length+'건</span></div><div class=&quot;pad&quot;>'+
+    (run.anomalies.length?run.anomalies.map(function(a){
+      return '<div style=&quot;margin-bottom:5px;font-size:12px&quot;><span class=&quot;pill '+
+        (a.severity==='error'?'fail':a.severity==='info'?'gy':'warn')+'&quot;>'+esc(a.label)+
+        '</span> '+esc(a.detail)+'</div>';
+    }).join(''):'<div class=&quot;cell-sub&quot;>이상 없음</div>')+'</div>'):'';
+  if(!run||!ui.provPath){
+    r.innerHTML='<div class=&quot;sec-h&quot;>근거 추적</div><div class=&quot;empty&quot;>'+
+      '<div class=&quot;big&quot;>값을 클릭하세요</div>설계결과(⑥)의 밑줄 친 값을 누르면 근거가 여기 쌓입니다.</div>'+anHtml;
+    return;
+  }
+  var layers=provFor(ui.provPath);
+  var c=currentCase();
+  var pin=(c.expect.pins||[]).filter(function(p){return p.path===ui.provPath;})[0];
+  var actual=pinResolve(run.design,ui.provPath);
+  r.innerHTML='<div class=&quot;sec-h&quot;>근거 추적 <span class=&quot;n mono&quot;>'+esc(ui.provPath)+'</span></div><div class=&quot;pad&quot;>'+
+    layers.map(function(p){
+      return '<div class=&quot;'+p.cls+'&quot;><b>'+esc(p.label)+'</b><br>'+esc(p.detail)+
+        (p.jump?'<br><a class=&quot;jump&quot; href=&quot;'+esc(p.jump)+'&quot; data-action=&quot;jump&quot;>↳ 원본 화면 열기 →</a>':'')+'</div>';
+    }).join('')+
+    '<div style=&quot;border-top:1px solid var(--border);margin-top:8px;padding-top:7px;font-size:12px&quot;>'+
+    '<b>이 값의 기대값</b><br>'+
+    (pin?('<span class=&quot;mono&quot;>'+esc(pin.op||'=')+' '+esc(pin.val)+'</span> '+
+          (pinCompare(pin.op||'=',actual,pin.val)?'<span class=&quot;pill sent&quot;>✓ 일치</span>':'<span class=&quot;pill fail&quot;>✕ 불일치</span>')+
+          ' <button class=&quot;btn btn-sm&quot; data-action=&quot;pin-del&quot; data-path=&quot;'+esc(ui.provPath)+'&quot;>해제</button>')
+        :('<span class=&quot;cell-sub&quot;>지정 안 됨</span> '+
+          '<button class=&quot;btn btn-sm&quot; data-action=&quot;pin-add&quot; data-path=&quot;'+esc(ui.provPath)+'&quot;>현재값을 기대값으로</button>'))+
+    '</div></div>'+anHtml;
+}
+
+/* ============================================================
+   렌더 — 기대값 대조
+   ============================================================ */
+function expLine(ok,kind,want,actual){
+  return '<div class=&quot;exp-row&quot;><span class=&quot;pill '+(ok?'sent':'fail')+'&quot;>'+(ok?'✓':'✕')+'</span>'+
+    '<b>'+esc(kind)+'</b> '+esc(want)+
+    (ok?'':' → 실제 <span class=&quot;mono&quot;>'+esc(
+      Object.prototype.toString.call(actual)==='[object Array]'?actual.join(','):actual)+'</span>')+'</div>';
+}
+function renderExpect(){
+  var p=$('#expect-panel'), c=currentCase();
+  if(!run||!c){p.innerHTML='';return;}
+  var pins=checkPins(run.design,c.expect.pins);
+  var vers=checkVerdicts(run,c.expect.verdicts);
+  var gd=c.lastRun?c.lastRun.goldenDiff:[];
+  p.innerHTML='<div class=&quot;panel-h&quot;><h3>기대값 대조</h3><span class=&quot;sub&quot;>핵심 '+
+    pins.pass+'/'+pins.total+' · 판정 '+vers.pass+'/'+vers.total+
+    (c.expect.golden?' · 골든 diff '+gd.length:' · 골든 없음')+'</span></div><div class=&quot;pad&quot;>'+
+    (vers.total+pins.total===0?'<div class=&quot;cell-sub&quot;>기대값이 지정되지 않았습니다 — 설계결과의 값을 클릭해 지정하세요.</div>':'')+
+    vers.results.map(function(r){
+      var v=r.verdict;
+      var want=v.expectErrorCode?('에러코드 '+v.expectErrorCode+' 발생'):v.expect;
+      return expLine(r.ok,'판정',circled(v.stage)+' '+want,r.actual);}).join('')+
+    pins.results.map(function(r){
+      return expLine(r.ok,'핵심',(r.pin.label||r.pin.path)+' '+(r.pin.op||'=')+' '+r.pin.val,r.actual);}).join('')+
+    (c.expect.golden
+      ? (gd.length
+          ? '<div class=&quot;pv-issue wa&quot; style=&quot;margin-top:6px&quot;>골든 스냅샷('+fmtDT(c.expect.goldenAt)+
+            ' 채택) 대비 <b>'+gd.length+'개 항목</b> 상이 '+
+            '<button class=&quot;btn btn-sm&quot; data-action=&quot;golden-diff&quot;>diff 보기</button> '+
+            '<button class=&quot;btn btn-sm btn-pri&quot; data-action=&quot;golden-accept&quot;>이 변경 승인 → 골든 갱신</button></div>'
+          : '<div class=&quot;pv-ok&quot; style=&quot;margin-top:6px&quot;>골든 스냅샷과 일치합니다.</div>')
+      : '<p class=&quot;f-hint&quot;>골든 스냅샷이 없습니다. '+
+        '<button class=&quot;btn btn-sm&quot; data-action=&quot;golden-set&quot;>현재 결과를 골든으로 채택</button></p>')+
+    '</div>';
+}
+
+function renderAll(){
+  renderCaseList();renderOrderForm();renderLog();
+  renderBadges();renderPipe();renderStage();renderExpect();renderProv();
+}
+
+/* ============================================================
+   동작 — 골든 · 승격 · 케이스
+   ============================================================ */
+function goldenSet(){
+  var c=currentCase();
+  c.expect.golden=goldenSnapshot(run.design);
+  c.expect.goldenAt=Date.now();
+  pushLog('골든 채택',c.id,'없음',Object.keys(c.expect.golden).length+'개 항목');
+  doRun();
+}
+function goldenAccept(){
+  var c=currentCase();
+  var n=(c.lastRun.goldenDiff||[]).length, before=c.expect.goldenAt;
+  c.expect.golden=goldenSnapshot(run.design);
+  c.expect.goldenAt=Date.now();
+  pushLog('골든 갱신',c.id,fmtDT(before)+' 스냅샷',n+'개 항목 변경 승인');
+  doRun();
+}
+function showGoldenDiff(){
+  var c=currentCase(), gd=c.lastRun.goldenDiff||[];
+  $('#modal-title').textContent=c.id+' — 골든 스냅샷 대비 차이 '+gd.length+'건';
+  $('#modal-body').innerHTML='<div class=&quot;tbl-scroll&quot;><table class=&quot;grid&quot;><thead><tr>'+
+    '<th>설계 경로</th><th>골든</th><th>현재</th></tr></thead><tbody>'+
+    gd.map(function(x){return '<tr><td class=&quot;mono&quot;>'+esc(x.path)+'</td>'+
+      '<td class=&quot;mono&quot;>'+esc(x.before)+'</td><td class=&quot;mono&quot;><b>'+esc(x.after)+'</b></td></tr>';}).join('')+
+    '</tbody></table></div>';
+  $('#modal-back').classList.add('on');
+  $('#modal-back').setAttribute('aria-hidden','false');
+}
+function closeModal(){
+  $('#modal-back').classList.remove('on');
+  $('#modal-back').setAttribute('aria-hidden','true');
+}
+function promote(){
+  var c=currentCase();
+  if(!c.lastRun||c.lastRun.status==='FAIL'){toast('FAIL 상태는 승격할 수 없습니다','err');return;}
+  pushLog('실제 설계로 승격',c.id,c.lastRun.status,'주문 '+orderKey(c.order)+' 설계결과 반영 요청');
+  renderLog();
+  toast('승격 요청을 이력에 남겼습니다 — 목업이라 실제 반영은 없습니다');
+}
+function newCase(){
+  var n=state.cases.length+1;
+  var id='TC-'+String(100+n);
+  var base=orderFromSeed(SEED_ORDERS[0]);
+  base.__src='manual';
+  state.cases.push({id:id,name:'새 검증 케이스',baseOrderRef:null,order:base,
+    expect:{pins:[],verdicts:[],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'});
+  state.sel=id;
+  pushLog('케이스 생성',id,'—','신규');
+  run=null;renderAll();
+  toast(id+' 을 만들었습니다');
+}
+function jumpTo(hash){
+  try{ if(window.self!==window.top){window.top.location.hash=hash;return;} }catch(e){}
+  toast('포털에서 열면 해당 화면으로 이동합니다: '+hash);
+}
+
+/* ============================================================
+   이벤트
+   ============================================================ */
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-action]');
+  if(!el)return;
+  var a=el.getAttribute('data-action');
+  if(a==='jump'){e.preventDefault();jumpTo(el.getAttribute('href'));return;}
+  if(a==='case-pick'){state.sel=el.getAttribute('data-id');run=null;ui.provPath=null;
+    var c=currentCase();if(c&amp;&amp;c.lastRun)run=computeCase(c);
+    saveState();renderAll();return;}
+  if(a==='run'){doRun();return;}
+  if(a==='run-all'){runAll();return;}
+  if(a==='case-new'){newCase();return;}
+  if(a==='reset-all'){
+    if(!window.confirm('시드 상태로 되돌립니다. 저장된 케이스와 이력이 사라집니다.'))return;
+    state=freshState();run=null;saveState();renderAll();toast('시드로 초기화했습니다');return;}
+  if(a==='stage'){ui.stage=Number(el.getAttribute('data-no'));ui.provPath=null;
+    renderPipe();renderStage();renderProv();return;}
+  if(a==='sec'){var id=el.getAttribute('data-id');ui.openSec[id]=!ui.openSec[id];
+    renderStage();return;}
+  if(a==='prov'){ui.provPath=el.getAttribute('data-path');renderStage();renderProv();return;}
+  if(a==='pin-add'){
+    var p=el.getAttribute('data-path'), cc=currentCase();
+    var v=pinResolve(run.design,p);
+    cc.expect.pins.push({path:p,label:p.split('.').pop(),op:'=',val:String(v)});
+    pushLog('기대값 지정',cc.id,'—',p+' = '+v);
+    doRun();return;}
+  if(a==='pin-del'){
+    var p2=el.getAttribute('data-path'), c2=currentCase();
+    c2.expect.pins=c2.expect.pins.filter(function(x){return x.path!==p2;});
+    pushLog('기대값 해제',c2.id,p2,'—');
+    doRun();return;}
+  if(a==='golden-set'){goldenSet();return;}
+  if(a==='golden-accept'){goldenAccept();return;}
+  if(a==='golden-diff'){showGoldenDiff();return;}
+  if(a==='modal-close'){closeModal();return;}
+  if(a==='promote'){promote();return;}
+});
+$('#modal-back').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+
+$('#case-q').addEventListener('input',function(){ui.q=this.value;renderCaseList();});
+
+document.addEventListener('input',function(e){
+  var el=e.target.closest('[data-order-field]');
+  if(!el)return;
+  var c=currentCase();if(!c)return;
+  var k=el.getAttribute('data-order-field');
+  c.order[k]=el.value;
+  c.order.__src='manual';
+  el.classList.add('dirty');
+  $('#order-src').textContent='직접 입력';
+  saveState();
+});
+
+$('#order-load').addEventListener('change',function(){
+  var v=this.value;if(!v)return;
+  var so=SEED_ORDERS.filter(function(o){return o.no+'-'+o.ln===v;})[0];
+  if(!so)return;
+  var c=currentCase();
+  c.order=orderFromSeed(so);
+  c.baseOrderRef=orderKey(c.order);
+  c.asisSnapshot=null;
+  pushLog('주문 불러오기',c.id,'—',v);
+  doRun();
+  this.value='';
+});
+
+/* splitter — 드래그 · ←/→ · 더블클릭 초기화 */
+(function(){
+  var sp=$('#splitter'), lp=$('#lpane'), dragging=false;
+  function setW(w){lp.style.width=Math.max(200,Math.min(520,w))+'px';}
+  sp.addEventListener('mousedown',function(e){dragging=true;e.preventDefault();});
+  document.addEventListener('mousemove',function(e){
+    if(!dragging)return;setW(e.clientX-lp.getBoundingClientRect().left);});
+  document.addEventListener('mouseup',function(){dragging=false;});
+  sp.addEventListener('dblclick',function(){lp.style.width='270px';});
+  sp.addEventListener('keydown',function(e){
+    var w=lp.getBoundingClientRect().width;
+    if(e.key==='ArrowLeft'){setW(w-20);e.preventDefault();}
+    if(e.key==='ArrowRight'){setW(w+20);e.preventDefault();}
+  });
+})();
+
+/* 파이프라인 바 키보드 이동 */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='ArrowLeft'&amp;&amp;e.key!=='ArrowRight')return;
+  var act=document.activeElement;
+  if(!act||!act.matches('.st'))return;
+  var tabs=$$('.st');
+  var i=tabs.indexOf(act);
+  var j=e.key==='ArrowLeft'?Math.max(0,i-1):Math.min(tabs.length-1,i+1);
+  tabs[j].focus();tabs[j].click();
+  e.preventDefault();
+});
+
+/* ============================================================
+   초기화
+   ============================================================ */
+(function init(){
+  loadCriteria();
+  renderSrcBadge();
+  state=loadState();
+  $('#order-load').innerHTML='<option value=&quot;&quot;>선택…</option>'+
+    SEED_ORDERS.map(function(o){
+      var k=o.no+'-'+o.ln;
+      return '<option value=&quot;'+esc(k)+'&quot;>'+esc(k)+' · '+esc(PRD_NM[o.prd]||o.prd)+' · '+
+        esc(o.spec)+' · '+o.thk.toFixed(3)+'×'+o.wid.toFixed(0)+'</option>';
+    }).join('');
+  var c=currentCase();
+  if(c){
+    run=computeCase(c);
+    /* AS-IS 대역 — 최초 실행 결과를 현행 시스템 결과로 간주 */
+    state.cases.forEach(function(x){
+      if(!x.asisSnapshot&amp;&amp;x.baseOrderRef){
+        x.asisSnapshot=goldenSnapshot(genDetail(toDesign(x.order)));
+      }
+    });
+    saveState();
+  }
+  renderAll();
+})();
+
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
         <section class="route-view placeholder-view" id="color-submaterial-view" aria-labelledby="color-submaterial-title" hidden>
@@ -8059,7 +9867,7 @@ renderHist();
       viewId: 'simulation-view',
       title: '시뮬레이션',
       crumbs: ['품질설계'],
-      openLink: false
+      openLink: true
     },
     'color-submaterial': {
       hash: '#/quality-design/master-data-management/color-submaterial',

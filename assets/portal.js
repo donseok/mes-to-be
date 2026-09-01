@@ -46,7 +46,7 @@
       viewId: 'simulation-view',
       title: '시뮬레이션',
       crumbs: ['품질설계'],
-      openLink: false
+      openLink: true
     },
     'color-submaterial': {
       hash: '#/quality-design/master-data-management/color-submaterial',

@@ -172,12 +172,13 @@
           </div>
         </section>
 
-        <section class="route-view placeholder-view" id="simulation-view" aria-labelledby="simulation-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">SIMULATION</p>
-            <h2 id="simulation-title">시뮬레이션</h2>
-            <p>시뮬레이션 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="simulation-view" aria-labelledby="page-title" hidden>
+          <iframe
+            id="module-frame-sim"
+            title="시뮬레이션 목업"
+            src="./modules/simulation.html?embed=1"
+            loading="lazy">
+          </iframe>
         </section>
 
         <section class="route-view placeholder-view" id="color-submaterial-view" aria-labelledby="color-submaterial-title" hidden>

@@ -117,6 +117,21 @@ index = index.replace(
     '          <iframe id="module-frame-oc" title="주문정합성체크 목업" '
     'loading="lazy" srcdoc="' + escaped_oc + '"></iframe>', 1)
 
+# --- 2f. 시뮬레이션 모듈도 iframe srcdoc으로 내장 --------------------------
+module_sim = open(path('modules', 'simulation.html'), encoding='utf-8').read()
+old_iframe_sim = """          <iframe
+            id="module-frame-sim"
+            title="시뮬레이션 목업"
+            src="./modules/simulation.html?embed=1"
+            loading="lazy">
+          </iframe>"""
+assert old_iframe_sim in index, 'sim iframe block not found'
+escaped_sim = module_sim.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_sim,
+    '          <iframe id="module-frame-sim" title="시뮬레이션 목업" '
+    'loading="lazy" srcdoc="' + escaped_sim + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')
