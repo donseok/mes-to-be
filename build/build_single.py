@@ -102,6 +102,21 @@ index = index.replace(
     '          <iframe id="module-frame-pf" title="생산가부관리 목업" '
     'loading="lazy" srcdoc="' + escaped_pf + '"></iframe>', 1)
 
+# --- 2e. 주문정합성체크 모듈도 iframe srcdoc으로 내장 ------------------------
+module_oc = open(path('modules', 'order-consistency.html'), encoding='utf-8').read()
+old_iframe_oc = '''          <iframe
+            id="module-frame-oc"
+            title="주문정합성체크 목업"
+            src="./modules/order-consistency.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_oc in index, 'oc iframe block not found'
+escaped_oc = module_oc.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_oc,
+    '          <iframe id="module-frame-oc" title="주문정합성체크 목업" '
+    'loading="lazy" srcdoc="' + escaped_oc + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')

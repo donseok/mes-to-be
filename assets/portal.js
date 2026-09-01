@@ -25,7 +25,7 @@
       viewId: 'order-consistency-view',
       title: '주문정합성관리',
       crumbs: ['품질설계', '생산가부관리'],
-      openLink: false
+      openLink: true
     },
     'production-feasibility': {
       hash: '#/quality-design/feasibility-management/production-feasibility',
