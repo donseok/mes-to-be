@@ -5081,6 +5081,42 @@ const OC_SEED = {&quot;schema_version&quot;:&quot;1.0&quot;,&quot;ruleset&quot;:
 /*__OC_SEED_END__*/
 
 /* ============================================================
+   순수 표현 계층 (OC_PURE) — DOM·state·localStorage에 의존하지 않는 함수만.
+   build/tests/pure.test.mjs 가 이 마커 구간을 잘라 Node에서 직접 검증한다.
+   · 사전이 필요하면 dict = {fields, valueLabels} 를 첫 인자로 받는다.
+   · 마커 문자열을 변경하지 말 것.
+   ============================================================ */
+/*__OC_PURE_START__*/
+var OC_PURE = (function(){
+  'use strict';
+
+  /* 항목 영문키 -> 한국어 라벨. 사전에 없으면 키를 그대로 돌려준다. */
+  function fieldLabel(dict, key){
+    var fs = dict.fields || [];
+    for (var i=0; i<fs.length; i++) if (fs[i].key === key) return fs[i].label || String(key);
+    return String(key);
+  }
+
+  /* 값 코드 -> {text, certainty}. 사전에 없으면 null — 라벨을 지어내지 않는다. */
+  function valueLabel(dict, field, code){
+    var vs = dict.valueLabels || [];
+    for (var i=0; i<vs.length; i++){
+      var e = vs[i];
+      if (e.field === field &amp;&amp; String(e.code) === String(code)){
+        return {text: e.label != null ? e.label : '', certainty: e.certainty || '추정'};
+      }
+    }
+    return null;
+  }
+
+  return {
+    fieldLabel: fieldLabel,
+    valueLabel: valueLabel
+  };
+})();
+/*__OC_PURE_END__*/
+
+/* ============================================================
    상태 — localStorage에만 저장.
    재시드 게이트 3종: LS_KEY · schema_version · content_hash.
    content_hash는 clean_rules.py가 rules+issues+fields+value_labels로

@@ -15,6 +15,19 @@
 | `build/template.html` | 포털 셸 (사이드바 메뉴, 해시 라우팅 뼈대, iframe 자리) |
 | `assets/portal.css` · `assets/portal.js` | 포털 셸의 스타일·동작 (사이드바 접기, 라우팅, 모바일 서랍) |
 
+## 테스트
+
+순수 표현 계층(`modules/order-consistency.html` 의 `/*__OC_PURE_*__*/` 마커 구간)은
+DOM 없이 Node에서 직접 검증한다. 외부 의존성 없음.
+
+```bash
+node --test build/tests/
+```
+
+`build/oc_pure.mjs` 가 HTML에서 시드 구역과 순수 구역만 잘라 `new Function`으로 로드한다.
+따라서 **순수 구역 안에서는 `document`·`state`·`localStorage`를 참조하면 안 된다.**
+사전이 필요하면 `dict = {fields, valueLabels}` 를 인자로 받는다.
+
 ## 빌드
 
 ```bash
