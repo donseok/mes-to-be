@@ -9,35 +9,35 @@
   <style>
 /* ============================================================
    MES To-Be Portal — shell styles
-   프로토타입(Q-SPEC)과 같은 팔레트: cobalt #1D5FBF + steel neutrals,
-   IBM Plex Sans KR. 사이드바는 프로토타입 탑바와 같은 다크 네이비.
+   프로토타입(Q-SPEC)과 같은 팔레트: cobalt #166578 + steel neutrals,
+   Gothic A1. 사이드바는 라이트(웜 페이퍼) + 소프트 pill 활성 상태.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&display=swap');
 
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --side-bg:#14202E;
-  --side-bg-2:#0F1926;
-  --side-ink:#D8E1EC;
-  --side-dim:#8DA0B5;
-  --side-line:rgba(216,225,236,.14);
-  --side-active:#1D5FBF;
-  --side-active-ink:#FFFFFF;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --side-bg:#FBFAF7;
+  --side-bg-2:#FBFAF7;
+  --side-ink:#3A4148;
+  --side-dim:#7A8188;
+  --side-line:#EEECE7;
+  --side-active:#E4EEF1;
+  --side-active-ink:#166578;
+  --focus:#166578;
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
@@ -48,7 +48,7 @@ html,body{ height:100%; }
 
 body{
   margin:0;
-  font-family:'IBM Plex Sans KR','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  font-family:'Gothic A1','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
   font-size:14px;
   line-height:1.5;
   color:var(--ink);
@@ -87,7 +87,8 @@ a{ color:inherit; }
   flex:0 0 248px;
   display:flex;
   flex-direction:column;
-  background:linear-gradient(180deg,var(--side-bg) 0%,var(--side-bg-2) 100%);
+  background:var(--side-bg);
+  border-right:1px solid var(--border);
   color:var(--side-ink);
   overflow-y:auto;
 }
@@ -107,7 +108,7 @@ a{ color:inherit; }
   width:34px; height:34px; border-radius:9px;
   background:var(--accent); color:#FFFFFF;
   font-weight:700; font-size:17px;
-  box-shadow:0 2px 8px rgba(0,0,0,.35);
+  box-shadow:0 1px 4px rgba(0,0,0,.14);
 }
 .portal-brand b{ display:block; font-size:15px; letter-spacing:.04em; line-height:1.2; }
 .portal-brand small{
@@ -167,7 +168,7 @@ a{ color:inherit; }
 .nav-link:hover{ background:var(--side-line); color:var(--side-ink); }
 .nav-link.active{
   background:var(--side-active); color:var(--side-active-ink);
-  font-weight:500;
+  font-weight:700;
 }
 .nav-root-link{ margin-top:2px; font-size:14px; color:var(--side-ink); }
 .nav-root-link.active{ color:var(--side-active-ink); }
@@ -182,8 +183,8 @@ a{ color:inherit; }
 .mock-badge{
   white-space:nowrap;
   padding:2px 8px; border-radius:999px;
-  background:rgba(228,237,250,.12);
-  border:1px solid rgba(228,237,250,.25);
+  background:#EFEEE9;
+  border:1px solid #DDD9D2;
   font-size:10px; font-weight:500; letter-spacing:.08em;
   color:var(--side-ink);
 }
@@ -449,49 +450,49 @@ noscript{
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
 <title>Q-SPEC 품질사양 관리</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
 <style>
 /* ============================================================
    Q-SPEC — MES 품질설계 품질사양 관리 목업
-   palette: cobalt #1D5FBF (조건/주조작), amber #B45309 (설계결과),
-   steel-tinted neutrals. IBM Plex Sans KR + IBM Plex Mono.
+   palette: cobalt #166578 (조건/주조작), amber #96610E (설계결과),
+   warm neutrals (Direction A). Gothic A1 + JetBrains Mono.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --result-soft-ink:#8F4408;
-  --st-draft:#5B6774;      --st-draft-bg:#E8ECF1;
-  --st-conf:#0E7490;       --st-conf-bg:#DFF2F7;
-  --st-sent:#15803D;       --st-sent-bg:#DFF2E5;
-  --st-fail:#B91C1C;       --st-fail-bg:#FBE4E4;
-  --code-bg:#EEF2F7;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --result-soft-ink:#7A4F0B;
+  --st-draft:#6A7178;      --st-draft-bg:#EFEEE9;
+  --st-conf:#3F5E8C;       --st-conf-bg:#E7ECF6;
+  --st-sent:#276B39;       --st-sent-bg:#E8F2E9;
+  --st-fail:#B03A32;       --st-fail-bg:#F7E4E2;
+  --code-bg:#F1F0EC;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);
   color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;
   line-height:1.55;
   min-height:100vh;
@@ -503,7 +504,7 @@ body.modal-open{overflow:hidden}
   font-weight:700;text-decoration:none;box-shadow:var(--shadow);
 }
 .skip-link:focus{top:10px}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -515,7 +516,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;
   height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
@@ -525,11 +526,11 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;display:flex;align-items:center;gap:7px;min-width:0;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -696,13 +697,13 @@ td.c,th.c{text-align:center}
 .chip{
   font-size:11.5px;border-radius:5px;padding:1.5px 7px;white-space:nowrap;
   background:var(--accent-soft);color:var(--accent-soft-ink);
-  font-family:'IBM Plex Mono',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
 .chip.res{background:var(--result-soft);color:var(--result-soft-ink)}
 .chip.more{background:var(--surface-2);color:var(--ink-3);font-family:inherit;font-weight:600}
 .chip.warn{background:var(--st-fail-bg);color:var(--st-fail)}
 .code-badge{
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
   background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;
   color:var(--ink-2);white-space:nowrap;
 }
@@ -725,7 +726,7 @@ td.c,th.c{text-align:center}
 .guide-editor{display:flex;flex-direction:column;gap:14px}
 .guide-step{border:1px solid var(--border);border-radius:9px;overflow:hidden}
 .guide-step-h{display:flex;gap:9px;align-items:center;padding:9px 11px;background:var(--surface-2);font-weight:700;font-size:12.5px}
-.guide-step-n{width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--accent);color:var(--accent-on);font:600 11px 'IBM Plex Mono',monospace;flex:none}
+.guide-step-n{width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--accent);color:var(--accent-on);font:600 11px 'JetBrains Mono',monospace;flex:none}
 .guide-step.result .guide-step-n{background:var(--result)}
 .guide-step-b{padding:11px;display:flex;flex-direction:column;gap:8px}
 #guide-conds,#guide-results{display:flex;flex-direction:column;gap:7px}
@@ -749,7 +750,7 @@ td.c,th.c{text-align:center}
 textarea.dsl{
   width:100%;min-height:180px;resize:vertical;
   background:var(--code-bg);border:1px solid var(--border-strong);border-radius:8px;
-  font-family:'IBM Plex Mono','Consolas',monospace;font-size:13.5px;line-height:1.9;
+  font-family:'JetBrains Mono','Consolas',monospace;font-size:13.5px;line-height:1.9;
   padding:12px 14px;color:var(--ink);
 }
 textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
@@ -758,10 +759,10 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
   border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink-2);
 }
 .syntax-box b{color:var(--ink)}
-.syntax-box code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--code-bg);border-radius:4px;padding:0 5px}
+.syntax-box code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--code-bg);border-radius:4px;padding:0 5px}
 .attr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .attr-chip{
-  font-size:12px;font-family:'IBM Plex Mono',monospace;
+  font-size:12px;font-family:'JetBrains Mono',monospace;
   border:1px solid var(--border-strong);border-radius:99px;padding:3px 11px;
   background:var(--surface);color:var(--ink-2);
 }
@@ -781,7 +782,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 .pv-line{border-bottom:1px solid var(--border);padding:12px 14px}
 .pv-line:last-child{border-bottom:none}
 .pv-no{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.pv-specno{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px}
+.pv-specno{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13.5px}
 .pv-flag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px}
 .pv-flag.ok{background:var(--st-sent-bg);color:var(--st-sent)}
 .pv-flag.err{background:var(--st-fail-bg);color:var(--st-fail)}
@@ -794,8 +795,8 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 .pv-col.res .pv-col-h{background:var(--result-soft);color:var(--result-soft-ink)}
 .pv-item{display:flex;align-items:center;gap:7px;padding:5px 10px;border-top:1px solid var(--border);font-size:12.5px;flex-wrap:wrap}
 .pv-item .ko{font-weight:600;min-width:74px}
-.pv-item .op{color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
-.pv-item .val{font-family:'IBM Plex Mono',monospace}
+.pv-item .op{color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+.pv-item .val{font-family:'JetBrains Mono',monospace}
 .pv-item .unit{color:var(--ink-3);font-size:11px}
 .pv-item.unknown .ko{color:var(--st-fail)}
 .pv-issues{margin-top:8px;display:flex;flex-direction:column;gap:4px}
@@ -820,7 +821,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 .d-sect h4{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--ink-3);margin-bottom:7px}
 .rawbox{
   background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
   overflow-x:auto;white-space:pre-wrap;word-break:break-all;
 }
 .rawbox .t-cond{color:var(--accent)}
@@ -849,7 +850,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 .modal-f{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .payload{
   background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.7;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;
   padding:10px 12px;overflow:auto;max-height:240px;white-space:pre;
 }
 .if-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
@@ -903,7 +904,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 }
 .order-card:hover{border-color:var(--border-strong)}
 .order-card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.order-card .o-no{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px}
+.order-card .o-no{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px}
 .order-card .o-attrs{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .o-list{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
 .steps{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:12px 14px 4px}
@@ -913,7 +914,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
   display:inline-flex;align-items:center;gap:6px;background:var(--surface);
   transition:all .2s;
 }
-.step .n{font-family:'IBM Plex Mono',monospace;font-size:10.5px}
+.step .n{font-family:'JetBrains Mono',monospace;font-size:10.5px}
 .step.act{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .step.done{border-color:var(--st-sent);color:var(--st-sent);background:var(--st-sent-bg)}
 .step-arrow{color:var(--ink-3);font-size:11px}
@@ -928,7 +929,7 @@ textarea.dsl:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px 
 .cond-check .row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .cc-ok{color:var(--st-sent);font-weight:700}
 .cc-no{color:var(--st-fail);font-weight:700}
-.final-val{font-family:'IBM Plex Mono',monospace;font-weight:600}
+.final-val{font-family:'JetBrains Mono',monospace;font-weight:600}
 tr.ovr td{background:var(--result-soft)}
 .src-badge{font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;background:var(--surface-3);color:var(--ink-2);white-space:nowrap}
 .src-badge.cus{background:var(--result-soft);color:var(--result-soft-ink)}
@@ -939,7 +940,7 @@ tr.ovr td{background:var(--result-soft)}
 .linklike:hover{text-decoration:underline}
 .hl{background:var(--result-soft);border-radius:3px;padding:0 3px}
 kbd{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--surface-2);
+  font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface-2);
   border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:4px;padding:0 5px;
 }
 @media (max-width:560px){
@@ -2920,7 +2921,7 @@ if(hadDraft)toast('작성 중이던 사양을 자동으로 복원했습니다');
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
 <title>Q-DESIGN 품질설계</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
 <style>
 /* ============================================================
    Q-DESIGN — 품질설계 의뢰현황 + 설계결과 통합 목업
@@ -2928,25 +2929,25 @@ if(hadDraft)toast('작성 중이던 사양을 자동으로 복원했습니다');
    palette·타입은 Q-SPEC 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
 :root{
-  --bg:#F4F6F9; --surface:#FFFFFF; --surface-2:#EDF1F6; --surface-3:#E3E9F0;
-  --border:#D9E0E8; --border-strong:#B9C4D0;
-  --ink:#18222F; --ink-2:#4C5A6B; --ink-3:#7C8798;
-  --accent:#1D5FBF; --accent-strong:#174C99; --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA; --accent-soft-ink:#174C99;
-  --result:#B45309; --result-soft:#F9EFE0; --result-soft-ink:#8F4408;
-  --st-draft:#5B6774; --st-draft-bg:#E8ECF1;
-  --st-conf:#0E7490;  --st-conf-bg:#DFF2F7;
-  --st-sent:#15803D;  --st-sent-bg:#DFF2E5;
-  --st-fail:#B91C1C;  --st-fail-bg:#FBE4E4;
+  --bg:#F5F4F0; --surface:#FFFFFF; --surface-2:#F1F0EB; --surface-3:#E9E7E1;
+  --border:#E8E6E1; --border-strong:#D6D2CA;
+  --ink:#1C2126; --ink-2:#4A5158; --ink-3:#8A9198;
+  --accent:#166578; --accent-strong:#0F4854; --accent-on:#FFFFFF;
+  --accent-soft:#E4EEF1; --accent-soft-ink:#0F4854;
+  --result:#96610E; --result-soft:#FBF0DC; --result-soft-ink:#7A4F0B;
+  --st-draft:#6A7178; --st-draft-bg:#EFEEE9;
+  --st-conf:#3F5E8C;  --st-conf-bg:#E7ECF6;
+  --st-sent:#276B39;  --st-sent-bg:#E8F2E9;
+  --st-fail:#B03A32;  --st-fail-bg:#F7E4E2;
   --edit-bg:#FFF9E8; --edit-bd:#EAD9A8;
-  --code-bg:#EEF2F7; --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E; --topbar-ink:#D8E1EC; --topbar-dim:#8DA0B5; --focus:#1D5FBF;
+  --code-bg:#F1F0EC; --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7; --topbar-ink:#3A4148; --topbar-dim:#7A8188; --focus:#166578;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;line-height:1.5;min-height:100vh}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+body{background:var(--bg);color:var(--ink);font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;line-height:1.5;min-height:100vh}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -2955,11 +2956,11 @@ input,select,textarea{font:inherit;color:var(--ink)}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* ---------- top bar (단독 실행 시) ---------- */
-.topbar{background:var(--topbar-bg);color:var(--topbar-ink);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
 .embedded .topbar{display:none}
 .brand{display:flex;align-items:center;gap:9px}
-.brand-mark{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff}
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-mark{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto}
@@ -2988,7 +2989,7 @@ select.inp{padding-right:24px}
 .pill.ing{color:var(--accent-soft-ink);background:var(--accent-soft)}
 .pill.conf{color:var(--st-sent);background:var(--st-sent-bg)}
 .pill.hold{color:var(--result-soft-ink);background:var(--result-soft)}
-.code-badge{font-family:'IBM Plex Mono',monospace;font-size:11.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--ink-2);white-space:nowrap}
+.code-badge{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--ink-2);white-space:nowrap}
 .urgent-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--st-fail);margin-right:5px;vertical-align:1px}
 
 /* ---------- split layout ---------- */
@@ -3028,12 +3029,12 @@ table.list{width:100%;min-width:470px;border-collapse:collapse;font-size:12.5px}
 .list tbody tr:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .list tbody tr.sel{background:var(--accent-soft)}
 .list tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
-.list .ord{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);font-size:12.5px;white-space:nowrap}
+.list .ord{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);font-size:12.5px;white-space:nowrap}
 .list .sub{display:block;font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap}
 .list td.r{text-align:right}.list td.c,.list th.c{text-align:center}
 .lp-msg{border-top:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);font-size:11.5px;padding:6px 14px;display:flex;gap:8px;align-items:center}
 .lp-msg b{color:var(--accent-soft-ink)}
-.lp-msg .pgm-id{margin-left:auto;font-family:'IBM Plex Mono',monospace;color:var(--ink-3);font-size:10.5px}
+.lp-msg .pgm-id{margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--ink-3);font-size:10.5px}
 
 /* ----- 우: 설계결과 ----- */
 .rp-scroll{flex:1;overflow:auto;min-height:0;padding:14px 18px 26px}
@@ -3041,7 +3042,7 @@ table.list{width:100%;min-width:470px;border-collapse:collapse;font-size:12.5px}
 .rp-empty .big{font-size:15px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
 .ord-head{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px 16px;margin-bottom:10px}
 .oh-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.oh-no{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;letter-spacing:.01em}
+.oh-no{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:17px;letter-spacing:.01em}
 .oh-no small{font-size:12px;color:var(--ink-3);font-weight:500}
 .oh-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 .oh-kv{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
@@ -3678,7 +3679,7 @@ select('D260831014-010');
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
 <title>W-ERR 주문단중에러관리</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
 <style>
 /* ============================================================
    W-ERR — MES 생산가부관리 주문단중에러관리 목업
@@ -3687,31 +3688,31 @@ select('D260831014-010');
    palette·타입은 Q-SPEC 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --danger:#B91C1C;
-  --danger-bg:#FBE4E4;
-  --code-bg:#EEF2F7;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --danger:#B03A32;
+  --danger-bg:#F7E4E2;
+  --code-bg:#F1F0EC;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
   /* 참조 엑셀 화면 색 */
   --xl-head:#FFF200;         /* 헤더(분할·열번호·Min/Max 라벨) 노랑 */
   --xl-head-ink:#111111;
@@ -3723,11 +3724,11 @@ select('D260831014-010');
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;line-height:1.55;min-height:100vh;
 }
 body.modal-open{overflow:hidden}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select{font:inherit;color:var(--ink)}
@@ -3739,7 +3740,7 @@ input,select{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
 }
@@ -3748,11 +3749,11 @@ input,select{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -3829,7 +3830,7 @@ input,select{font:inherit;color:var(--ink)}
 }
 .mm-box input{
   border:none;width:84px;padding:7px 10px;text-align:right;
-  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;
 }
 .mm-box input:focus{outline:none;background:var(--accent-soft)}
 
@@ -3851,7 +3852,7 @@ input,select{font:inherit;color:var(--ink)}
 .tbl-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:260px}
 table.matrix{
   border-collapse:separate;border-spacing:0;
-  font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+  font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;
   font-size:13px;min-width:760px;width:100%;
 }
 .matrix th,.matrix td{
@@ -3867,7 +3868,7 @@ table.matrix{
 .matrix th:first-child,.matrix td:first-child{border-left:1px solid var(--xl-grid)}
 .matrix tbody th{
   background:var(--surface);font-weight:700;text-align:right;
-  position:sticky;left:0;z-index:2;font-family:'IBM Plex Sans KR',sans-serif;
+  position:sticky;left:0;z-index:2;font-family:'Gothic A1',sans-serif;
   font-variant-numeric:tabular-nums;
 }
 .matrix td{background:var(--surface);color:var(--ink);cursor:default}
@@ -4361,7 +4362,7 @@ renderHist();
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
 <title>O-CHK 주문정합성체크</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
 <style>
 /* ============================================================
    O-CHK — MES 생산가부관리 주문정합성체크 목업
@@ -4370,47 +4371,47 @@ renderHist();
    palette·타입은 W-ERR / Q-SPEC 모듈과 동일한 디자인 시스템.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --danger:#B91C1C;
-  --danger-bg:#FBE4E4;
-  --code-bg:#EEF2F7;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --danger:#B03A32;
+  --danger-bg:#F7E4E2;
+  --code-bg:#F1F0EC;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
   /* Q-SPEC 공유 토큰 — 이식한 .pill/.chip/.pv-* CSS가 참조 */
-  --result-soft-ink:#8F4408;
-  --st-draft:#5B6774;      --st-draft-bg:#E8ECF1;
-  --st-conf:#0E7490;       --st-conf-bg:#DFF2F7;
-  --st-sent:#15803D;       --st-sent-bg:#DFF2E5;
-  --st-fail:#B91C1C;       --st-fail-bg:#FBE4E4;
+  --result-soft-ink:#7A4F0B;
+  --st-draft:#6A7178;      --st-draft-bg:#EFEEE9;
+  --st-conf:#3F5E8C;       --st-conf-bg:#E7ECF6;
+  --st-sent:#276B39;       --st-sent-bg:#E8F2E9;
+  --st-fail:#B03A32;       --st-fail-bg:#F7E4E2;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;line-height:1.55;min-height:100vh;
 }
 body.modal-open{overflow:hidden}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -4422,7 +4423,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
 }
@@ -4431,11 +4432,11 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -4546,13 +4547,13 @@ select.inp{padding-right:26px}
 .chip{
   font-size:11.5px;border-radius:5px;padding:1.5px 7px;white-space:nowrap;
   background:var(--accent-soft);color:var(--accent-soft-ink);
-  font-family:'IBM Plex Mono',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
 .chip.res{background:var(--result-soft);color:var(--result-soft-ink)}
 .chip.more{background:var(--surface-2);color:var(--ink-3);font-family:inherit;font-weight:600}
 .chip.warn{background:var(--st-fail-bg);color:var(--st-fail)}
 .code-badge{
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
   background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;
   color:var(--ink-2);white-space:nowrap;
 }
@@ -4562,7 +4563,7 @@ select.inp{padding-right:26px}
 .pv-line{border-bottom:1px solid var(--border);padding:12px 14px}
 .pv-line:last-child{border-bottom:none}
 .pv-no{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.pv-specno{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px}
+.pv-specno{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13.5px}
 .pv-flag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px}
 .pv-flag.ok{background:var(--st-sent-bg);color:var(--st-sent)}
 .pv-flag.err{background:var(--st-fail-bg);color:var(--st-fail)}
@@ -4575,8 +4576,8 @@ select.inp{padding-right:26px}
 .pv-col.res .pv-col-h{background:var(--result-soft);color:var(--result-soft-ink)}
 .pv-item{display:flex;align-items:center;gap:7px;padding:5px 10px;border-top:1px solid var(--border);font-size:12.5px;flex-wrap:wrap}
 .pv-item .ko{font-weight:600;min-width:74px}
-.pv-item .op{color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
-.pv-item .val{font-family:'IBM Plex Mono',monospace}
+.pv-item .op{color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+.pv-item .val{font-family:'JetBrains Mono',monospace}
 .pv-item .unit{color:var(--ink-3);font-size:11px}
 .pv-item.unknown .ko{color:var(--st-fail)}
 .pv-issues{margin-top:8px;display:flex;flex-direction:column;gap:4px}
@@ -4616,9 +4617,9 @@ select.inp{padding-right:26px}
 .rc-result{margin-top:8px;padding-top:7px;border-top:1px dashed var(--border);font-size:12.5px;color:var(--result-soft-ink);font-weight:600}
 .vlab{color:var(--ink-3);font-size:.92em}
 .est{font-size:10px;font-weight:700;color:var(--result-soft-ink);background:var(--result-soft);border-radius:3px;padding:0 4px;margin-left:5px;vertical-align:1px;white-space:nowrap}
-.est.raw-v{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border)}
+.est.raw-v{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border)}
 .code-badge.op{font-size:10.5px;margin-left:5px;vertical-align:1px}
-.src{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.src{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
 .src.common{background:var(--st-sent-bg);color:var(--st-sent)}
 .src.order{background:var(--accent-soft);color:var(--accent-soft-ink)}
 .src.cross{background:var(--result-soft);color:var(--result-soft-ink)}
@@ -4661,7 +4662,7 @@ select.inp{padding-right:26px}
 .cond-check .ct{min-width:0}
 .cc-ok{color:var(--st-sent);font-weight:700}
 .cc-no{color:var(--st-fail);font-weight:700}
-.ov{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.ov{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap}
 .ov i{color:var(--ink-3);font-style:normal}
 .cc-total{margin-top:5px;padding-top:6px;border-top:1px dashed var(--border);font-weight:600;color:var(--result-soft-ink);font-size:12.5px}
 .cc-fold{font-size:11.5px;color:var(--ink-3)}
@@ -4758,7 +4759,7 @@ select.inp{padding-right:26px}
   display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;font-weight:700;
 }
 .cmp-col.applied .cmp-h{background:var(--accent-soft);color:var(--accent-soft-ink)}
-.cmp-src{font-family:'IBM Plex Mono',monospace}
+.cmp-src{font-family:'JetBrains Mono',monospace}
 .cmp-msg{padding:7px 11px;font-size:12.5px;border-bottom:1px dashed var(--border)}
 .cmp-conds{list-style:none;padding:8px 11px;display:flex;flex-direction:column;gap:6px}
 .cmp-conds li{font-size:12.5px;line-height:1.7;display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}
@@ -4770,7 +4771,7 @@ select.inp{padding-right:26px}
 .iss-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .rule-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
 .rule-chip{
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;border:1px solid var(--border);
   border-radius:6px;padding:2px 8px;background:var(--surface);color:var(--ink-2);
 }
 .rule-chip .c{color:var(--result-soft-ink);font-weight:600}
@@ -4827,7 +4828,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 .icon-btn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--border)}
 .rawbox{
   background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
   overflow-x:auto;white-space:pre-wrap;word-break:break-all;
 }
 .rawbox .t-cond{color:var(--accent)}
@@ -4892,7 +4893,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
           <option value=&quot;확인필요&quot;>⚠확인필요</option><option value=&quot;상충해소&quot;>상충해소</option>
           <option value=&quot;비활성&quot;>비활성</option>
         </select></div>
-      <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:200px&quot;><label for=&quot;lf-q&quot;>키워드</label>
+      <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:150px&quot;><label for=&quot;lf-q&quot;>키워드</label>
         <div class=&quot;search-wrap&quot;><input class=&quot;inp&quot; id=&quot;lf-q&quot; type=&quot;search&quot; autocomplete=&quot;off&quot; placeholder=&quot;필드명·코드값·라벨·메시지 검색&quot;>
           <button class=&quot;search-clear&quot; id=&quot;lf-q-clear&quot; data-action=&quot;list-search-clear&quot; aria-label=&quot;검색어 지우기&quot;>✕</button></div></div>
       <button class=&quot;btn btn-pri&quot; data-action=&quot;list-apply&quot;>조회</button>
@@ -7246,7 +7247,7 @@ if(reseedNotice)setTimeout(function(){toast(reseedNotice);},60);
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
 <title>P-FEAS 생산가부관리</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap&quot;>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
 <style>
 /* ============================================================
    P-FEAS — MES 생산가부관리 목업
@@ -7257,30 +7258,30 @@ if(reseedNotice)setTimeout(function(){toast(reseedNotice);},60);
    palette·타입은 Q-SPEC/W-ERR 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --danger:#B91C1C;
-  --danger-bg:#FBE4E4;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --danger:#B03A32;
+  --danger-bg:#F7E4E2;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
   /* 참조 엑셀 시트 색 (B.D 생산범위 원본) */
   --xl-title-bg:#F2F2F2;     /* 제목 밴드 (흰색 배경 5% 어둡게) */
   --xl-ok:#3366FF;           /* 생산가능 (청) */
@@ -7296,11 +7297,11 @@ if(reseedNotice)setTimeout(function(){toast(reseedNotice);},60);
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;line-height:1.55;min-height:100vh;
 }
 body.modal-open{overflow:hidden}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select{font:inherit;color:var(--ink)}
@@ -7312,7 +7313,7 @@ input,select{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
 }
@@ -7321,11 +7322,11 @@ input,select{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -7450,7 +7451,7 @@ input,select{font:inherit;color:var(--ink)}
 .m-scroll{overflow-x:auto}
 table.bdmx{
   border-collapse:separate;border-spacing:0;
-  font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+  font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;
   font-size:11.5px;
 }
 .bdmx th,.bdmx td{
@@ -7469,7 +7470,7 @@ table.bdmx{
 .bdmx td.x{background:var(--xl-no-verified)}
 .bdmx td.hl{outline:2px solid var(--result);outline-offset:-2px}
 .bdmx td.mnote{
-  font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;
+  font-family:'Gothic A1',sans-serif;font-size:11px;font-weight:700;
   text-align:center;vertical-align:middle;padding:2px 6px;cursor:default;
   white-space:normal;line-height:1.3;
 }
@@ -7479,7 +7480,7 @@ table.bdmx{
   font-size:10.5px;color:var(--ink);letter-spacing:-.02em;
 }
 .bdmx tfoot th:first-child{
-  font-family:'IBM Plex Sans KR',sans-serif;font-size:10.5px;color:var(--ink-3);
+  font-family:'Gothic A1',sans-serif;font-size:10.5px;color:var(--ink-3);
   text-align:right;padding-right:8px;
 }
 .bdmx td.edited{position:relative}
@@ -8035,18 +8036,18 @@ renderHist();
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
 <style>
 :root{
-  --bg:#F4F6F9;--surface:#FFF;--surface-2:#EDF1F6;--surface-3:#E3E9F0;
-  --border:#D9E0E8;--border-strong:#B9C4D0;
-  --ink:#18222F;--ink-2:#4C5A6B;--ink-3:#7C8798;
-  --accent:#1D5FBF;--accent-strong:#174C99;--accent-soft:#E4EDFA;--accent-soft-ink:#174C99;
-  --result:#B45309;--result-soft:#F9EFE0;--result-soft-ink:#8F4408;
-  --code-bg:#EEF2F7;--focus:#1D5FBF;
-  --st-draft:#5B6774;--st-draft-bg:#E8ECF1;--st-conf:#0E7490;--st-conf-bg:#DFF2F7;
-  --st-sent:#15803D;--st-sent-bg:#DFF2E5;--st-fail:#B91C1C;--st-fail-bg:#FBE4E4;
-  --danger:#B91C1C;--danger-bg:#FBE4E4;
+  --bg:#F5F4F0;--surface:#FFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --code-bg:#F1F0EC;--focus:#166578;
+  --st-draft:#6A7178;--st-draft-bg:#EFEEE9;--st-conf:#3F5E8C;--st-conf-bg:#E7ECF6;
+  --st-sent:#276B39;--st-sent-bg:#E8F2E9;--st-fail:#B03A32;--st-fail-bg:#F7E4E2;
+  --danger:#B03A32;--danger-bg:#F7E4E2;
   --edit-bg:#FFF9E8;--edit-bd:#EAD9A8;
-  --topbar-bg:#14202E;--topbar-ink:#D8E1EC;--topbar-dim:#8DA0B5;
-  --shadow:0 8px 28px rgba(23,42,68,.14);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;
+  --shadow:0 8px 28px rgba(44,40,32,.12);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -8065,7 +8066,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .embedded .topbar{display:none}
 .brand{display:flex;align-items:center;gap:8px;font-weight:700}
 .brand-mark{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#2f7ae0,#1D5FBF);color:#fff;font-size:13px}
+  background:linear-gradient(135deg,#2f7ae0,#166578);color:#fff;font-size:13px}
 .crumb{color:var(--topbar-dim);font-size:12.5px}
 @media(max-width:920px){.crumb{display:none}}
 .mock-flag{margin-left:auto;background:var(--result);color:#fff;font-size:11px;font-weight:700;
@@ -8226,7 +8227,7 @@ details>summary{cursor:pointer;font-size:12px;color:var(--ink-2);margin:6px 0 4p
 .toast.err{background:var(--danger)}
 
 /* 모달 */
-.modal-back{position:fixed;inset:0;background:rgba(16,24,34,.44);display:none;
+.modal-back{position:fixed;inset:0;background:rgba(28,26,22,.44);display:none;
   align-items:center;justify-content:center;z-index:70;padding:16px}
 .modal-back.on{display:flex}
 .modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);

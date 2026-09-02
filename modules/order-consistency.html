@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>O-CHK 주문정합성체크</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
 /* ============================================================
    O-CHK — MES 생산가부관리 주문정합성체크 목업
@@ -14,47 +14,47 @@
    palette·타입은 W-ERR / Q-SPEC 모듈과 동일한 디자인 시스템.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --danger:#B91C1C;
-  --danger-bg:#FBE4E4;
-  --code-bg:#EEF2F7;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --danger:#B03A32;
+  --danger-bg:#F7E4E2;
+  --code-bg:#F1F0EC;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
   /* Q-SPEC 공유 토큰 — 이식한 .pill/.chip/.pv-* CSS가 참조 */
-  --result-soft-ink:#8F4408;
-  --st-draft:#5B6774;      --st-draft-bg:#E8ECF1;
-  --st-conf:#0E7490;       --st-conf-bg:#DFF2F7;
-  --st-sent:#15803D;       --st-sent-bg:#DFF2E5;
-  --st-fail:#B91C1C;       --st-fail-bg:#FBE4E4;
+  --result-soft-ink:#7A4F0B;
+  --st-draft:#6A7178;      --st-draft-bg:#EFEEE9;
+  --st-conf:#3F5E8C;       --st-conf-bg:#E7ECF6;
+  --st-sent:#276B39;       --st-sent-bg:#E8F2E9;
+  --st-fail:#B03A32;       --st-fail-bg:#F7E4E2;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;line-height:1.55;min-height:100vh;
 }
 body.modal-open{overflow:hidden}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -66,7 +66,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
 }
@@ -75,11 +75,11 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -190,13 +190,13 @@ select.inp{padding-right:26px}
 .chip{
   font-size:11.5px;border-radius:5px;padding:1.5px 7px;white-space:nowrap;
   background:var(--accent-soft);color:var(--accent-soft-ink);
-  font-family:'IBM Plex Mono',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
 .chip.res{background:var(--result-soft);color:var(--result-soft-ink)}
 .chip.more{background:var(--surface-2);color:var(--ink-3);font-family:inherit;font-weight:600}
 .chip.warn{background:var(--st-fail-bg);color:var(--st-fail)}
 .code-badge{
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
   background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;
   color:var(--ink-2);white-space:nowrap;
 }
@@ -206,7 +206,7 @@ select.inp{padding-right:26px}
 .pv-line{border-bottom:1px solid var(--border);padding:12px 14px}
 .pv-line:last-child{border-bottom:none}
 .pv-no{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.pv-specno{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px}
+.pv-specno{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13.5px}
 .pv-flag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px}
 .pv-flag.ok{background:var(--st-sent-bg);color:var(--st-sent)}
 .pv-flag.err{background:var(--st-fail-bg);color:var(--st-fail)}
@@ -219,8 +219,8 @@ select.inp{padding-right:26px}
 .pv-col.res .pv-col-h{background:var(--result-soft);color:var(--result-soft-ink)}
 .pv-item{display:flex;align-items:center;gap:7px;padding:5px 10px;border-top:1px solid var(--border);font-size:12.5px;flex-wrap:wrap}
 .pv-item .ko{font-weight:600;min-width:74px}
-.pv-item .op{color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
-.pv-item .val{font-family:'IBM Plex Mono',monospace}
+.pv-item .op{color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+.pv-item .val{font-family:'JetBrains Mono',monospace}
 .pv-item .unit{color:var(--ink-3);font-size:11px}
 .pv-item.unknown .ko{color:var(--st-fail)}
 .pv-issues{margin-top:8px;display:flex;flex-direction:column;gap:4px}
@@ -260,9 +260,9 @@ select.inp{padding-right:26px}
 .rc-result{margin-top:8px;padding-top:7px;border-top:1px dashed var(--border);font-size:12.5px;color:var(--result-soft-ink);font-weight:600}
 .vlab{color:var(--ink-3);font-size:.92em}
 .est{font-size:10px;font-weight:700;color:var(--result-soft-ink);background:var(--result-soft);border-radius:3px;padding:0 4px;margin-left:5px;vertical-align:1px;white-space:nowrap}
-.est.raw-v{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border)}
+.est.raw-v{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border)}
 .code-badge.op{font-size:10.5px;margin-left:5px;vertical-align:1px}
-.src{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.src{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
 .src.common{background:var(--st-sent-bg);color:var(--st-sent)}
 .src.order{background:var(--accent-soft);color:var(--accent-soft-ink)}
 .src.cross{background:var(--result-soft);color:var(--result-soft-ink)}
@@ -305,7 +305,7 @@ select.inp{padding-right:26px}
 .cond-check .ct{min-width:0}
 .cc-ok{color:var(--st-sent);font-weight:700}
 .cc-no{color:var(--st-fail);font-weight:700}
-.ov{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.ov{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap}
 .ov i{color:var(--ink-3);font-style:normal}
 .cc-total{margin-top:5px;padding-top:6px;border-top:1px dashed var(--border);font-weight:600;color:var(--result-soft-ink);font-size:12.5px}
 .cc-fold{font-size:11.5px;color:var(--ink-3)}
@@ -402,7 +402,7 @@ select.inp{padding-right:26px}
   display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;font-weight:700;
 }
 .cmp-col.applied .cmp-h{background:var(--accent-soft);color:var(--accent-soft-ink)}
-.cmp-src{font-family:'IBM Plex Mono',monospace}
+.cmp-src{font-family:'JetBrains Mono',monospace}
 .cmp-msg{padding:7px 11px;font-size:12.5px;border-bottom:1px dashed var(--border)}
 .cmp-conds{list-style:none;padding:8px 11px;display:flex;flex-direction:column;gap:6px}
 .cmp-conds li{font-size:12.5px;line-height:1.7;display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}
@@ -414,7 +414,7 @@ select.inp{padding-right:26px}
 .iss-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .rule-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
 .rule-chip{
-  font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;border:1px solid var(--border);
   border-radius:6px;padding:2px 8px;background:var(--surface);color:var(--ink-2);
 }
 .rule-chip .c{color:var(--result-soft-ink);font-weight:600}
@@ -471,7 +471,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
 .icon-btn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--border)}
 .rawbox{
   background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.8;padding:10px 12px;
   overflow-x:auto;white-space:pre-wrap;word-break:break-all;
 }
 .rawbox .t-cond{color:var(--accent)}
@@ -536,7 +536,7 @@ table.grid{border-collapse:collapse;width:100%;font-size:13px}
           <option value="확인필요">⚠확인필요</option><option value="상충해소">상충해소</option>
           <option value="비활성">비활성</option>
         </select></div>
-      <div class="f-field" style="flex:1;min-width:200px"><label for="lf-q">키워드</label>
+      <div class="f-field" style="flex:1;min-width:150px"><label for="lf-q">키워드</label>
         <div class="search-wrap"><input class="inp" id="lf-q" type="search" autocomplete="off" placeholder="필드명·코드값·라벨·메시지 검색">
           <button class="search-clear" id="lf-q-clear" data-action="list-search-clear" aria-label="검색어 지우기">✕</button></div></div>
       <button class="btn btn-pri" data-action="list-apply">조회</button>
