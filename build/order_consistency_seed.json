@@ -483,7 +483,7 @@
   {
    "key": "PRD_SHP",
    "label": "제품형태",
-   "type": "string",
+   "type": "code",
    "origin": "EAV|column",
    "refs": 30
   },
@@ -762,13 +762,6 @@
    "label": "CCAI",
    "certainty": "추정",
    "evidence": "order#127 'CCAI 코일형'(품명 =5)·order#132 'CCAI'(품명 =5)"
-  },
-  {
-   "field": "PRD_NM_CD",
-   "code": "6",
-   "label": "CCGI",
-   "certainty": "추정",
-   "evidence": "order#77 'CCGI Spangle 선택 오류'(품명 3,6)"
   },
   {
    "field": "PRD_NM_CD",
@@ -1604,11 +1597,14 @@
     },
     {
      "field": "ORD_EXC_THK",
-     "op": "LT",
+     "op": "LE",
      "values": [
-      0.801
+      0.8
      ],
-     "display": "0.8 이하"
+     "converted": {
+      "op": "LT",
+      "value": 0.801
+     }
     },
     {
      "field": "ORD_THK_MNG_CD",
@@ -9563,7 +9559,8 @@
        "v2": null
       }
      ],
-     "diff": "M6 폐기: 구 일반상한 >8000(품명 1~6·제품형태 C) — 룰 미탑재. A451~A460 두께·수요가별 세분 가족(5000~16000)으로 대체(union 금지 · 이슈 I-C3)"
+     "diff": "M6 폐기: 구 일반상한 >8000(품명 1~6·제품형태 C) — 룰 미탑재. A451~A460 두께·수요가별 세분 가족(5000~16000)으로 대체(union 금지 · 이슈 I-C3)",
+     "discarded": true
     }
    ]
   },
@@ -11912,11 +11909,14 @@
     },
     {
      "field": "ORD_EXC_THK",
-     "op": "GE",
+     "op": "GT",
      "values": [
-      0.701
+      0.7
      ],
-     "display": "0.7 초과"
+     "converted": {
+      "op": "GE",
+      "value": 0.701
+     }
     }
    ],
    "error": {
@@ -12423,11 +12423,14 @@
    "when": [
     {
      "field": "ORD_PAK_UNT_WGT_ULV",
-     "op": "GE",
+     "op": "GT",
      "values": [
-      2201
+      2200
      ],
-     "display": "2200 초과"
+     "converted": {
+      "op": "GE",
+      "value": 2201
+     }
     }
    ],
    "context": [
@@ -12522,11 +12525,14 @@
    "when": [
     {
      "field": "ORD_PAK_UNT_WGT_ULV",
-     "op": "GE",
+     "op": "GT",
      "values": [
-      2401
+      2400
      ],
-     "display": "2400 초과"
+     "converted": {
+      "op": "GE",
+      "value": 2401
+     }
     }
    ],
    "context": [
@@ -12621,11 +12627,14 @@
    "when": [
     {
      "field": "ORD_PAK_UNT_WGT_ULV",
-     "op": "GE",
+     "op": "GT",
      "values": [
-      2601
+      2600
      ],
-     "display": "2600 초과"
+     "converted": {
+      "op": "GE",
+      "value": 2601
+     }
     }
    ],
    "context": [
@@ -13683,13 +13692,28 @@
   {
    "id": "I-D4",
    "type": "data_defect",
-   "title": "의미론적 포함(그림자) 룰 3쌍 — 동시발화 안내",
-   "body": "order#77[A72] ⊆ order#81[A722], cross#65[A72] ⊆ cross#69[A722](병합 후 R-077/R-081로 수렴), order#115[A664] ⊆ order#87[A663]. 좁은 룰이 발화하는 모든 주문에서 넓은 룰도 발화한다 — 모순이 아니라 다중 결함이며, first-match 엔진이면 한쪽이 영구 은폐된다(전수 평가 채택 근거).",
+   "title": "의미론적 포함(그림자) 룰 2쌍 — 동시발화 안내",
+   "body": "병합 후 실재 2쌍: order#77[A72] ⊆ order#81[A722] / order#115[A664] ⊆ order#87[A663]. (cross#65 ⊆ cross#69는 같은 쌍의 병합 전 cross 측 계보 — 별도 쌍이 아니다.) 좁은 룰이 발화하는 모든 주문에서 넓은 룰도 발화한다 — 모순이 아니라 다중 결함이며, first-match 엔진이면 한쪽이 영구 은폐된다(전수 평가 채택 근거).",
    "rule_ids": [
     "R-077",
     "R-081",
     "R-087",
     "R-115"
+   ],
+   "status": "open"
+  },
+  {
+   "id": "I-D6",
+   "type": "data_defect",
+   "title": "컬러 단중상한 A45x 두께 밴드 공백 4구간",
+   "body": "두께 밴드 상한이 0.449 / 0.599 / 0.799 / 0.999로 인코딩되어 (0.449,0.45) (0.599,0.6) (0.799,0.8) (0.999,1.0) 구간의 두께는 어느 상한 룰에도 걸리지 않는다 — 단중 상한 검사가 조용히 빠지는 무주지. 폭 밴드([800,1101) 등)는 무겹침 완전 분할이 맞지만 두께 밴드는 아니다. 냉연 두께는 통상 소수 3자리라 실발생 확률은 낮으나, 원본 값 보정(0.449→0.45 미만)은 업무 확인이 필요해 룰을 고치지 않고 결함으로만 등재한다.",
+   "rule_ids": [
+    "R-098",
+    "R-099",
+    "R-128",
+    "R-129",
+    "R-130",
+    "R-131"
    ],
    "status": "open"
   },
@@ -13706,36 +13730,31 @@
   }
  ],
  "stats": {
-  "display_hints": [
+  "semantic_conversions": [
    {
     "where": "order#11 주문환산두께",
-    "op": "LT",
-    "value": 0.801,
-    "display": "0.8 이하"
+    "from": "LT 0.801",
+    "to": "LE 0.8"
    },
    {
     "where": "order#127 주문환산두께",
-    "op": "GE",
-    "value": 0.701,
-    "display": "0.7 초과"
+    "from": "GE 0.701",
+    "to": "GT 0.7"
    },
    {
     "where": "order#132 주문항목값(ORD_PAK_UNT_WGT_ULV)",
-    "op": "GE",
-    "value": 2201,
-    "display": "2200 초과"
+    "from": "GE 2201",
+    "to": "GT 2200"
    },
    {
     "where": "order#133 주문항목값(ORD_PAK_UNT_WGT_ULV)",
-    "op": "GE",
-    "value": 2401,
-    "display": "2400 초과"
+    "from": "GE 2401",
+    "to": "GT 2400"
    },
    {
     "where": "order#134 주문항목값(ORD_PAK_UNT_WGT_ULV)",
-    "op": "GE",
-    "value": 2601,
-    "display": "2600 초과"
+    "from": "GE 2601",
+    "to": "GT 2600"
    }
   ],
   "in_demoted": 11,
@@ -13792,14 +13811,14 @@
    "R-C50"
   ],
   "conflicts": 3,
-  "issues": 14,
+  "issues": 15,
   "issues_by_type": {
    "conflict": 3,
    "needs_review": 6,
-   "data_defect": 5
+   "data_defect": 6
   },
   "fields": 66,
-  "value_labels": 36,
+  "value_labels": 35,
   "categories": {
    "누락": 47,
    "사용불가": 6,
@@ -13845,5 +13864,5 @@
    "alias_count": 4
   }
  },
- "content_hash": "83af2e6596a0"
+ "content_hash": "ae3e6d926dab"
 }
