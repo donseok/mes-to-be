@@ -27,7 +27,7 @@
 python3 build/build_single.py
 ```
 
-`build/template.html`에 CSS/JS를 인라인하고 다섯 모듈(품질사양·품질설계·주문단중에러·생산가부·주문정합성체크) 전체를 iframe `srcdoc`으로 내장해
+`build/template.html`에 CSS/JS를 인라인하고 열두 모듈(품질사양·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·칼라부재료·칼라BOM·품질보증서·검사증명서·Tag) 전체를 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
 
 ## 룰 시드 파이프라인 (주문정합성체크 모듈 전용)
