@@ -12,6 +12,12 @@
 | `modules/order-weight-error.html` | 주문단중에러관리 모듈 (주문단중 × 분할 수 매트릭스 — Min/Max 허용범위 하이라이트·셀 수정·수정 이력) |
 | `modules/production-feasibility.html` | 생산가부관리 모듈 (B.D 생산범위(2CGL GI) 탭 — 참조 엑셀 시트 재현: 재질별 폭 × 두께 가부 매트릭스·가부 간편조회·셀 상태 수정·수정 이력) |
 | `modules/order-consistency.html` | 주문정합성체크 모듈 (엑셀 룰 2종을 정제·병합한 통합 룰셋 138건 — 룰 목록·조건 빌더·주문 시뮬레이션·검토 이슈·코드 사전·변경 이력 6탭. 시드는 `build/clean_rules.py --inject`가 `/*__OC_SEED_START__*/` 마커 구간에 주입) |
+| `modules/quality-judgment.html` | 품질판정 1차 화면 (판정 대기 목록 · 검사값 vs 기준값 drawer · 합격/불합격/보류) |
+| `modules/color-submaterial.html` | 칼라부재료관리 1차 화면 (부재료 마스터 목록 · 색상 · 사용/중지) |
+| `modules/color-bom.html` | 칼라BOM관리 1차 화면 (BOM 목록 · 도장 층 구성 drawer) |
+| `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · PDF 발행) |
+| `modules/inspection-certificate.html` | 검사증명서관리 1차 화면 (MTC 목록 · 기계적성질 · 화학 성분) |
+| `modules/tag-management.html` | Tag관리 1차 화면 (Tag 발행 목록 · Tag 레이아웃 미리보기) |
 | `build/template.html` | 포털 셸 (사이드바 메뉴, 해시 라우팅 뼈대, iframe 자리) |
 | `assets/portal.css` · `assets/portal.js` | 포털 셸의 스타일·동작 (사이드바 접기, 라우팅, 모바일 서랍) |
 

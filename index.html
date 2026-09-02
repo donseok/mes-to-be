@@ -254,7 +254,8 @@ a{ color:inherit; }
 }
 
 #module-frame, #module-frame-qd, #module-frame-owe, #module-frame-oc, #module-frame-pf,
-#module-frame-sim{
+#module-frame-sim, #module-frame-qj, #module-frame-csm, #module-frame-cbom,
+#module-frame-qc, #module-frame-ic, #module-frame-tag{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }
@@ -8018,12 +8019,261 @@ renderHist();
 "></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="quality-judgment-view" aria-labelledby="judgment-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">QUALITY JUDGMENT</p>
-            <h2 id="judgment-title">품질판정</h2>
-            <p>품질판정 하위 프로그램을 설계하면 이 메뉴 아래에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="quality-judgment-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-qj" title="품질판정 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>Q-JDG 품질판정</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   Q-JDG — MES 품질판정 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   공정 완료 코일의 검사값을 기준과 대조해 합격/불합격/보류를 판정한다. 좌: 판정 대기 목록 · 우(drawer): 검사값 vs 기준값.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>Q-JDG</span></div>
+  <span class=&quot;crumb&quot;>품질 업무 › 품질판정</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>판정 대기 <span class=&quot;cnt&quot;>8</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>판정 기준 등록</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>판정 이력</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>검사일자(부터)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-08-31&quot;></div>
+    <div class=&quot;f-field&quot;><label>검사일자(까지)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-09-02&quot;></div>
+    <div class=&quot;f-field&quot;><label>공정</label><select class=&quot;inp&quot;><option>전체</option><option>2CGL</option><option>5CGL</option><option>CCL</option><option>7CGL</option></select></div>
+    <div class=&quot;f-field&quot;><label>품명</label><select class=&quot;inp&quot;><option>전체</option><option>G : GI</option><option>L : G/L</option><option>3 : CCGI</option><option>4 : CCLI</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;판정대기&quot;>판정대기</option><option value=&quot;합격&quot;>합격</option><option value=&quot;불합격&quot;>불합격</option><option value=&quot;보류&quot;>보류</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;선택 코일이 없습니다 — 목록에서 코일을 선택하세요&quot;>일괄 합격 처리</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+  <div class=&quot;note&quot;>검사 항목 배지: 도(도금량) · 표(표면) · 기(기계적성질) · 치(치수) — 녹색 통과 · 적색 미달 · 회색 미검사</div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>판정 기준명</label><input class=&quot;inp&quot; placeholder=&quot;예) GI 도금량 하한&quot;></div>
+    <div class=&quot;f-field&quot;><label>적용 공정</label><input class=&quot;inp&quot; placeholder=&quot;2CGL / 5CGL / CCL&quot;></div>
+    <div class=&quot;f-field&quot;><label>검사 항목</label><input class=&quot;inp&quot; placeholder=&quot;도금량 · 표면 · 기계적성질 · 치수&quot;></div>
+    <div class=&quot;f-field&quot;><label>기준 하한</label><input class=&quot;inp&quot; placeholder=&quot;숫자&quot;></div>
+    <div class=&quot;f-field&quot;><label>기준 상한</label><input class=&quot;inp&quot; placeholder=&quot;숫자&quot;></div>
+    <div class=&quot;f-field&quot;><label>적용 품명</label><input class=&quot;inp&quot; placeholder=&quot;G, L, 3, 4 …&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;판정 기준 저장 — 목업에서는 저장되지 않습니다&quot;>판정 기준 저장</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>판정 이력</div>판정·보류·재검 처리 기록이 시각순으로 표시됩니다. 목업 시드에는 이력이 없습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;coil&quot;: &quot;C260901001&quot;, &quot;ord&quot;: &quot;D260831014-010&quot;, &quot;prd&quot;: &quot;3 : CCGI&quot;, &quot;spec&quot;: &quot;KS3-CGCC&quot;, &quot;size&quot;: &quot;0.450 × 1490&quot;, &quot;proc&quot;: &quot;5CGL&quot;, &quot;st&quot;: &quot;판정대기&quot;, &quot;who&quot;: &quot;이도현&quot;, &quot;when&quot;: &quot;09-02 08:10&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: null}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;80 / 120&quot;, &quot;96&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;A&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;205~380&quot;, &quot;—&quot;, &quot;미검&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;+0.008&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901001&quot;}, {&quot;coil&quot;: &quot;C260901002&quot;, &quot;ord&quot;: &quot;D260831020-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;spec&quot;: &quot;KSL-SGLCC&quot;, &quot;size&quot;: &quot;0.400 × 915&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;판정대기&quot;, &quot;who&quot;: &quot;김민석&quot;, &quot;when&quot;: &quot;09-02 07:42&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: false}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;100 / 150&quot;, &quot;92&quot;, &quot;부&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;B&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;205~380&quot;, &quot;268&quot;, &quot;합&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;-0.004&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901002&quot;}, {&quot;coil&quot;: &quot;C260901003&quot;, &quot;ord&quot;: &quot;D260831021-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;spec&quot;: &quot;KSG-SGC340&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;합격&quot;, &quot;who&quot;: &quot;박서연&quot;, &quot;when&quot;: &quot;09-01 17:05&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;80 / 120&quot;, &quot;104&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;A&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;245~&quot;, &quot;312&quot;, &quot;합&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;+0.002&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901003&quot;}, {&quot;coil&quot;: &quot;C260901004&quot;, &quot;ord&quot;: &quot;D260831023-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;spec&quot;: &quot;KSG-SGC340&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;보류&quot;, &quot;who&quot;: &quot;박서연&quot;, &quot;when&quot;: &quot;09-01 16:30&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: null}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;80 / 120&quot;, &quot;88&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;재검&quot;, &quot;보류&quot;], [&quot;YP (MPa)&quot;, &quot;245~&quot;, &quot;301&quot;, &quot;합&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;+0.011&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901004&quot;}, {&quot;coil&quot;: &quot;C260901005&quot;, &quot;ord&quot;: &quot;D260831024-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;spec&quot;: &quot;KSL-SGLC570&quot;, &quot;size&quot;: &quot;0.370 × 1221&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;불합격&quot;, &quot;who&quot;: &quot;정하윤&quot;, &quot;when&quot;: &quot;09-01 15:12&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: false}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: false}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;100 / 150&quot;, &quot;118&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;C&quot;, &quot;부&quot;], [&quot;TS (MPa)&quot;, &quot;570~&quot;, &quot;548&quot;, &quot;부&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;-0.006&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901005&quot;}, {&quot;coil&quot;: &quot;C260901006&quot;, &quot;ord&quot;: &quot;D260831025-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;spec&quot;: &quot;KSG-SGCC&quot;, &quot;size&quot;: &quot;0.440 × 1306&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;판정대기&quot;, &quot;who&quot;: &quot;이도현&quot;, &quot;when&quot;: &quot;09-01 14:40&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: null}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;80 / 120&quot;, &quot;91&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;A&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;205~380&quot;, &quot;—&quot;, &quot;미검&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;+0.001&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901006&quot;}, {&quot;coil&quot;: &quot;C260901007&quot;, &quot;ord&quot;: &quot;D260831027-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;spec&quot;: &quot;KSL-SGLCC&quot;, &quot;size&quot;: &quot;0.800 × 1224&quot;, &quot;proc&quot;: &quot;2CGL&quot;, &quot;st&quot;: &quot;합격&quot;, &quot;who&quot;: &quot;김민석&quot;, &quot;when&quot;: &quot;09-01 11:20&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: true}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;100 / 150&quot;, &quot;131&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;A&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;205~380&quot;, &quot;247&quot;, &quot;합&quot;], [&quot;두께 편차&quot;, &quot;±0.030&quot;, &quot;+0.012&quot;, &quot;합&quot;]], &quot;id&quot;: &quot;C260901007&quot;}, {&quot;coil&quot;: &quot;C260901008&quot;, &quot;ord&quot;: &quot;D260831028-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;spec&quot;: &quot;KSG-SGC340&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;proc&quot;: &quot;5CGL&quot;, &quot;st&quot;: &quot;판정대기&quot;, &quot;who&quot;: &quot;정하윤&quot;, &quot;when&quot;: &quot;09-01 10:05&quot;, &quot;chk&quot;: [{&quot;s&quot;: &quot;도&quot;, &quot;n&quot;: &quot;도금량&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;표&quot;, &quot;n&quot;: &quot;표면&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;기&quot;, &quot;n&quot;: &quot;기계적성질&quot;, &quot;ok&quot;: true}, {&quot;s&quot;: &quot;치&quot;, &quot;n&quot;: &quot;치수&quot;, &quot;ok&quot;: null}], &quot;items&quot;: [[&quot;도금량 (g/㎡)&quot;, &quot;80 / 120&quot;, &quot;97&quot;, &quot;합&quot;], [&quot;표면 결함&quot;, &quot;등급 B 이상&quot;, &quot;A&quot;, &quot;합&quot;], [&quot;YP (MPa)&quot;, &quot;245~&quot;, &quot;288&quot;, &quot;합&quot;], [&quot;두께 편차&quot;, &quot;±0.020&quot;, &quot;—&quot;, &quot;미검&quot;]], &quot;id&quot;: &quot;C260901008&quot;}];
+var COLS=[{&quot;k&quot;: &quot;coil&quot;, &quot;l&quot;: &quot;코일번호&quot;, &quot;t&quot;: &quot;link&quot;, &quot;sub&quot;: &quot;ord&quot;}, {&quot;k&quot;: &quot;prd&quot;, &quot;l&quot;: &quot;품명 · 규격&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;spec&quot;}, {&quot;k&quot;: &quot;size&quot;, &quot;l&quot;: &quot;두께 × 폭&quot;, &quot;t&quot;: &quot;mono&quot;}, {&quot;k&quot;: &quot;proc&quot;, &quot;l&quot;: &quot;공정&quot;, &quot;t&quot;: &quot;code&quot;}, {&quot;k&quot;: &quot;chk&quot;, &quot;l&quot;: &quot;검사 항목&quot;, &quot;t&quot;: &quot;chk&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;판정&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;who&quot;, &quot;l&quot;: &quot;검사자&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;when&quot;}];
+var DETAIL={title:function(r){return r.coil+' · 품질판정';},
+  sections:[{h:'코일 정보',f:[{l:'코일번호',k:'coil',t:'mono'},{l:'주문번호',k:'ord',t:'mono'},{l:'품명 · 규격',k:'prd'},{l:'두께 × 폭',k:'size',t:'mono'},{l:'공정',k:'proc'},{l:'검사자 · 시각',k:'who'}]},
+            {h:'현재 판정',f:[{l:'상태',k:'st',t:'pill'}]}],
+  actions:[{k:'hold',l:'보류'},{k:'fail',l:'불합격',warn:true},{k:'pass',l:'합격 판정',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;판정대기&quot;: {&quot;cls&quot;: &quot;warn&quot;}, &quot;합격&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;불합격&quot;: {&quot;cls&quot;: &quot;no&quot;}, &quot;보류&quot;: {&quot;cls&quot;: &quot;hold&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){
+  var h='<div class=&quot;d-sect&quot;><h4>검사값 vs 기준값</h4><table class=&quot;mini&quot;><tr><th>항목</th><th>기준</th><th class=&quot;num&quot;>검사값</th><th>판정</th></tr>';
+  r.items.forEach(function(it){var c=it[3]==='합'?'ok':it[3]==='부'?'no':it[3]==='보류'?'hold':'dim';
+    h+='<tr><td>'+esc(it[0])+'</td><td class=&quot;mono&quot;>'+esc(it[1])+'</td><td class=&quot;num&quot;>'+esc(it[2])+'</td><td><span class=&quot;pill '+c+'&quot;>'+esc(it[3])+'</span></td></tr>';});
+  return h+'</table></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
         <section class="route-view" id="simulation-view" aria-labelledby="page-title" hidden>
@@ -9841,44 +10091,1269 @@ document.addEventListener('keydown',function(e){
 "></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="color-submaterial-view" aria-labelledby="color-submaterial-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">COLOR SUB-MATERIAL MASTER</p>
-            <h2 id="color-submaterial-title">칼라부재료관리</h2>
-            <p>칼라부재료관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="color-submaterial-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-csm" title="칼라부재료관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>C-SUB 칼라부재료관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   C-SUB — MES 칼라부재료관리 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   칼라강판 도료·프라이머·필름·이면도료 등 부재료 마스터. 코드·색상·제조사·규격·사용 여부를 관리한다.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>C-SUB</span></div>
+  <span class=&quot;crumb&quot;>품질설계 › 기준정보관리 › 칼라부재료관리</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>부재료 목록 <span class=&quot;cnt&quot;>10</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>신규 등록</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>변경 이력</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>구분</label><select class=&quot;inp&quot;><option>전체</option><option>상도</option><option>하도(프라이머)</option><option>이면도료</option><option>보호필름</option><option>왁스</option></select></div>
+    <div class=&quot;f-field&quot;><label>제조사</label><select class=&quot;inp&quot;><option>전체</option><option>제조사 A</option><option>제조사 B</option><option>제조사 C</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;사용&quot;>사용</option><option value=&quot;중지&quot;>중지</option><option value=&quot;승인대기&quot;>승인대기</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;엑셀 다운로드 — 목업에서는 생성하지 않습니다&quot;>엑셀 다운로드</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>부재료코드</label><input class=&quot;inp&quot; placeholder=&quot;예) P-TOP-L2001&quot;></div>
+    <div class=&quot;f-field&quot;><label>구분</label><input class=&quot;inp&quot; placeholder=&quot;상도 / 하도 / 이면도료 / 보호필름 / 왁스&quot;></div>
+    <div class=&quot;f-field&quot;><label>품명</label><input class=&quot;inp&quot; placeholder=&quot;예) 폴리에스터 상도&quot;></div>
+    <div class=&quot;f-field&quot;><label>색상코드</label><input class=&quot;inp&quot; placeholder=&quot;예) L2001&quot;></div>
+    <div class=&quot;f-field&quot;><label>제조사</label><input class=&quot;inp&quot; placeholder=&quot;가명 사용&quot;></div>
+    <div class=&quot;f-field&quot;><label>규격</label><input class=&quot;inp&quot; placeholder=&quot;예) 18L / 고형분 58%&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;부재료 등록 — 목업에서는 저장되지 않습니다&quot;>부재료 등록</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>변경 이력</div>코드 등록·수정·중지 기록이 전/후 값과 함께 표시됩니다. 목업 시드에는 이력이 없습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;cd&quot;: &quot;P-TOP-L2001&quot;, &quot;kind&quot;: &quot;상도&quot;, &quot;nm&quot;: &quot;폴리에스터 상도&quot;, &quot;grade&quot;: &quot;RMP 일반&quot;, &quot;color&quot;: &quot;L2001&quot;, &quot;colornm&quot;: &quot;아이보리&quot;, &quot;mfr&quot;: &quot;제조사 A&quot;, &quot;spec&quot;: &quot;18L / 고형분 58%&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-08-28&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;hex&quot;: &quot;#EDE6D3&quot;, &quot;id&quot;: &quot;P-TOP-L2001&quot;}, {&quot;cd&quot;: &quot;P-TOP-C9015&quot;, &quot;kind&quot;: &quot;상도&quot;, &quot;nm&quot;: &quot;폴리에스터 상도&quot;, &quot;grade&quot;: &quot;RMP 일반&quot;, &quot;color&quot;: &quot;C9015&quot;, &quot;colornm&quot;: &quot;화이트&quot;, &quot;mfr&quot;: &quot;제조사 A&quot;, &quot;spec&quot;: &quot;18L / 고형분 58%&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-08-28&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;hex&quot;: &quot;#F3F1EC&quot;, &quot;id&quot;: &quot;P-TOP-C9015&quot;}, {&quot;cd&quot;: &quot;P-TOP-S7016&quot;, &quot;kind&quot;: &quot;상도&quot;, &quot;nm&quot;: &quot;SMP 상도&quot;, &quot;grade&quot;: &quot;실리콘 변성&quot;, &quot;color&quot;: &quot;S7016&quot;, &quot;colornm&quot;: &quot;앤트러사이트&quot;, &quot;mfr&quot;: &quot;제조사 B&quot;, &quot;spec&quot;: &quot;18L / 고형분 55%&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-08-20&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;hex&quot;: &quot;#3B3F44&quot;, &quot;id&quot;: &quot;P-TOP-S7016&quot;}, {&quot;cd&quot;: &quot;P-TOP-H3009&quot;, &quot;kind&quot;: &quot;상도&quot;, &quot;nm&quot;: &quot;HDP 상도&quot;, &quot;grade&quot;: &quot;고내후&quot;, &quot;color&quot;: &quot;H3009&quot;, &quot;colornm&quot;: &quot;옥사이드 레드&quot;, &quot;mfr&quot;: &quot;제조사 B&quot;, &quot;spec&quot;: &quot;18L / 고형분 60%&quot;, &quot;st&quot;: &quot;승인대기&quot;, &quot;upd&quot;: &quot;2026-09-01&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;hex&quot;: &quot;#7A3A2E&quot;, &quot;id&quot;: &quot;P-TOP-H3009&quot;}, {&quot;cd&quot;: &quot;P-PRM-EP01&quot;, &quot;kind&quot;: &quot;하도(프라이머)&quot;, &quot;nm&quot;: &quot;에폭시 프라이머&quot;, &quot;grade&quot;: &quot;B1 : EPOXY&quot;, &quot;color&quot;: &quot;—&quot;, &quot;colornm&quot;: &quot;&quot;, &quot;mfr&quot;: &quot;제조사 A&quot;, &quot;spec&quot;: &quot;18L / 도막 5㎛&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-07-15&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;hex&quot;: &quot;#C9B98A&quot;, &quot;id&quot;: &quot;P-PRM-EP01&quot;}, {&quot;cd&quot;: &quot;P-PRM-PU02&quot;, &quot;kind&quot;: &quot;하도(프라이머)&quot;, &quot;nm&quot;: &quot;폴리우레탄 프라이머&quot;, &quot;grade&quot;: &quot;B2 : PU&quot;, &quot;color&quot;: &quot;—&quot;, &quot;colornm&quot;: &quot;&quot;, &quot;mfr&quot;: &quot;제조사 C&quot;, &quot;spec&quot;: &quot;18L / 도막 5㎛&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-07-15&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;hex&quot;: &quot;#D8CFA8&quot;, &quot;id&quot;: &quot;P-PRM-PU02&quot;}, {&quot;cd&quot;: &quot;P-BCK-G01&quot;, &quot;kind&quot;: &quot;이면도료&quot;, &quot;nm&quot;: &quot;이면 서비스코트&quot;, &quot;grade&quot;: &quot;그레이&quot;, &quot;color&quot;: &quot;B-GY1&quot;, &quot;colornm&quot;: &quot;라이트 그레이&quot;, &quot;mfr&quot;: &quot;제조사 A&quot;, &quot;spec&quot;: &quot;18L / 도막 7㎛&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-06-30&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;hex&quot;: &quot;#C2C4C6&quot;, &quot;id&quot;: &quot;P-BCK-G01&quot;}, {&quot;cd&quot;: &quot;P-BCK-W01&quot;, &quot;kind&quot;: &quot;이면도료&quot;, &quot;nm&quot;: &quot;이면 서비스코트&quot;, &quot;grade&quot;: &quot;화이트&quot;, &quot;color&quot;: &quot;B-WH1&quot;, &quot;colornm&quot;: &quot;화이트&quot;, &quot;mfr&quot;: &quot;제조사 A&quot;, &quot;spec&quot;: &quot;18L / 도막 7㎛&quot;, &quot;st&quot;: &quot;중지&quot;, &quot;upd&quot;: &quot;2026-05-12&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;hex&quot;: &quot;#EFEFEF&quot;, &quot;id&quot;: &quot;P-BCK-W01&quot;}, {&quot;cd&quot;: &quot;F-PTT-50&quot;, &quot;kind&quot;: &quot;보호필름&quot;, &quot;nm&quot;: &quot;PE 보호필름&quot;, &quot;grade&quot;: &quot;50㎛ 저점착&quot;, &quot;color&quot;: &quot;—&quot;, &quot;colornm&quot;: &quot;투명&quot;, &quot;mfr&quot;: &quot;제조사 C&quot;, &quot;spec&quot;: &quot;폭 1250 / 1500 · 롤&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-08-02&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;hex&quot;: &quot;#F8F8F8&quot;, &quot;id&quot;: &quot;F-PTT-50&quot;}, {&quot;cd&quot;: &quot;W-WAX-01&quot;, &quot;kind&quot;: &quot;왁스&quot;, &quot;nm&quot;: &quot;방청 왁스&quot;, &quot;grade&quot;: &quot;—&quot;, &quot;color&quot;: &quot;—&quot;, &quot;colornm&quot;: &quot;&quot;, &quot;mfr&quot;: &quot;제조사 B&quot;, &quot;spec&quot;: &quot;18L&quot;, &quot;st&quot;: &quot;사용&quot;, &quot;upd&quot;: &quot;2026-04-22&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;hex&quot;: &quot;#E8E2CC&quot;, &quot;id&quot;: &quot;W-WAX-01&quot;}];
+var COLS=[{&quot;k&quot;: &quot;cd&quot;, &quot;l&quot;: &quot;부재료코드&quot;, &quot;t&quot;: &quot;link&quot;}, {&quot;k&quot;: &quot;kind&quot;, &quot;l&quot;: &quot;구분&quot;, &quot;t&quot;: &quot;code&quot;}, {&quot;k&quot;: &quot;nm&quot;, &quot;l&quot;: &quot;품명&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;grade&quot;}, {&quot;k&quot;: &quot;color&quot;, &quot;l&quot;: &quot;색상코드&quot;, &quot;t&quot;: &quot;mono&quot;, &quot;sub&quot;: &quot;colornm&quot;}, {&quot;k&quot;: &quot;mfr&quot;, &quot;l&quot;: &quot;제조사&quot;, &quot;t&quot;: &quot;text&quot;}, {&quot;k&quot;: &quot;spec&quot;, &quot;l&quot;: &quot;규격&quot;, &quot;t&quot;: &quot;mono&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;상태&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;upd&quot;, &quot;l&quot;: &quot;최종수정&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;by&quot;}];
+var DETAIL={title:function(r){return r.cd+' · '+r.nm;},
+  sections:[{h:'기본 정보',f:[{l:'부재료코드',k:'cd',t:'mono'},{l:'구분',k:'kind'},{l:'품명 · 등급',k:'nm'},{l:'제조사',k:'mfr'},{l:'규격',k:'spec',t:'mono'},{l:'상태',k:'st',t:'pill'}]},
+            {h:'변경',f:[{l:'최종수정',k:'upd'},{l:'수정자',k:'by'}]}],
+  actions:[{k:'stop',l:'사용 중지',warn:true},{k:'edit',l:'수정',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;사용&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;중지&quot;: {&quot;cls&quot;: &quot;dim&quot;}, &quot;승인대기&quot;: {&quot;cls&quot;: &quot;warn&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){ if(r.color==='—')return '';
+  return '<div class=&quot;d-sect&quot;><h4>색상</h4><div class=&quot;layer&quot;><span class=&quot;sw&quot; style=&quot;background:'+esc(r.hex)+'&quot;></span><span class=&quot;nm&quot;>'+esc(r.color)+' · '+esc(r.colornm)+'</span><span class=&quot;th&quot;>'+esc(r.hex)+'</span></div></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="color-bom-view" aria-labelledby="color-bom-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">COLOR BOM MASTER</p>
-            <h2 id="color-bom-title">칼라BOM관리</h2>
-            <p>칼라BOM관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="color-bom-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-cbom" title="칼라BOM관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>C-BOM 칼라BOM관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   C-BOM — MES 칼라BOM관리 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   칼라 제품별 도장 구성(BOM): 상도/하도/이면의 부재료·도막두께·소요량. 품질사양의 CCL_BOM번호가 여기를 가리킨다.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>C-BOM</span></div>
+  <span class=&quot;crumb&quot;>품질설계 › 기준정보관리 › 칼라BOM관리</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>BOM 목록 <span class=&quot;cnt&quot;>8</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>신규 등록</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>변경 이력</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>제품 계열</label><select class=&quot;inp&quot;><option>전체</option><option>RMP</option><option>SMP</option><option>HDP</option><option>PVDF</option></select></div>
+    <div class=&quot;f-field&quot;><label>용도</label><select class=&quot;inp&quot;><option>전체</option><option>건재 외장</option><option>건재 내장</option><option>가전</option><option>기타</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;확정&quot;>확정</option><option value=&quot;설계중&quot;>설계중</option><option value=&quot;폐기&quot;>폐기</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;복사할 BOM을 선택하세요&quot;>BOM 복사</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>BOM번호</label><input class=&quot;inp&quot; placeholder=&quot;예) L2000E&quot;></div>
+    <div class=&quot;f-field&quot;><label>제품명</label><input class=&quot;inp&quot; placeholder=&quot;예) RMP 일반 아이보리&quot;></div>
+    <div class=&quot;f-field&quot;><label>계열</label><input class=&quot;inp&quot; placeholder=&quot;RMP / SMP / HDP / PVDF&quot;></div>
+    <div class=&quot;f-field&quot;><label>상도 부재료</label><input class=&quot;inp&quot; placeholder=&quot;부재료코드&quot;></div>
+    <div class=&quot;f-field&quot;><label>하도 부재료</label><input class=&quot;inp&quot; placeholder=&quot;부재료코드&quot;></div>
+    <div class=&quot;f-field&quot;><label>이면 부재료</label><input class=&quot;inp&quot; placeholder=&quot;부재료코드&quot;></div>
+    <div class=&quot;f-field&quot;><label>상도 도막 (㎛)</label><input class=&quot;inp&quot; placeholder=&quot;숫자&quot;></div>
+    <div class=&quot;f-field&quot;><label>이면 도막 (㎛)</label><input class=&quot;inp&quot; placeholder=&quot;숫자&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;BOM 저장 — 목업에서는 저장되지 않습니다&quot;>BOM 저장</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>변경 이력</div>개정(Rev.)별 층 구성·도막 변경 내역이 표시됩니다. 목업 시드에는 이력이 없습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;bom&quot;: &quot;L2000E&quot;, &quot;rev&quot;: &quot;Rev.3&quot;, &quot;series&quot;: &quot;RMP&quot;, &quot;nm&quot;: &quot;RMP 일반 아이보리&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;L2001&quot;, &quot;topnm&quot;: &quot;아이보리&quot;, &quot;back&quot;: &quot;C9015&quot;, &quot;thk&quot;: &quot;25 / 7&quot;, &quot;st&quot;: &quot;확정&quot;, &quot;upd&quot;: &quot;2026-08-28&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-L2001 폴리에스터 상도&quot;, &quot;20㎛&quot;, &quot;#EDE6D3&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-EP01 에폭시 프라이머&quot;, &quot;5㎛&quot;, &quot;#C9B98A&quot;], [&quot;이면 (BACK)&quot;, &quot;P-TOP-C9015 · 서비스코트&quot;, &quot;7㎛&quot;, &quot;#F3F1EC&quot;]], &quot;id&quot;: &quot;L2000E&quot;}, {&quot;bom&quot;: &quot;L2010E&quot;, &quot;rev&quot;: &quot;Rev.1&quot;, &quot;series&quot;: &quot;RMP&quot;, &quot;nm&quot;: &quot;RMP 일반 화이트&quot;, &quot;usage&quot;: &quot;건재 내장&quot;, &quot;top&quot;: &quot;C9015&quot;, &quot;topnm&quot;: &quot;화이트&quot;, &quot;back&quot;: &quot;B-GY1&quot;, &quot;thk&quot;: &quot;20 / 7&quot;, &quot;st&quot;: &quot;확정&quot;, &quot;upd&quot;: &quot;2026-08-20&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-C9015 폴리에스터 상도&quot;, &quot;15㎛&quot;, &quot;#F3F1EC&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-EP01 에폭시 프라이머&quot;, &quot;5㎛&quot;, &quot;#C9B98A&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-G01 서비스코트&quot;, &quot;7㎛&quot;, &quot;#C2C4C6&quot;]], &quot;id&quot;: &quot;L2010E&quot;}, {&quot;bom&quot;: &quot;S7000E&quot;, &quot;rev&quot;: &quot;Rev.2&quot;, &quot;series&quot;: &quot;SMP&quot;, &quot;nm&quot;: &quot;SMP 앤트러사이트&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;S7016&quot;, &quot;topnm&quot;: &quot;앤트러사이트&quot;, &quot;back&quot;: &quot;B-GY1&quot;, &quot;thk&quot;: &quot;25 / 7&quot;, &quot;st&quot;: &quot;확정&quot;, &quot;upd&quot;: &quot;2026-08-11&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-S7016 SMP 상도&quot;, &quot;20㎛&quot;, &quot;#3B3F44&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-PU02 폴리우레탄 프라이머&quot;, &quot;5㎛&quot;, &quot;#D8CFA8&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-G01 서비스코트&quot;, &quot;7㎛&quot;, &quot;#C2C4C6&quot;]], &quot;id&quot;: &quot;S7000E&quot;}, {&quot;bom&quot;: &quot;H3000E&quot;, &quot;rev&quot;: &quot;Rev.0&quot;, &quot;series&quot;: &quot;HDP&quot;, &quot;nm&quot;: &quot;HDP 옥사이드 레드&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;H3009&quot;, &quot;topnm&quot;: &quot;옥사이드 레드&quot;, &quot;back&quot;: &quot;B-GY1&quot;, &quot;thk&quot;: &quot;30 / 7&quot;, &quot;st&quot;: &quot;설계중&quot;, &quot;upd&quot;: &quot;2026-09-01&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-H3009 HDP 상도&quot;, &quot;25㎛&quot;, &quot;#7A3A2E&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-PU02 폴리우레탄 프라이머&quot;, &quot;5㎛&quot;, &quot;#D8CFA8&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-G01 서비스코트&quot;, &quot;7㎛&quot;, &quot;#C2C4C6&quot;]], &quot;id&quot;: &quot;H3000E&quot;}, {&quot;bom&quot;: &quot;L2020A&quot;, &quot;rev&quot;: &quot;Rev.4&quot;, &quot;series&quot;: &quot;RMP&quot;, &quot;nm&quot;: &quot;RMP 가전 화이트 (양면)&quot;, &quot;usage&quot;: &quot;가전&quot;, &quot;top&quot;: &quot;C9015&quot;, &quot;topnm&quot;: &quot;화이트&quot;, &quot;back&quot;: &quot;C9015&quot;, &quot;thk&quot;: &quot;20 / 20&quot;, &quot;st&quot;: &quot;확정&quot;, &quot;upd&quot;: &quot;2026-07-30&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-C9015 폴리에스터 상도&quot;, &quot;15㎛&quot;, &quot;#F3F1EC&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-EP01 에폭시 프라이머&quot;, &quot;5㎛&quot;, &quot;#C9B98A&quot;], [&quot;이면 (BACK)&quot;, &quot;P-TOP-C9015 폴리에스터 상도&quot;, &quot;15㎛&quot;, &quot;#F3F1EC&quot;], [&quot;이면 하도&quot;, &quot;P-PRM-EP01 에폭시 프라이머&quot;, &quot;5㎛&quot;, &quot;#C9B98A&quot;]], &quot;id&quot;: &quot;L2020A&quot;}, {&quot;bom&quot;: &quot;S7010E&quot;, &quot;rev&quot;: &quot;Rev.1&quot;, &quot;series&quot;: &quot;SMP&quot;, &quot;nm&quot;: &quot;SMP 그레이&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;S7035&quot;, &quot;topnm&quot;: &quot;라이트 그레이&quot;, &quot;back&quot;: &quot;B-GY1&quot;, &quot;thk&quot;: &quot;25 / 7&quot;, &quot;st&quot;: &quot;확정&quot;, &quot;upd&quot;: &quot;2026-07-02&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-S7035 SMP 상도&quot;, &quot;20㎛&quot;, &quot;#C5C7C9&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-PU02 폴리우레탄 프라이머&quot;, &quot;5㎛&quot;, &quot;#D8CFA8&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-G01 서비스코트&quot;, &quot;7㎛&quot;, &quot;#C2C4C6&quot;]], &quot;id&quot;: &quot;S7010E&quot;}, {&quot;bom&quot;: &quot;L1990E&quot;, &quot;rev&quot;: &quot;Rev.6&quot;, &quot;series&quot;: &quot;RMP&quot;, &quot;nm&quot;: &quot;RMP 구형 아이보리&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;L2001&quot;, &quot;topnm&quot;: &quot;아이보리&quot;, &quot;back&quot;: &quot;B-WH1&quot;, &quot;thk&quot;: &quot;20 / 7&quot;, &quot;st&quot;: &quot;폐기&quot;, &quot;upd&quot;: &quot;2026-05-12&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;P-TOP-L2001 폴리에스터 상도&quot;, &quot;15㎛&quot;, &quot;#EDE6D3&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-EP01 에폭시 프라이머&quot;, &quot;5㎛&quot;, &quot;#C9B98A&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-W01 서비스코트 (중지)&quot;, &quot;7㎛&quot;, &quot;#EFEFEF&quot;]], &quot;id&quot;: &quot;L1990E&quot;}, {&quot;bom&quot;: &quot;P4000E&quot;, &quot;rev&quot;: &quot;Rev.0&quot;, &quot;series&quot;: &quot;PVDF&quot;, &quot;nm&quot;: &quot;PVDF 실버 메탈릭&quot;, &quot;usage&quot;: &quot;건재 외장&quot;, &quot;top&quot;: &quot;V9006&quot;, &quot;topnm&quot;: &quot;실버&quot;, &quot;back&quot;: &quot;B-GY1&quot;, &quot;thk&quot;: &quot;25 / 7&quot;, &quot;st&quot;: &quot;설계중&quot;, &quot;upd&quot;: &quot;2026-08-30&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;layers&quot;: [[&quot;상도 (TOP)&quot;, &quot;PVDF 상도 (신규 등록 예정)&quot;, &quot;20㎛&quot;, &quot;#B9BCC0&quot;], [&quot;하도 (PRIMER)&quot;, &quot;P-PRM-PU02 폴리우레탄 프라이머&quot;, &quot;5㎛&quot;, &quot;#D8CFA8&quot;], [&quot;이면 (BACK)&quot;, &quot;P-BCK-G01 서비스코트&quot;, &quot;7㎛&quot;, &quot;#C2C4C6&quot;]], &quot;id&quot;: &quot;P4000E&quot;}];
+var COLS=[{&quot;k&quot;: &quot;bom&quot;, &quot;l&quot;: &quot;BOM번호&quot;, &quot;t&quot;: &quot;link&quot;, &quot;sub&quot;: &quot;rev&quot;}, {&quot;k&quot;: &quot;series&quot;, &quot;l&quot;: &quot;계열&quot;, &quot;t&quot;: &quot;code&quot;}, {&quot;k&quot;: &quot;nm&quot;, &quot;l&quot;: &quot;제품명&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;usage&quot;}, {&quot;k&quot;: &quot;top&quot;, &quot;l&quot;: &quot;상도 (T)&quot;, &quot;t&quot;: &quot;mono&quot;, &quot;sub&quot;: &quot;topnm&quot;}, {&quot;k&quot;: &quot;back&quot;, &quot;l&quot;: &quot;이면 (B)&quot;, &quot;t&quot;: &quot;mono&quot;}, {&quot;k&quot;: &quot;thk&quot;, &quot;l&quot;: &quot;도막 T / B (㎛)&quot;, &quot;t&quot;: &quot;mono&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;상태&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;upd&quot;, &quot;l&quot;: &quot;최종수정&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;by&quot;}];
+var DETAIL={title:function(r){return r.bom+' '+r.rev+' · '+r.nm;},
+  sections:[{h:'BOM 정보',f:[{l:'BOM번호 · 개정',k:'bom',t:'mono'},{l:'계열 · 용도',k:'series'},{l:'제품명',k:'nm'},{l:'도막 T / B',k:'thk',t:'mono'},{l:'상태',k:'st',t:'pill'},{l:'최종수정',k:'upd'}]}],
+  actions:[{k:'copy',l:'복사해서 신규'},{k:'confirm',l:'확정',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;확정&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;설계중&quot;: {&quot;cls&quot;: &quot;warn&quot;}, &quot;폐기&quot;: {&quot;cls&quot;: &quot;dim&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){var h='<div class=&quot;d-sect&quot;><h4>도장 구성 (층 순서)</h4><div style=&quot;display:flex;flex-direction:column;gap:6px&quot;>';
+  r.layers.forEach(function(l){h+='<div class=&quot;layer&quot;><span class=&quot;sw&quot; style=&quot;background:'+esc(l[3])+'&quot;></span><span class=&quot;nm&quot;>'+esc(l[0])+'<span class=&quot;sub&quot;>'+esc(l[1])+'</span></span><span class=&quot;th&quot;>'+esc(l[2])+'</span></div>';});
+  return h+'</div></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="quality-certificate-view" aria-labelledby="quality-certificate-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">QUALITY CERTIFICATE</p>
-            <h2 id="quality-certificate-title">품질보증서관리</h2>
-            <p>품질보증서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="quality-certificate-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-qc" title="품질보증서관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>Q-CERT 품질보증서관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   Q-CERT — MES 품질보증서관리 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   출하 코일에 대한 품질보증서(성적서) 발행·재발행·회수 관리. 수요가는 가명.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>Q-CERT</span></div>
+  <span class=&quot;crumb&quot;>출력물관리 › 품질보증서관리</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>발행 목록 <span class=&quot;cnt&quot;>9</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>발행 요청</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>양식 관리</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>발행일(부터)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-08-25&quot;></div>
+    <div class=&quot;f-field&quot;><label>발행일(까지)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-09-02&quot;></div>
+    <div class=&quot;f-field&quot;><label>수요가</label><select class=&quot;inp&quot;><option>전체</option><option>수요가 A</option><option>수요가 B</option><option>수요가 C</option><option>수요가 D</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;발행&quot;>발행</option><option value=&quot;초안&quot;>초안</option><option value=&quot;재발행&quot;>재발행</option><option value=&quot;회수&quot;>회수</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;출력할 보증서를 선택하세요&quot;>선택 PDF 출력</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>주문번호</label><input class=&quot;inp&quot; placeholder=&quot;예) D260831014-010&quot;></div>
+    <div class=&quot;f-field&quot;><label>수요가</label><input class=&quot;inp&quot; placeholder=&quot;가명 사용&quot;></div>
+    <div class=&quot;f-field&quot;><label>코일 범위</label><input class=&quot;inp&quot; placeholder=&quot;예) C260901001 ~ 003&quot;></div>
+    <div class=&quot;f-field&quot;><label>양식</label><input class=&quot;inp&quot; placeholder=&quot;KS 표준 / 수요가 지정&quot;></div>
+    <div class=&quot;f-field&quot;><label>언어</label><input class=&quot;inp&quot; placeholder=&quot;국문 / 영문&quot;></div>
+    <div class=&quot;f-field&quot;><label>비고</label><input class=&quot;inp&quot; placeholder=&quot;&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;발행 요청 — 목업에서는 저장되지 않습니다&quot;>발행 요청</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>양식 관리</div>보증서 양식(KS 표준·수요가 지정 양식)의 항목 구성과 서명·직인 설정을 관리합니다. 목업 시드에는 양식 2종만 정의되어 있습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;no&quot;: &quot;QC-2609-0101&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;po&quot;: &quot;PO-A-77812&quot;, &quot;ord&quot;: &quot;D260831014-010&quot;, &quot;prd&quot;: &quot;3 : CCGI · KS3-CGCC&quot;, &quot;size&quot;: &quot;0.450 × 1490&quot;, &quot;coils&quot;: &quot;3&quot;, &quot;wgt&quot;: &quot;28,000&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-02&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;id&quot;: &quot;QC-2609-0101&quot;}, {&quot;no&quot;: &quot;QC-2609-0102&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 B&quot;, &quot;po&quot;: &quot;PO-B-10233&quot;, &quot;ord&quot;: &quot;D260831020-010&quot;, &quot;prd&quot;: &quot;L : G/L · KSL-SGLCC&quot;, &quot;size&quot;: &quot;0.400 × 915&quot;, &quot;coils&quot;: &quot;2&quot;, &quot;wgt&quot;: &quot;12,400&quot;, &quot;st&quot;: &quot;초안&quot;, &quot;date&quot;: &quot;—&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;id&quot;: &quot;QC-2609-0102&quot;}, {&quot;no&quot;: &quot;QC-2608-0098&quot;, &quot;ver&quot;: &quot;v2&quot;, &quot;cus&quot;: &quot;수요가 C&quot;, &quot;po&quot;: &quot;PO-C-55021&quot;, &quot;ord&quot;: &quot;D260831021-010&quot;, &quot;prd&quot;: &quot;G : GI · KSG-SGC340&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;coils&quot;: &quot;4&quot;, &quot;wgt&quot;: &quot;31,200&quot;, &quot;st&quot;: &quot;재발행&quot;, &quot;date&quot;: &quot;2026-08-31&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;id&quot;: &quot;QC-2608-0098&quot;}, {&quot;no&quot;: &quot;QC-2608-0097&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 C&quot;, &quot;po&quot;: &quot;PO-C-55021&quot;, &quot;ord&quot;: &quot;D260831023-010&quot;, &quot;prd&quot;: &quot;G : GI · KSG-SGC340&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;coils&quot;: &quot;4&quot;, &quot;wgt&quot;: &quot;30,850&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-31&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;id&quot;: &quot;QC-2608-0097&quot;}, {&quot;no&quot;: &quot;QC-2608-0096&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;po&quot;: &quot;PO-A-77790&quot;, &quot;ord&quot;: &quot;D260831024-010&quot;, &quot;prd&quot;: &quot;L : G/L · KSL-SGLC570&quot;, &quot;size&quot;: &quot;0.370 × 1221&quot;, &quot;coils&quot;: &quot;2&quot;, &quot;wgt&quot;: &quot;11,900&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-30&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;id&quot;: &quot;QC-2608-0096&quot;}, {&quot;no&quot;: &quot;QC-2608-0095&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 D&quot;, &quot;po&quot;: &quot;PO-D-30012&quot;, &quot;ord&quot;: &quot;D260831025-010&quot;, &quot;prd&quot;: &quot;G : GI · KSG-SGCC&quot;, &quot;size&quot;: &quot;0.440 × 1306&quot;, &quot;coils&quot;: &quot;5&quot;, &quot;wgt&quot;: &quot;40,100&quot;, &quot;st&quot;: &quot;회수&quot;, &quot;date&quot;: &quot;2026-08-29&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;id&quot;: &quot;QC-2608-0095&quot;}, {&quot;no&quot;: &quot;QC-2608-0094&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 B&quot;, &quot;po&quot;: &quot;PO-B-10211&quot;, &quot;ord&quot;: &quot;D260831027-010&quot;, &quot;prd&quot;: &quot;L : G/L · KSL-SGLCC&quot;, &quot;size&quot;: &quot;0.800 × 1224&quot;, &quot;coils&quot;: &quot;3&quot;, &quot;wgt&quot;: &quot;24,300&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-28&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;id&quot;: &quot;QC-2608-0094&quot;}, {&quot;no&quot;: &quot;QC-2608-0093&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;po&quot;: &quot;PO-A-77780&quot;, &quot;ord&quot;: &quot;D260831028-010&quot;, &quot;prd&quot;: &quot;G : GI · KSG-SGC340&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;coils&quot;: &quot;2&quot;, &quot;wgt&quot;: &quot;15,600&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-27&quot;, &quot;id&quot;: &quot;QC-2608-0093&quot;}, {&quot;no&quot;: &quot;QC-2608-0092&quot;, &quot;ver&quot;: &quot;v1&quot;, &quot;cus&quot;: &quot;수요가 D&quot;, &quot;po&quot;: &quot;PO-D-29998&quot;, &quot;ord&quot;: &quot;D260831032-010&quot;, &quot;prd&quot;: &quot;4 : CCLI · KS4-CGLCC&quot;, &quot;size&quot;: &quot;0.500 × 1070&quot;, &quot;coils&quot;: &quot;1&quot;, &quot;wgt&quot;: &quot;7,800&quot;, &quot;st&quot;: &quot;초안&quot;, &quot;date&quot;: &quot;—&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;id&quot;: &quot;QC-2608-0092&quot;}];
+var COLS=[{&quot;k&quot;: &quot;no&quot;, &quot;l&quot;: &quot;보증서번호&quot;, &quot;t&quot;: &quot;link&quot;, &quot;sub&quot;: &quot;ver&quot;}, {&quot;k&quot;: &quot;cus&quot;, &quot;l&quot;: &quot;수요가&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;po&quot;}, {&quot;k&quot;: &quot;ord&quot;, &quot;l&quot;: &quot;주문번호&quot;, &quot;t&quot;: &quot;mono&quot;}, {&quot;k&quot;: &quot;prd&quot;, &quot;l&quot;: &quot;품명 · 규격&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;size&quot;}, {&quot;k&quot;: &quot;coils&quot;, &quot;l&quot;: &quot;코일&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;wgt&quot;, &quot;l&quot;: &quot;중량 (kg)&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;상태&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;date&quot;, &quot;l&quot;: &quot;발행일&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;by&quot;}];
+var DETAIL={title:function(r){return r.no+' '+r.ver+' · 품질보증서';},
+  sections:[{h:'발행 정보',f:[{l:'보증서번호',k:'no',t:'mono'},{l:'수요가 · PO',k:'cus'},{l:'주문번호',k:'ord',t:'mono'},{l:'품명 · 규격',k:'prd'},{l:'코일 수 · 중량',k:'coils'},{l:'상태',k:'st',t:'pill'},{l:'발행일 · 담당',k:'date'}]}],
+  actions:[{k:'recall',l:'회수',warn:true},{k:'preview',l:'미리보기'},{k:'issue',l:'PDF 발행',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;발행&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;초안&quot;: {&quot;cls&quot;: &quot;warn&quot;}, &quot;재발행&quot;: {&quot;cls&quot;: &quot;hold&quot;}, &quot;회수&quot;: {&quot;cls&quot;: &quot;no&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){return '<div class=&quot;d-sect&quot;><h4>보증 항목 (양식 KS 표준)</h4><table class=&quot;mini&quot;><tr><th>항목</th><th>기준</th><th class=&quot;num&quot;>대표값</th></tr>'
+  +'<tr><td>인장강도 TS (MPa)</td><td class=&quot;mono&quot;>규격 하한 이상</td><td class=&quot;num&quot;>312</td></tr>'
+  +'<tr><td>항복강도 YP (MPa)</td><td class=&quot;mono&quot;>규격 범위</td><td class=&quot;num&quot;>268</td></tr>'
+  +'<tr><td>연신율 EL (%)</td><td class=&quot;mono&quot;>규격 하한 이상</td><td class=&quot;num&quot;>34</td></tr>'
+  +'<tr><td>도금 부착량 (g/㎡)</td><td class=&quot;mono&quot;>주문 도금량 이상</td><td class=&quot;num&quot;>96</td></tr></table></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="inspection-certificate-view" aria-labelledby="inspection-certificate-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">INSPECTION CERTIFICATE</p>
-            <h2 id="inspection-certificate-title">검사증명서관리</h2>
-            <p>검사증명서관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="inspection-certificate-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-ic" title="검사증명서관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>I-CERT 검사증명서관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   I-CERT — MES 검사증명서관리 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   코일 단위 검사증명서(Mill Test Certificate): 성분·기계적성질·도금 검사값을 규격과 대조해 발행한다.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>I-CERT</span></div>
+  <span class=&quot;crumb&quot;>출력물관리 › 검사증명서관리</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>증명서 목록 <span class=&quot;cnt&quot;>8</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>발행 요청</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>발행 이력</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>검사일(부터)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-08-28&quot;></div>
+    <div class=&quot;f-field&quot;><label>검사일(까지)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-09-02&quot;></div>
+    <div class=&quot;f-field&quot;><label>규격</label><select class=&quot;inp&quot;><option>전체</option><option>KS D 3506</option><option>KS D 3520</option><option>JIS G 3302</option><option>ASTM A653</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;발행&quot;>발행</option><option value=&quot;검토중&quot;>검토중</option><option value=&quot;보류&quot;>보류</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;발행할 증명서를 선택하세요&quot;>일괄 발행</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>코일번호</label><input class=&quot;inp&quot; placeholder=&quot;예) C260901001&quot;></div>
+    <div class=&quot;f-field&quot;><label>적용 규격</label><input class=&quot;inp&quot; placeholder=&quot;KS D 3506 / JIS G 3302 / ASTM A653&quot;></div>
+    <div class=&quot;f-field&quot;><label>Heat No.</label><input class=&quot;inp&quot; placeholder=&quot;제강 Heat 번호&quot;></div>
+    <div class=&quot;f-field&quot;><label>시험 성적 출처</label><input class=&quot;inp&quot; placeholder=&quot;자체 시험 / 외부 기관&quot;></div>
+    <div class=&quot;f-field&quot;><label>언어</label><input class=&quot;inp&quot; placeholder=&quot;국문 / 영문&quot;></div>
+    <div class=&quot;f-field&quot;><label>비고</label><input class=&quot;inp&quot; placeholder=&quot;&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;발행 요청 — 목업에서는 저장되지 않습니다&quot;>발행 요청</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>발행 이력</div>증명서 발행·재발행·보류 처리 기록이 표시됩니다. 목업 시드에는 이력이 없습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;no&quot;: &quot;MTC-260902-01&quot;, &quot;std&quot;: &quot;KS D 3506&quot;, &quot;coil&quot;: &quot;C260901001&quot;, &quot;heat&quot;: &quot;Heat 5A1207&quot;, &quot;prd&quot;: &quot;3 : CCGI&quot;, &quot;size&quot;: &quot;0.450 × 1490&quot;, &quot;yp&quot;: &quot;268&quot;, &quot;ts&quot;: &quot;312&quot;, &quot;el&quot;: &quot;34&quot;, &quot;zn&quot;: &quot;96&quot;, &quot;st&quot;: &quot;검토중&quot;, &quot;date&quot;: &quot;2026-09-02&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.045&quot;], [&quot;Si&quot;, &quot;0.012&quot;], [&quot;Mn&quot;, &quot;0.21&quot;], [&quot;P&quot;, &quot;0.011&quot;], [&quot;S&quot;, &quot;0.006&quot;]], &quot;id&quot;: &quot;MTC-260902-01&quot;}, {&quot;no&quot;: &quot;MTC-260901-07&quot;, &quot;std&quot;: &quot;KS D 3506&quot;, &quot;coil&quot;: &quot;C260901003&quot;, &quot;heat&quot;: &quot;Heat 5A1198&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;yp&quot;: &quot;312&quot;, &quot;ts&quot;: &quot;398&quot;, &quot;el&quot;: &quot;29&quot;, &quot;zn&quot;: &quot;104&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.052&quot;], [&quot;Si&quot;, &quot;0.015&quot;], [&quot;Mn&quot;, &quot;0.24&quot;], [&quot;P&quot;, &quot;0.012&quot;], [&quot;S&quot;, &quot;0.005&quot;]], &quot;id&quot;: &quot;MTC-260901-07&quot;}, {&quot;no&quot;: &quot;MTC-260901-06&quot;, &quot;std&quot;: &quot;KS D 3520&quot;, &quot;coil&quot;: &quot;C260901004&quot;, &quot;heat&quot;: &quot;Heat 5A1198&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;yp&quot;: &quot;301&quot;, &quot;ts&quot;: &quot;389&quot;, &quot;el&quot;: &quot;30&quot;, &quot;zn&quot;: &quot;88&quot;, &quot;st&quot;: &quot;보류&quot;, &quot;date&quot;: &quot;2026-09-01&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.052&quot;], [&quot;Si&quot;, &quot;0.015&quot;], [&quot;Mn&quot;, &quot;0.24&quot;], [&quot;P&quot;, &quot;0.012&quot;], [&quot;S&quot;, &quot;0.005&quot;]], &quot;id&quot;: &quot;MTC-260901-06&quot;}, {&quot;no&quot;: &quot;MTC-260901-05&quot;, &quot;std&quot;: &quot;JIS G 3302&quot;, &quot;coil&quot;: &quot;C260901007&quot;, &quot;heat&quot;: &quot;Heat 5A1190&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.800 × 1224&quot;, &quot;yp&quot;: &quot;247&quot;, &quot;ts&quot;: &quot;338&quot;, &quot;el&quot;: &quot;36&quot;, &quot;zn&quot;: &quot;131&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.041&quot;], [&quot;Si&quot;, &quot;0.010&quot;], [&quot;Mn&quot;, &quot;0.19&quot;], [&quot;P&quot;, &quot;0.010&quot;], [&quot;S&quot;, &quot;0.007&quot;]], &quot;id&quot;: &quot;MTC-260901-05&quot;}, {&quot;no&quot;: &quot;MTC-260831-12&quot;, &quot;std&quot;: &quot;KS D 3506&quot;, &quot;coil&quot;: &quot;C260831088&quot;, &quot;heat&quot;: &quot;Heat 5A1181&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;yp&quot;: &quot;288&quot;, &quot;ts&quot;: &quot;371&quot;, &quot;el&quot;: &quot;31&quot;, &quot;zn&quot;: &quot;97&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-31&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.048&quot;], [&quot;Si&quot;, &quot;0.013&quot;], [&quot;Mn&quot;, &quot;0.22&quot;], [&quot;P&quot;, &quot;0.011&quot;], [&quot;S&quot;, &quot;0.006&quot;]], &quot;id&quot;: &quot;MTC-260831-12&quot;}, {&quot;no&quot;: &quot;MTC-260831-11&quot;, &quot;std&quot;: &quot;ASTM A653&quot;, &quot;coil&quot;: &quot;C260831080&quot;, &quot;heat&quot;: &quot;Heat 5A1181&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;yp&quot;: &quot;291&quot;, &quot;ts&quot;: &quot;374&quot;, &quot;el&quot;: &quot;30&quot;, &quot;zn&quot;: &quot;99&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-31&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.048&quot;], [&quot;Si&quot;, &quot;0.013&quot;], [&quot;Mn&quot;, &quot;0.22&quot;], [&quot;P&quot;, &quot;0.011&quot;], [&quot;S&quot;, &quot;0.006&quot;]], &quot;id&quot;: &quot;MTC-260831-11&quot;}, {&quot;no&quot;: &quot;MTC-260830-09&quot;, &quot;std&quot;: &quot;KS D 3520&quot;, &quot;coil&quot;: &quot;C260830071&quot;, &quot;heat&quot;: &quot;Heat 5A1172&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.370 × 1221&quot;, &quot;yp&quot;: &quot;—&quot;, &quot;ts&quot;: &quot;548&quot;, &quot;el&quot;: &quot;22&quot;, &quot;zn&quot;: &quot;118&quot;, &quot;st&quot;: &quot;보류&quot;, &quot;date&quot;: &quot;2026-08-30&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.039&quot;], [&quot;Si&quot;, &quot;0.011&quot;], [&quot;Mn&quot;, &quot;0.18&quot;], [&quot;P&quot;, &quot;0.009&quot;], [&quot;S&quot;, &quot;0.007&quot;]], &quot;id&quot;: &quot;MTC-260830-09&quot;}, {&quot;no&quot;: &quot;MTC-260830-08&quot;, &quot;std&quot;: &quot;KS D 3506&quot;, &quot;coil&quot;: &quot;C260830066&quot;, &quot;heat&quot;: &quot;Heat 5A1172&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.400 × 915&quot;, &quot;yp&quot;: &quot;262&quot;, &quot;ts&quot;: &quot;340&quot;, &quot;el&quot;: &quot;35&quot;, &quot;zn&quot;: &quot;112&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-30&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;comp&quot;: [[&quot;C&quot;, &quot;0.039&quot;], [&quot;Si&quot;, &quot;0.011&quot;], [&quot;Mn&quot;, &quot;0.18&quot;], [&quot;P&quot;, &quot;0.009&quot;], [&quot;S&quot;, &quot;0.007&quot;]], &quot;id&quot;: &quot;MTC-260830-08&quot;}];
+var COLS=[{&quot;k&quot;: &quot;no&quot;, &quot;l&quot;: &quot;증명서번호&quot;, &quot;t&quot;: &quot;link&quot;, &quot;sub&quot;: &quot;std&quot;}, {&quot;k&quot;: &quot;coil&quot;, &quot;l&quot;: &quot;코일번호&quot;, &quot;t&quot;: &quot;mono&quot;, &quot;sub&quot;: &quot;heat&quot;}, {&quot;k&quot;: &quot;prd&quot;, &quot;l&quot;: &quot;품명 · 규격&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;size&quot;}, {&quot;k&quot;: &quot;yp&quot;, &quot;l&quot;: &quot;YP&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;ts&quot;, &quot;l&quot;: &quot;TS&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;el&quot;, &quot;l&quot;: &quot;EL %&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;zn&quot;, &quot;l&quot;: &quot;도금량&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;상태&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;date&quot;, &quot;l&quot;: &quot;검사일&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;by&quot;}];
+var DETAIL={title:function(r){return r.no+' · 검사증명서';},
+  sections:[{h:'증명서 정보',f:[{l:'증명서번호',k:'no',t:'mono'},{l:'적용 규격',k:'std'},{l:'코일 · Heat',k:'coil',t:'mono'},{l:'품명 · 규격',k:'prd'},{l:'상태',k:'st',t:'pill'},{l:'검사일 · 담당',k:'date'}]},
+            {h:'기계적 성질',f:[{l:'YP (MPa)',k:'yp',t:'mono'},{l:'TS (MPa)',k:'ts',t:'mono'},{l:'EL (%)',k:'el',t:'mono'},{l:'도금 부착량 (g/㎡)',k:'zn',t:'mono'}]}],
+  actions:[{k:'hold',l:'보류'},{k:'preview',l:'미리보기'},{k:'issue',l:'발행',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;발행&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;검토중&quot;: {&quot;cls&quot;: &quot;warn&quot;}, &quot;보류&quot;: {&quot;cls&quot;: &quot;hold&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){var h='<div class=&quot;d-sect&quot;><h4>화학 성분 (wt%)</h4><table class=&quot;mini&quot;><tr>';
+  r.comp.forEach(function(c){h+='<th class=&quot;num&quot;>'+esc(c[0])+'</th>';});h+='</tr><tr>';
+  r.comp.forEach(function(c){h+='<td class=&quot;num&quot;>'+esc(c[1])+'</td>';});return h+'</tr></table></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
 
-        <section class="route-view placeholder-view" id="tag-management-view" aria-labelledby="tag-management-title" hidden>
-          <div class="placeholder-copy">
-            <p class="eyebrow">TAG MANAGEMENT</p>
-            <h2 id="tag-management-title">Tag관리</h2>
-            <p>Tag관리 화면을 설계하면 이 메뉴에 같은 방식으로 연결할 수 있습니다.</p>
-          </div>
+        <section class="route-view" id="tag-management-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-tag" title="Tag관리 목업" loading="lazy" srcdoc="<!doctype html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
+<title>TAG Tag관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap&quot;>
+<style>
+/* ============================================================
+   TAG — MES Tag관리 1차 화면 목업 (Direction A '스틸 &amp; 페이퍼')
+   코일 Tag(라벨) 발행·재발행·폐기 관리. 우측 drawer에서 Tag 레이아웃을 미리 본다.
+   시드 데이터는 가상 값이며 고객사·제조사는 가명(A/B/C)이다.
+   ============================================================ */
+
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;--accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;--ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);--shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:13.5px;color:var(--ink);background:var(--bg);line-height:1.5}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:is(a,button,input,select):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.topbar{background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;position:sticky;top:0;z-index:30}
+.embedded .topbar{display:none}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock{margin-left:auto;font-size:10.5px;letter-spacing:.08em;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border-strong);color:var(--ink-2)}
+.tabs{display:flex;gap:22px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20}
+.embedded .tabs{top:0}
+.tab{display:flex;align-items:center;gap:7px;height:46px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
+.cnt{display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent)}
+.sc{display:none;padding:18px 26px 28px;flex-direction:column;gap:14px}
+.sc.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px 16px}
+.f-field{display:flex;flex-direction:column;gap:5px}
+.f-field label{font-size:11px;font-weight:700;color:var(--ink-3)}
+.inp{height:38px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink);min-width:120px}
+.inp:focus{border-color:var(--accent)}
+.f-spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on);font-weight:700}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#E8C89A;color:var(--result);font-weight:700}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);padding:0 2px}
+.meta b{color:var(--ink)}
+.grid{overflow:auto}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#FAF9F6}
+.tbl tr.row.sel td{background:var(--accent-soft)}
+.tbl .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.sub{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.lnk{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+.code{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:7px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.chk{display:inline-flex;gap:4px}
+.chk span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--ok-bg);color:var(--ok)}
+.chk span.x{background:var(--danger-bg);color:var(--danger)}
+.chk span.q{background:var(--surface-2);color:var(--ink-3)}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.empty .big{font-size:16px;font-weight:800;color:var(--ink-2);margin-bottom:6px}
+.form{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px 16px;padding:18px}
+.form .f-field .inp{min-width:0;width:100%}
+.form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
+.note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;max-width:92vw;background:var(--surface);box-shadow:var(--shadow);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;font-weight:800;flex:1}
+.d-close{width:32px;height:32px;border-radius:8px;color:var(--ink-3);font-size:16px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.d-sect h4{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 12px;font-size:13px}
+.kv dt{color:var(--ink-3);margin:0}
+.kv dd{margin:0;font-weight:500}
+.d-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{background:var(--surface-2);font-size:11px;color:var(--ink-2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.mini td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.mini .num{text-align:right;font-family:'JetBrains Mono',monospace}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.18s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tagcard{border:1.5px solid var(--ink);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:#fff}
+.tagcard b{display:block;font-size:10px;color:var(--ink-3);font-family:'Gothic A1',sans-serif;font-weight:700}
+.tagcard .big{grid-column:1/-1;font-size:20px;font-weight:600;letter-spacing:.04em}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px}
+.layer .sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border-strong)}
+.layer .nm{flex:1;font-weight:700}
+.layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+</style>
+</head>
+<body>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>TAG</span></div>
+  <span class=&quot;crumb&quot;>출력물관리 › Tag관리</span>
+  <span class=&quot;mock&quot;>MOCK-UP</span>
+</header>
+<nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
+  <button class=&quot;tab on&quot; role=&quot;tab&quot; data-tab=&quot;list&quot; aria-selected=&quot;true&quot;>Tag 발행 <span class=&quot;cnt&quot;>10</span></button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;reg&quot; aria-selected=&quot;false&quot;>재발행 요청</button>
+  <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;hist&quot; aria-selected=&quot;false&quot;>양식 관리</button>
+</nav>
+<main>
+<section class=&quot;sc on&quot; id=&quot;sc-list&quot;>
+  <div class=&quot;card fbar&quot;>
+    <div class=&quot;f-field&quot;><label>발행일(부터)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-09-01&quot;></div>
+    <div class=&quot;f-field&quot;><label>발행일(까지)</label><input class=&quot;inp&quot; type=&quot;date&quot; value=&quot;2026-09-02&quot;></div>
+    <div class=&quot;f-field&quot;><label>프린터</label><select class=&quot;inp&quot;><option>전체</option><option>PRT-CGL2-01</option><option>PRT-CGL5-01</option><option>PRT-CCL-02</option><option>PRT-출하-01</option></select></div>
+    <div class=&quot;f-field&quot;><label>상태</label><select class=&quot;inp&quot; id=&quot;f-st&quot;><option value=&quot;&quot;>전체</option><option value=&quot;발행&quot;>발행</option><option value=&quot;대기&quot;>대기</option><option value=&quot;재발행&quot;>재발행</option><option value=&quot;폐기&quot;>폐기</option></select></div>
+    <div class=&quot;f-field&quot; style=&quot;flex:1;min-width:180px&quot;><label>키워드</label><input class=&quot;inp&quot; id=&quot;f-q&quot; type=&quot;search&quot; placeholder=&quot;번호·품명·규격·담당 검색&quot; autocomplete=&quot;off&quot;></div>
+    <button class=&quot;btn btn-pri&quot; data-action=&quot;search&quot;>조회</button><button class=&quot;btn&quot; data-action=&quot;reset&quot;>초기화</button>
+  </div>
+  <div class=&quot;meta&quot;><span id=&quot;meta&quot;></span><span class=&quot;f-spacer&quot;></span><button class=&quot;btn btn-sm&quot; data-action=&quot;msg&quot; data-msg=&quot;출력할 Tag를 선택하세요&quot;>선택 Tag 출력</button></div>
+  <div class=&quot;card grid&quot; id=&quot;grid&quot;></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-reg&quot;>
+  <div class=&quot;card&quot;><div class=&quot;form&quot;>
+    <div class=&quot;f-field&quot;><label>Tag번호 또는 코일번호</label><input class=&quot;inp&quot; placeholder=&quot;예) T-2609-00109&quot;></div>
+    <div class=&quot;f-field&quot;><label>재발행 사유</label><input class=&quot;inp&quot; placeholder=&quot;훼손 / 분실 / 정보 정정&quot;></div>
+    <div class=&quot;f-field&quot;><label>프린터</label><input class=&quot;inp&quot; placeholder=&quot;PRT-CGL2-01 …&quot;></div>
+    <div class=&quot;f-field&quot;><label>매수</label><input class=&quot;inp&quot; placeholder=&quot;1&quot;></div>
+    <div class=&quot;f-field&quot;><label>요청자</label><input class=&quot;inp&quot; placeholder=&quot;&quot;></div>
+    <div class=&quot;f-field&quot;><label>비고</label><input class=&quot;inp&quot; placeholder=&quot;&quot;></div>
+  </div><div class=&quot;form-foot&quot;><button class=&quot;btn&quot; data-action=&quot;msg&quot; data-msg=&quot;입력값을 비웠습니다&quot;>초기화</button><button class=&quot;btn btn-pri&quot; data-action=&quot;msg&quot; data-msg=&quot;재발행 요청 — 목업에서는 저장되지 않습니다&quot;>재발행 요청</button></div></div>
+</section>
+<section class=&quot;sc&quot; id=&quot;sc-hist&quot;>
+  <div class=&quot;card&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>양식 관리</div>Tag 양식(공정 Tag·출하 Tag·수요가 지정 양식)의 레이아웃과 바코드 규격을 관리합니다. 목업 시드에는 양식 2종만 정의되어 있습니다.</div></div>
+</section>
+</main>
+<div class=&quot;scrim&quot; id=&quot;scrim&quot;></div>
+<aside class=&quot;drawer&quot; id=&quot;drawer&quot; aria-hidden=&quot;true&quot;>
+  <div class=&quot;d-head&quot;><h3 id=&quot;d-title&quot;>상세</h3><button class=&quot;d-close&quot; id=&quot;d-close&quot; aria-label=&quot;닫기&quot;>✕</button></div>
+  <div class=&quot;d-body&quot; id=&quot;d-body&quot;></div>
+  <div class=&quot;d-foot&quot; id=&quot;d-foot&quot;></div>
+</aside>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+<script>
+'use strict';
+var ROWS=[{&quot;tag&quot;: &quot;T-2609-00112&quot;, &quot;kind&quot;: &quot;출하 Tag&quot;, &quot;coil&quot;: &quot;C260901001&quot;, &quot;ord&quot;: &quot;D260831014-010&quot;, &quot;prd&quot;: &quot;3 : CCGI&quot;, &quot;size&quot;: &quot;0.450 × 1490&quot;, &quot;wgt&quot;: &quot;9,340&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;prt&quot;: &quot;PRT-출하-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-02 08:40&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;id&quot;: &quot;T-2609-00112&quot;}, {&quot;tag&quot;: &quot;T-2609-00111&quot;, &quot;kind&quot;: &quot;출하 Tag&quot;, &quot;coil&quot;: &quot;C260901002&quot;, &quot;ord&quot;: &quot;D260831020-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.400 × 915&quot;, &quot;wgt&quot;: &quot;6,210&quot;, &quot;cus&quot;: &quot;수요가 B&quot;, &quot;prt&quot;: &quot;PRT-출하-01&quot;, &quot;st&quot;: &quot;대기&quot;, &quot;date&quot;: &quot;—&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;id&quot;: &quot;T-2609-00111&quot;}, {&quot;tag&quot;: &quot;T-2609-00110&quot;, &quot;kind&quot;: &quot;공정 Tag&quot;, &quot;coil&quot;: &quot;C260901003&quot;, &quot;ord&quot;: &quot;D260831021-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;wgt&quot;: &quot;7,820&quot;, &quot;cus&quot;: &quot;수요가 C&quot;, &quot;prt&quot;: &quot;PRT-CGL2-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01 17:10&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;id&quot;: &quot;T-2609-00110&quot;}, {&quot;tag&quot;: &quot;T-2609-00109&quot;, &quot;kind&quot;: &quot;공정 Tag&quot;, &quot;coil&quot;: &quot;C260901004&quot;, &quot;ord&quot;: &quot;D260831023-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.440 × 1225&quot;, &quot;wgt&quot;: &quot;7,705&quot;, &quot;cus&quot;: &quot;수요가 C&quot;, &quot;prt&quot;: &quot;PRT-CGL2-01&quot;, &quot;st&quot;: &quot;재발행&quot;, &quot;date&quot;: &quot;2026-09-01 16:35&quot;, &quot;by&quot;: &quot;박서연&quot;, &quot;id&quot;: &quot;T-2609-00109&quot;}, {&quot;tag&quot;: &quot;T-2609-00108&quot;, &quot;kind&quot;: &quot;출하 Tag&quot;, &quot;coil&quot;: &quot;C260901005&quot;, &quot;ord&quot;: &quot;D260831024-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.370 × 1221&quot;, &quot;wgt&quot;: &quot;5,950&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;prt&quot;: &quot;PRT-출하-01&quot;, &quot;st&quot;: &quot;폐기&quot;, &quot;date&quot;: &quot;2026-09-01 15:20&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;id&quot;: &quot;T-2609-00108&quot;}, {&quot;tag&quot;: &quot;T-2609-00107&quot;, &quot;kind&quot;: &quot;공정 Tag&quot;, &quot;coil&quot;: &quot;C260901006&quot;, &quot;ord&quot;: &quot;D260831025-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.440 × 1306&quot;, &quot;wgt&quot;: &quot;8,020&quot;, &quot;cus&quot;: &quot;수요가 D&quot;, &quot;prt&quot;: &quot;PRT-CGL2-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01 14:45&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;id&quot;: &quot;T-2609-00107&quot;}, {&quot;tag&quot;: &quot;T-2609-00106&quot;, &quot;kind&quot;: &quot;출하 Tag&quot;, &quot;coil&quot;: &quot;C260901007&quot;, &quot;ord&quot;: &quot;D260831027-010&quot;, &quot;prd&quot;: &quot;L : G/L&quot;, &quot;size&quot;: &quot;0.800 × 1224&quot;, &quot;wgt&quot;: &quot;8,100&quot;, &quot;cus&quot;: &quot;수요가 B&quot;, &quot;prt&quot;: &quot;PRT-출하-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01 11:30&quot;, &quot;by&quot;: &quot;김민석&quot;, &quot;id&quot;: &quot;T-2609-00106&quot;}, {&quot;tag&quot;: &quot;T-2609-00105&quot;, &quot;kind&quot;: &quot;공정 Tag&quot;, &quot;coil&quot;: &quot;C260901008&quot;, &quot;ord&quot;: &quot;D260831028-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;wgt&quot;: &quot;7,800&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;prt&quot;: &quot;PRT-CGL5-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-09-01 10:10&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;id&quot;: &quot;T-2609-00105&quot;}, {&quot;tag&quot;: &quot;T-2609-00104&quot;, &quot;kind&quot;: &quot;공정 Tag&quot;, &quot;coil&quot;: &quot;C260831088&quot;, &quot;ord&quot;: &quot;D260831028-010&quot;, &quot;prd&quot;: &quot;G : GI&quot;, &quot;size&quot;: &quot;0.510 × 1064&quot;, &quot;wgt&quot;: &quot;7,795&quot;, &quot;cus&quot;: &quot;수요가 A&quot;, &quot;prt&quot;: &quot;PRT-CGL5-01&quot;, &quot;st&quot;: &quot;발행&quot;, &quot;date&quot;: &quot;2026-08-31 18:02&quot;, &quot;by&quot;: &quot;정하윤&quot;, &quot;id&quot;: &quot;T-2609-00104&quot;}, {&quot;tag&quot;: &quot;T-2609-00103&quot;, &quot;kind&quot;: &quot;출하 Tag&quot;, &quot;coil&quot;: &quot;C260831080&quot;, &quot;ord&quot;: &quot;D260831032-010&quot;, &quot;prd&quot;: &quot;4 : CCLI&quot;, &quot;size&quot;: &quot;0.500 × 1070&quot;, &quot;wgt&quot;: &quot;7,800&quot;, &quot;cus&quot;: &quot;수요가 D&quot;, &quot;prt&quot;: &quot;PRT-CCL-02&quot;, &quot;st&quot;: &quot;대기&quot;, &quot;date&quot;: &quot;—&quot;, &quot;by&quot;: &quot;이도현&quot;, &quot;id&quot;: &quot;T-2609-00103&quot;}];
+var COLS=[{&quot;k&quot;: &quot;tag&quot;, &quot;l&quot;: &quot;Tag번호&quot;, &quot;t&quot;: &quot;link&quot;, &quot;sub&quot;: &quot;kind&quot;}, {&quot;k&quot;: &quot;coil&quot;, &quot;l&quot;: &quot;코일번호&quot;, &quot;t&quot;: &quot;mono&quot;, &quot;sub&quot;: &quot;ord&quot;}, {&quot;k&quot;: &quot;prd&quot;, &quot;l&quot;: &quot;품명 · 규격&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;size&quot;}, {&quot;k&quot;: &quot;wgt&quot;, &quot;l&quot;: &quot;중량 (kg)&quot;, &quot;t&quot;: &quot;num&quot;}, {&quot;k&quot;: &quot;cus&quot;, &quot;l&quot;: &quot;수요가&quot;, &quot;t&quot;: &quot;text&quot;}, {&quot;k&quot;: &quot;prt&quot;, &quot;l&quot;: &quot;프린터&quot;, &quot;t&quot;: &quot;code&quot;}, {&quot;k&quot;: &quot;st&quot;, &quot;l&quot;: &quot;상태&quot;, &quot;t&quot;: &quot;pill&quot;}, {&quot;k&quot;: &quot;date&quot;, &quot;l&quot;: &quot;발행&quot;, &quot;t&quot;: &quot;text&quot;, &quot;sub&quot;: &quot;by&quot;}];
+var DETAIL={title:function(r){return r.tag+' · '+r.kind;},
+  sections:[{h:'Tag 정보',f:[{l:'Tag번호',k:'tag',t:'mono'},{l:'종류',k:'kind'},{l:'코일 · 주문',k:'coil',t:'mono'},{l:'프린터',k:'prt'},{l:'상태',k:'st',t:'pill'},{l:'발행 · 담당',k:'date'}]}],
+  actions:[{k:'void',l:'폐기',warn:true},{k:'reissue',l:'재발행'},{k:'print',l:'출력',pri:true}]};
+var sel=null;
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&amp;<>&quot;']/g,function(c){return {'&amp;':'&amp;amp;','<':'&amp;lt;','>':'&amp;gt;','&quot;':'&amp;quot;',&quot;'&quot;:'&amp;#39;'}[c];});}
+var _t;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');},2200);}
+function pill(v){var m=STATUS[v]||{cls:'dim'};return '<span class=&quot;pill '+m.cls+'&quot;>'+esc(v)+'</span>';}
+function cell(col,r){
+  var v=r[col.k];
+  switch(col.t){
+    case 'link':return '<span class=&quot;lnk&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'mono':return '<span class=&quot;mono&quot;>'+esc(v)+'</span>'+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+    case 'code':return '<span class=&quot;code&quot;>'+esc(v)+'</span>';
+    case 'num':return esc(v);
+    case 'pill':return pill(v);
+    case 'chk':return '<span class=&quot;chk&quot;>'+v.map(function(x){return '<span class=&quot;'+(x.ok===true?'':x.ok===false?'x':'q')+'&quot; title=&quot;'+esc(x.n)+'&quot;>'+esc(x.s)+'</span>';}).join('')+'</span>';
+    default:return esc(v)+(col.sub?'<span class=&quot;sub&quot;>'+esc(r[col.sub])+'</span>':'');
+  }
+}
+function renderTable(){
+  var q=($('#f-q')?$('#f-q').value:'').trim().toLowerCase();
+  var st=$('#f-st')?$('#f-st').value:'';
+  var rows=ROWS.filter(function(r){
+    if(st&amp;&amp;r[STATUS_KEY]!==st)return false;
+    if(!q)return true;
+    return JSON.stringify(r).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<table class=&quot;tbl&quot;><thead><tr>'+COLS.map(function(c){return '<th'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+esc(c.l)+'</th>';}).join('')+'</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan=&quot;'+COLS.length+'&quot;><div class=&quot;empty&quot;><div class=&quot;big&quot;>조회 결과가 없습니다</div>검색어·상태 필터를 조정해 보세요</div></td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class=&quot;row'+(sel===r.id?' sel':'')+'&quot; data-id=&quot;'+esc(r.id)+'&quot;>'+COLS.map(function(c){return '<td'+(c.t==='num'?' class=&quot;num&quot;':'')+'>'+cell(c,r)+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  $('#grid').innerHTML=h;
+  $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+}
+function openDrawer(id){
+  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  sel=id;renderTable();
+  $('#d-title').textContent=DETAIL.title(r);
+  var h='';
+  DETAIL.sections.forEach(function(s){
+    h+='<div class=&quot;d-sect&quot;><h4>'+esc(s.h)+'</h4><dl class=&quot;kv&quot;>'+s.f.map(function(f){return '<dt>'+esc(f.l)+'</dt><dd>'+(f.t==='pill'?pill(r[f.k]):f.t==='mono'?'<span class=&quot;mono&quot;>'+esc(r[f.k])+'</span>':esc(r[f.k]));}).join('')+'</dl></div>';
+  });
+  if(typeof extraDetail==='function')h+=extraDetail(r);
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class=&quot;btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'&quot; data-act=&quot;'+esc(a.k)+'&quot;>'+esc(a.l)+'</button>';}).join('');
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
+function setTab(k){
+  $$('.tab').forEach(function(t){var on=t.getAttribute('data-tab')===k;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');});
+  $$('.sc').forEach(function(p){p.classList.toggle('on',p.id==='sc-'+k);});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
+  var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
+  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var b=e.target.closest('[data-action=&quot;reset&quot;]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
+  var s=e.target.closest('[data-action=&quot;search&quot;]');if(s){renderTable();return;}
+  var m=e.target.closest('[data-action=&quot;msg&quot;]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
+});
+document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
+document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&amp;&amp;$('#drawer').classList.contains('on'))closeDrawer();});
+var STATUS={&quot;발행&quot;: {&quot;cls&quot;: &quot;ok&quot;}, &quot;대기&quot;: {&quot;cls&quot;: &quot;warn&quot;}, &quot;재발행&quot;: {&quot;cls&quot;: &quot;hold&quot;}, &quot;폐기&quot;: {&quot;cls&quot;: &quot;dim&quot;}};
+var STATUS_KEY=&quot;st&quot;;
+function extraDetail(r){return '<div class=&quot;d-sect&quot;><h4>Tag 미리보기 (100 × 70 mm)</h4><div class=&quot;tagcard&quot;>'
+  +'<div class=&quot;big&quot;>'+esc(r.coil)+'</div>'
+  +'<div><b>품명 · 규격</b>'+esc(r.prd)+' · '+esc(r.size)+'</div><div><b>중량</b>'+esc(r.wgt)+' kg</div>'
+  +'<div><b>주문번호</b>'+esc(r.ord)+'</div><div><b>수요가</b>'+esc(r.cus)+'</div>'
+  +'<div><b>Tag</b>'+esc(r.tag)+'</div><div><b>발행</b>'+esc(r.date)+'</div></div></div>';}
+renderTable();
+</script>
+</body>
+</html>
+"></iframe>
         </section>
       </main>
     </div>
@@ -9941,42 +11416,42 @@ document.addEventListener('keydown',function(e){
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
       crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      openLink: true
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
       crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      openLink: true
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
       crumbs: ['품질 업무'],
-      openLink: false
+      openLink: true
     },
     'quality-certificate': {
       hash: '#/output-management/quality-certificate',
       viewId: 'quality-certificate-view',
       title: '품질보증서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'inspection-certificate': {
       hash: '#/output-management/inspection-certificate',
       viewId: 'inspection-certificate-view',
       title: '검사증명서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'tag-management': {
       hash: '#/output-management/tag-management',
       viewId: 'tag-management-view',
       title: 'Tag관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     }
   };
   var DEFAULT_ROUTE = 'quality-spec';

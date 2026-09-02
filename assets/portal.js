@@ -53,42 +53,42 @@
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
       crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      openLink: true
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
       crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      openLink: true
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
       crumbs: ['품질 업무'],
-      openLink: false
+      openLink: true
     },
     'quality-certificate': {
       hash: '#/output-management/quality-certificate',
       viewId: 'quality-certificate-view',
       title: '품질보증서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'inspection-certificate': {
       hash: '#/output-management/inspection-certificate',
       viewId: 'inspection-certificate-view',
       title: '검사증명서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'tag-management': {
       hash: '#/output-management/tag-management',
       viewId: 'tag-management-view',
       title: 'Tag관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     }
   };
   var DEFAULT_ROUTE = 'quality-spec';

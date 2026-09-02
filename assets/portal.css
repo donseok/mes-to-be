@@ -245,7 +245,8 @@ a{ color:inherit; }
 }
 
 #module-frame, #module-frame-qd, #module-frame-owe, #module-frame-oc, #module-frame-pf,
-#module-frame-sim{
+#module-frame-sim, #module-frame-qj, #module-frame-csm, #module-frame-cbom,
+#module-frame-qc, #module-frame-ic, #module-frame-tag{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }

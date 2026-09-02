@@ -132,6 +132,96 @@ index = index.replace(
     '          <iframe id="module-frame-sim" title="시뮬레이션 목업" '
     'loading="lazy" srcdoc="' + escaped_sim + '"></iframe>', 1)
 
+# --- 2g. 품질판정 모듈 iframe srcdoc 내장 ----------------------------------
+module_qj = open(path('modules', 'quality-judgment.html'), encoding='utf-8').read()
+old_iframe_qj = '''          <iframe
+            id="module-frame-qj"
+            title="품질판정 목업"
+            src="./modules/quality-judgment.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_qj in index, 'qj iframe block not found'
+escaped_qj = module_qj.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_qj,
+    '          <iframe id="module-frame-qj" title="품질판정 목업" '
+    'loading="lazy" srcdoc="' + escaped_qj + '"></iframe>', 1)
+
+# --- 2h. 칼라부재료관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_csm = open(path('modules', 'color-submaterial.html'), encoding='utf-8').read()
+old_iframe_csm = '''          <iframe
+            id="module-frame-csm"
+            title="칼라부재료관리 목업"
+            src="./modules/color-submaterial.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_csm in index, 'csm iframe block not found'
+escaped_csm = module_csm.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_csm,
+    '          <iframe id="module-frame-csm" title="칼라부재료관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_csm + '"></iframe>', 1)
+
+# --- 2i. 칼라BOM관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_cbom = open(path('modules', 'color-bom.html'), encoding='utf-8').read()
+old_iframe_cbom = '''          <iframe
+            id="module-frame-cbom"
+            title="칼라BOM관리 목업"
+            src="./modules/color-bom.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_cbom in index, 'cbom iframe block not found'
+escaped_cbom = module_cbom.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_cbom,
+    '          <iframe id="module-frame-cbom" title="칼라BOM관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_cbom + '"></iframe>', 1)
+
+# --- 2j. 품질보증서관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_qc = open(path('modules', 'quality-certificate.html'), encoding='utf-8').read()
+old_iframe_qc = '''          <iframe
+            id="module-frame-qc"
+            title="품질보증서관리 목업"
+            src="./modules/quality-certificate.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_qc in index, 'qc iframe block not found'
+escaped_qc = module_qc.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_qc,
+    '          <iframe id="module-frame-qc" title="품질보증서관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_qc + '"></iframe>', 1)
+
+# --- 2k. 검사증명서관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_ic = open(path('modules', 'inspection-certificate.html'), encoding='utf-8').read()
+old_iframe_ic = '''          <iframe
+            id="module-frame-ic"
+            title="검사증명서관리 목업"
+            src="./modules/inspection-certificate.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_ic in index, 'ic iframe block not found'
+escaped_ic = module_ic.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_ic,
+    '          <iframe id="module-frame-ic" title="검사증명서관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_ic + '"></iframe>', 1)
+
+# --- 2l. Tag관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_tag = open(path('modules', 'tag-management.html'), encoding='utf-8').read()
+old_iframe_tag = '''          <iframe
+            id="module-frame-tag"
+            title="Tag관리 목업"
+            src="./modules/tag-management.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_tag in index, 'tag iframe block not found'
+escaped_tag = module_tag.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_tag,
+    '          <iframe id="module-frame-tag" title="Tag관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_tag + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')
