@@ -347,63 +347,68 @@ noscript{
       </div>
 
       <nav class="portal-nav" aria-label="품질 모듈">
-        <button class="nav-parent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
-          <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
+        <button class="nav-parent" type="button" data-tree-toggle="quality-management-tree" aria-expanded="true" aria-controls="quality-management-tree">
+          <span>품질관리</span><span class="chevron" aria-hidden="true">⌄</span>
         </button>
-        <div class="nav-tree open" id="quality-design-tree">
-          <button class="nav-subparent" type="button" data-tree-toggle="module-management-tree" aria-expanded="true" aria-controls="module-management-tree">
-            <span>모듈관리</span><span class="chevron" aria-hidden="true">⌄</span>
+        <div class="nav-tree open" id="quality-management-tree">
+          <button class="nav-subparent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
+            <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
           </button>
-          <div class="nav-tree nav-tree-inner open" id="module-management-tree">
-            <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
-              품질사양 관리
+          <div class="nav-tree nav-tree-inner open" id="quality-design-tree">
+            <button class="nav-subparent" type="button" data-tree-toggle="module-management-tree" aria-expanded="true" aria-controls="module-management-tree">
+              <span>모듈관리</span><span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="nav-tree nav-tree-inner open" id="module-management-tree">
+              <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
+                품질사양 관리
+              </a>
+            </div>
+
+            <button class="nav-subparent" type="button" data-tree-toggle="feasibility-management-tree" aria-expanded="true" aria-controls="feasibility-management-tree">
+              <span>생산가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="nav-tree nav-tree-inner open" id="feasibility-management-tree">
+              <a class="nav-link" href="#/quality-design/feasibility-management/order-unit-weight-error" data-route="order-unit-weight-error">
+                주문단중에러관리
+              </a>
+              <a class="nav-link" href="#/quality-design/feasibility-management/order-consistency" data-route="order-consistency">
+                주문정합성관리
+              </a>
+              <a class="nav-link" href="#/quality-design/feasibility-management/production-feasibility" data-route="production-feasibility">
+                생산가부관리
+              </a>
+            </div>
+
+            <button class="nav-subparent" type="button" data-tree-toggle="result-management-tree" aria-expanded="true" aria-controls="result-management-tree">
+              <span>설계결과관리</span><span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="nav-tree nav-tree-inner open" id="result-management-tree">
+              <a class="nav-link" href="#/quality-design/result-management/quality-design-result" data-route="quality-design-result">
+                품질설계결과
+              </a>
+            </div>
+
+            <a class="nav-link" href="#/quality-design/simulation" data-route="simulation">
+              시뮬레이션
             </a>
+
+            <button class="nav-subparent" type="button" data-tree-toggle="master-data-management-tree" aria-expanded="true" aria-controls="master-data-management-tree">
+              <span>기준정보관리</span><span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="nav-tree nav-tree-inner open" id="master-data-management-tree">
+              <a class="nav-link" href="#/quality-design/master-data-management/color-submaterial" data-route="color-submaterial">
+                칼라부재료관리
+              </a>
+              <a class="nav-link" href="#/quality-design/master-data-management/color-bom" data-route="color-bom">
+                칼라BOM관리
+              </a>
+            </div>
           </div>
 
-          <button class="nav-subparent" type="button" data-tree-toggle="feasibility-management-tree" aria-expanded="true" aria-controls="feasibility-management-tree">
-            <span>생산가부관리</span><span class="chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-tree nav-tree-inner open" id="feasibility-management-tree">
-            <a class="nav-link" href="#/quality-design/feasibility-management/order-unit-weight-error" data-route="order-unit-weight-error">
-              주문단중에러관리
-            </a>
-            <a class="nav-link" href="#/quality-design/feasibility-management/order-consistency" data-route="order-consistency">
-              주문정합성관리
-            </a>
-            <a class="nav-link" href="#/quality-design/feasibility-management/production-feasibility" data-route="production-feasibility">
-              생산가부관리
-            </a>
-          </div>
-
-          <button class="nav-subparent" type="button" data-tree-toggle="result-management-tree" aria-expanded="true" aria-controls="result-management-tree">
-            <span>설계결과관리</span><span class="chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-tree nav-tree-inner open" id="result-management-tree">
-            <a class="nav-link" href="#/quality-design/result-management/quality-design-result" data-route="quality-design-result">
-              품질설계결과
-            </a>
-          </div>
-
-          <a class="nav-link" href="#/quality-design/simulation" data-route="simulation">
-            시뮬레이션
+          <a class="nav-link" href="#/quality-judgment" data-route="quality-judgment">
+            품질판정
           </a>
-
-          <button class="nav-subparent" type="button" data-tree-toggle="master-data-management-tree" aria-expanded="true" aria-controls="master-data-management-tree">
-            <span>기준정보관리</span><span class="chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="nav-tree nav-tree-inner open" id="master-data-management-tree">
-            <a class="nav-link" href="#/quality-design/master-data-management/color-submaterial" data-route="color-submaterial">
-              칼라부재료관리
-            </a>
-            <a class="nav-link" href="#/quality-design/master-data-management/color-bom" data-route="color-bom">
-              칼라BOM관리
-            </a>
-          </div>
         </div>
-
-        <a class="nav-link nav-root-link" href="#/quality-judgment" data-route="quality-judgment">
-          품질판정
-        </a>
 
         <button class="nav-parent" type="button" data-tree-toggle="output-management-tree" aria-expanded="true" aria-controls="output-management-tree">
           <span>출력물관리</span><span class="chevron" aria-hidden="true">⌄</span>
@@ -436,7 +441,7 @@ noscript{
         </button>
         <div class="page-context">
           <div class="breadcrumb" id="breadcrumb" aria-label="현재 위치">
-            <span>품질설계</span><span aria-hidden="true">›</span><span>모듈관리</span><span aria-hidden="true">›</span>
+            <span>품질관리</span><span aria-hidden="true">›</span><span>품질설계</span><span aria-hidden="true">›</span><span>모듈관리</span><span aria-hidden="true">›</span>
           </div>
           <h1 id="page-title">품질사양 관리</h1>
         </div>
@@ -8145,7 +8150,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 <body>
 <header class=&quot;topbar&quot;>
   <div class=&quot;brand&quot;><span class=&quot;brand-mark&quot;>M</span><span class=&quot;brand-name&quot;>Q-JDG</span></div>
-  <span class=&quot;crumb&quot;>품질 업무 › 품질판정</span>
+  <span class=&quot;crumb&quot;>품질관리 › 품질판정</span>
   <span class=&quot;mock&quot;>MOCK-UP</span>
 </header>
 <nav class=&quot;tabs&quot; role=&quot;tablist&quot;>
@@ -11373,63 +11378,63 @@ renderTable();
       hash: '#/quality-design/module-management/quality-spec',
       viewId: 'quality-spec-view',
       title: '품질사양 관리',
-      crumbs: ['품질설계', '모듈관리'],
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
       title: '주문단중에러관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'order-consistency': {
       hash: '#/quality-design/feasibility-management/order-consistency',
       viewId: 'order-consistency-view',
       title: '주문정합성관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'production-feasibility': {
       hash: '#/quality-design/feasibility-management/production-feasibility',
       viewId: 'production-feasibility-view',
       title: '생산가부관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'quality-design-result': {
       hash: '#/quality-design/result-management/quality-design-result',
       viewId: 'quality-design-result-view',
       title: '품질설계결과',
-      crumbs: ['품질설계', '설계결과관리'],
+      crumbs: ['품질관리', '품질설계', '설계결과관리'],
       openLink: true
     },
     'simulation': {
       hash: '#/quality-design/simulation',
       viewId: 'simulation-view',
       title: '시뮬레이션',
-      crumbs: ['품질설계'],
+      crumbs: ['품질관리', '품질설계'],
       openLink: true
     },
     'color-submaterial': {
       hash: '#/quality-design/master-data-management/color-submaterial',
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
-      crumbs: ['품질설계', '기준정보관리'],
+      crumbs: ['품질관리', '품질설계', '기준정보관리'],
       openLink: true
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
-      crumbs: ['품질설계', '기준정보관리'],
+      crumbs: ['품질관리', '품질설계', '기준정보관리'],
       openLink: true
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
-      crumbs: ['품질 업무'],
+      crumbs: ['품질관리', '품질판정'],
       openLink: true
     },
     'quality-certificate': {
