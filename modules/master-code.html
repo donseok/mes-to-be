@@ -12,16 +12,23 @@
 <main>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <section id="list-view">
-    <div class="heading"><div><p class="eyebrow">MASTER DATA</p><h1>마스터코드 리스트</h1><p>업무에서 사용하는 공통 코드와 디코드를 관리합니다.</p></div><button class="primary" id="new">＋ 마스터코드 등록</button></div>
-    <div class="panel"><form id="search-form" class="toolbar"><div class="search"><label for="query">통합 검색<input id="query" type="search" placeholder="마스터 코드 영문 ID, 한글명, 코드, 디코드 검색"></label><button class="primary" type="submit">조회</button><button id="reset" type="button">초기화</button></div></form></div>
-    <div class="panel"><div class="section-head"><h2>마스터코드 목록 <span id="count" class="badge"></span></h2><span class="muted">영문 ID를 클릭하면 상세 화면으로 이동합니다.</span></div><div class="scroll"><table><thead><tr><th scope="col">마스터 코드 영문 ID</th><th scope="col">한글명</th><th scope="col">코드</th><th scope="col">디코드</th></tr></thead><tbody id="list-body"></tbody></table></div><div class="pager"><button id="prev">이전</button><span id="page-info" class="muted"></span><button id="next">다음</button></div></div>
+    <div class="heading"><div><p class="eyebrow">MASTER DATA</p><h1>마스터코드 리스트</h1><p>업무에서 사용하는 공통 코드와 코드명을 관리합니다.</p></div><button class="primary" id="new">＋ 마스터코드 등록</button></div>
+    <div class="panel"><form id="search-form" class="toolbar"><div class="search"><label for="query">통합 검색<input id="query" type="search" placeholder="마스터코드아이디, 한글명, 등록자명, 일자, 코드, 코드명 검색"></label><button class="primary" type="submit">조회</button><button id="reset" type="button">초기화</button></div></form></div>
+    <div class="panel"><div class="section-head"><h2>마스터코드 목록 <span id="count" class="badge"></span></h2><span class="muted">아이디를 클릭하면 상세 화면으로 이동합니다.</span></div><div class="scroll"><table><thead><tr><th scope="col">마스터코드아이디</th><th scope="col">한글명</th><th scope="col">등록일자</th><th scope="col">등록자명</th><th scope="col">시작일자</th><th scope="col">종료일자</th></tr></thead><tbody id="list-body"></tbody></table></div><div class="pager"><button id="prev">이전</button><span id="page-info" class="muted"></span><button id="next">다음</button></div></div>
   </section>
   <section id="detail-view" hidden>
     <div class="heading"><div><p class="eyebrow">MASTER DATA</p><h1 id="detail-title" tabindex="-1">마스터코드 상세</h1><p id="detail-description"></p></div><button id="back">목록으로</button></div>
     <form id="editor">
-      <div class="panel"><div class="section-head"><h2>기본 정보</h2><span class="muted">* 필수 입력</span></div><div class="fields"><label for="master-id">마스터 코드 영문 ID <span class="required">*</span><input id="master-id" required maxlength="64" pattern="[A-Za-z][A-Za-z0-9_]*" placeholder="예: PRODUCT_TYPE" aria-describedby="id-help"><span class="help" id="id-help">영문으로 시작하는 영문·숫자·밑줄 조합, 최대 64자</span></label><label for="master-name">한글명 <span class="required">*</span><input id="master-name" required maxlength="100" placeholder="예: 제품유형"></label></div></div>
-      <div class="panel"><div class="section-head"><h2>코드 / 디코드 <span id="code-count" class="badge"></span></h2><button id="add-code" type="button">＋ 코드 추가</button></div><div class="scroll"><table class="edit-table"><thead><tr><th scope="col" style="width:65px">번호</th><th scope="col" style="width:30%">코드 <span class="required">*</span></th><th scope="col">디코드 <span class="required">*</span></th><th scope="col" style="width:90px">관리</th></tr></thead><tbody id="code-body"></tbody></table></div></div>
-      <p class="muted">코드는 동일한 마스터 코드 내에서 중복할 수 없습니다. 디코드는 코드의 의미를 나타내는 표시명입니다.</p>
+      <div class="panel"><div class="section-head"><h2>기본 정보</h2><span class="muted">* 필수 입력</span></div><div class="fields">
+        <label for="master-id">마스터코드아이디 <span class="required">*</span><input id="master-id" required maxlength="64" pattern="[A-Za-z][A-Za-z0-9_]*" placeholder="예: PRODUCT_TYPE" aria-describedby="id-help"><span class="help" id="id-help">영문으로 시작하는 영문·숫자·밑줄 조합, 최대 64자</span></label>
+        <label for="master-name">한글명 <span class="required">*</span><input id="master-name" required maxlength="100" placeholder="예: 제품유형"></label>
+        <label for="registered-date">등록일자 <span class="required">*</span><input id="registered-date" type="date" required min="0001-01-01" max="9999-12-31"></label>
+        <label for="registrant-name">등록자명 <span class="required">*</span><input id="registrant-name" required maxlength="100" placeholder="등록자명을 입력하세요"></label>
+        <label for="start-date">시작일자 <span class="required">*</span><input id="start-date" type="date" required min="0001-01-01" max="9999-12-31"></label>
+        <label for="end-date">종료일자<input id="end-date" type="date" min="0001-01-01" max="9999-12-31"><span class="help">종료일자가 없으면 비워 두세요.</span></label>
+      </div></div>
+      <div class="panel"><div class="section-head"><h2>코드 / 코드명 <span id="code-count" class="badge"></span></h2><button id="add-code" type="button">＋ 코드 추가</button></div><div class="scroll"><table class="edit-table"><thead><tr><th scope="col" style="width:65px">번호</th><th scope="col" style="width:30%">코드 <span class="required">*</span></th><th scope="col">코드명 <span class="required">*</span></th><th scope="col" style="width:90px">관리</th></tr></thead><tbody id="code-body"></tbody></table></div></div>
+      <p class="muted">코드는 동일한 마스터 코드 내에서 중복할 수 없습니다. 코드명은 코드의 의미를 나타내는 표시명입니다.</p>
       <div class="actions"><button id="cancel" type="button">취소</button><button id="edit" type="button" class="primary">수정</button><button id="save" type="submit" class="primary">저장</button></div>
     </form>
   </section>
@@ -33,6 +40,9 @@
   const KEY = 'mes-master-codes-v1';
   const $ = id => document.getElementById(id);
   const clone = value => JSON.parse(JSON.stringify(value));
+  const metadata = {'registered-date':'registeredDate','registrant-name':'registrantName','start-date':'startDate','end-date':'endDate'};
+  function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function validDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= '0001-01-01' && value <= '9999-12-31' && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value; }
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const seed = [
     {id:'PRODUCT_TYPE',name:'제품유형',codes:[{code:'GI',decode:'용융아연도금강판'},{code:'GL',decode:'용융알루미늄아연도금강판'},{code:'PPGI',decode:'착색아연도금강판'}]},
@@ -47,35 +57,38 @@
     const raw = localStorage.getItem(KEY);
     records = raw === null ? clone(seed) : JSON.parse(raw);
     if (!validRecords(records)) throw new Error('Invalid stored records');
+    // Preserve legacy codes and leave unknown registration metadata blank.
+    records = records.map(r => ({...r,...Object.fromEntries(Object.values(metadata).map(key => [key,typeof r[key] === 'string' ? r[key] : '']))}));
   } catch (e) { storageError = true; records = []; }
   function notice(message = '', error = false) { $('notice').textContent = message; $('notice').className = 'notice' + (error ? ' error' : ''); }
   function renderList() {
     $('list-view').hidden = false; $('detail-view').hidden = true; mode = 'list';
-    const rows = records.flatMap(r => r.codes.map(c => ({...c,id:r.id,name:r.name}))).filter(r => [r.id,r.name,r.code,r.decode].some(v => v.toLocaleLowerCase().includes(keyword)));
+    const rows = records.filter(r => [r.id,r.name,r.registeredDate,r.registrantName,r.startDate,r.endDate,...r.codes.flatMap(c => [c.code,c.decode])].some(v => v.toLocaleLowerCase().includes(keyword)));
     const pages = Math.max(1, Math.ceil(rows.length / 10)); page = Math.min(page,pages);
     $('count').textContent = rows.length + '건';
-    $('list-body').innerHTML = rows.slice((page-1)*10,page*10).map(r => `<tr><td><button type="button" class="link" data-id="${esc(r.id)}">${esc(r.id)}</button></td><td>${esc(r.name)}</td><td class="mono">${esc(r.code)}</td><td>${esc(r.decode)}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">' + (keyword ? '검색 결과가 없습니다. 검색어를 변경해 주세요.' : '등록된 마스터코드가 없습니다. 마스터코드를 등록해 주세요.') + '</td></tr>';
+    $('list-body').innerHTML = rows.slice((page-1)*10,page*10).map(r => `<tr><td><button type="button" class="link" data-id="${esc(r.id)}">${esc(r.id)}</button></td><td>${esc(r.name)}</td><td>${esc(r.registeredDate || '—')}</td><td>${esc(r.registrantName || '—')}</td><td>${esc(r.startDate || '—')}</td><td>${esc(r.endDate || '—')}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">' + (keyword ? '검색 결과가 없습니다. 검색어를 변경해 주세요.' : '등록된 마스터코드가 없습니다. 마스터코드를 등록해 주세요.') + '</td></tr>';
     $('page-info').textContent = page + ' / ' + pages; $('prev').disabled = page === 1; $('next').disabled = page === pages;
   }
   function renderDetail(focus = true) {
     const writable = mode !== 'view';
     $('list-view').hidden = true; $('detail-view').hidden = false;
     $('detail-title').textContent = mode === 'new' ? '마스터코드 등록' : mode === 'edit' ? '마스터코드 수정' : '마스터코드 상세';
-    $('detail-description').textContent = mode === 'new' ? '기본 정보와 코드·디코드를 입력해 새 마스터코드를 등록합니다.' : draft.name + '의 기본 정보와 코드 목록입니다.';
+    $('detail-description').textContent = mode === 'new' ? '기본 정보와 코드·코드명을 입력해 새 마스터코드를 등록합니다.' : draft.name + '의 기본 정보와 코드 목록입니다.';
     $('master-id').value = draft.id; $('master-name').value = draft.name;
     $('master-id').readOnly = !writable; $('master-name').readOnly = !writable;
+    Object.entries(metadata).forEach(([id,key]) => { $(id).value = draft[key]; $(id).readOnly = !writable; });
     $('add-code').hidden = !writable; $('save').hidden = !writable; $('cancel').hidden = !writable; $('edit').hidden = writable;
     $('save').textContent = mode === 'new' ? '등록' : '저장';
     renderCodes(); if (focus) $('detail-title').focus();
   }
   function renderCodes() {
     const writable = mode !== 'view'; $('code-count').textContent = draft.codes.length + '건';
-    $('code-body').innerHTML = draft.codes.map((c,i) => `<tr><td class="muted">${i+1}</td><td><input aria-label="${i+1}행 코드" data-index="${i}" data-field="code" maxlength="64" required value="${esc(c.code)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 디코드" data-index="${i}" data-field="decode" maxlength="200" required value="${esc(c.decode)}" ${writable?'':'readonly'}></td><td>${writable?`<button type="button" data-remove="${i}" aria-label="${i+1}행 삭제" ${draft.codes.length===1?'disabled':''}>삭제</button>`:'—'}</td></tr>`).join('');
+    $('code-body').innerHTML = draft.codes.map((c,i) => `<tr><td class="muted">${i+1}</td><td><input aria-label="${i+1}행 코드" data-index="${i}" data-field="code" maxlength="64" required value="${esc(c.code)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 코드명" data-index="${i}" data-field="decode" maxlength="200" required value="${esc(c.decode)}" ${writable?'':'readonly'}></td><td>${writable?`<button type="button" data-remove="${i}" aria-label="${i+1}행 삭제" ${draft.codes.length===1?'disabled':''}>삭제</button>`:'—'}</td></tr>`).join('');
   }
   function openRecord(id) { originalId = id; draft = clone(records.find(r => r.id === id)); baseline = JSON.stringify(draft); mode = 'view'; notice(); renderDetail(); }
   function dirty() { return (mode === 'new' || mode === 'edit') && JSON.stringify(draft) !== baseline; }
   function canLeave() { return !dirty() || window.confirm('저장하지 않은 변경사항이 있습니다. 변경사항을 버리시겠습니까?'); }
-  $('new').onclick = () => { if(storageError) return notice('저장 데이터를 읽을 수 없어 등록할 수 없습니다. 브라우저 저장소 설정을 확인해 주세요.',true); originalId = null; draft = {id:'',name:'',codes:[{code:'',decode:''}]}; baseline = JSON.stringify(draft); mode = 'new'; notice(); renderDetail(); $('master-id').focus(); };
+  $('new').onclick = () => { if(storageError) return notice('저장 데이터를 읽을 수 없어 등록할 수 없습니다. 브라우저 저장소 설정을 확인해 주세요.',true); originalId = null; draft = {id:'',name:'',registeredDate:today(),registrantName:'',startDate:today(),endDate:'',codes:[{code:'',decode:''}]}; baseline = JSON.stringify(draft); mode = 'new'; notice(); renderDetail(); $('master-id').focus(); };
   $('list-body').onclick = e => { const button = e.target.closest('[data-id]'); if (button) openRecord(button.dataset.id); };
   $('search-form').onsubmit = e => { e.preventDefault(); keyword = $('query').value.trim().toLocaleLowerCase(); page = 1; renderList(); };
   $('reset').onclick = () => { $('query').value = ''; keyword = ''; page = 1; renderList(); };
@@ -84,12 +97,16 @@
   $('cancel').onclick = () => { if(canLeave()){ if(originalId === null){notice();renderList();}else openRecord(originalId); } };
   $('edit').onclick = () => { mode = 'edit'; notice(); renderDetail(); $('master-name').focus(); };
   $('master-id').oninput = e => { draft.id = e.target.value; }; $('master-name').oninput = e => { draft.name = e.target.value; };
+  Object.entries(metadata).forEach(([id,key]) => { $(id).oninput = e => { draft[key] = e.target.value; }; });
   $('code-body').oninput = e => { if(e.target.dataset.field) draft.codes[Number(e.target.dataset.index)][e.target.dataset.field] = e.target.value; };
   $('add-code').onclick = () => { draft.codes.push({code:'',decode:''}); renderCodes(); $('code-body').lastElementChild.querySelector('input').focus(); };
   $('code-body').onclick = e => { const button = e.target.closest('[data-remove]'); if(button && draft.codes.length>1){draft.codes.splice(Number(button.dataset.remove),1);renderCodes();} };
   $('editor').onsubmit = e => {
     e.preventDefault(); if(mode !== 'new' && mode !== 'edit') return;
-    const cleaned = {id:draft.id.trim(),name:draft.name.trim(),codes:draft.codes.map(c => ({code:c.code.trim(),decode:c.decode.trim()}))};
+    const cleaned = {id:draft.id.trim(),name:draft.name.trim(),...Object.fromEntries(Object.values(metadata).map(key => [key,draft[key].trim()])),codes:draft.codes.map(c => ({code:c.code.trim(),decode:c.decode.trim()}))};
+    if(!cleaned.registrantName) return notice('등록자명을 입력해 주세요.',true);
+    if(!validDate(cleaned.registeredDate) || !validDate(cleaned.startDate) || (cleaned.endDate && !validDate(cleaned.endDate))) return notice('등록일자, 시작일자 및 종료일자를 올바르게 입력해 주세요.',true);
+    if(cleaned.endDate && cleaned.endDate < cleaned.startDate) return notice('종료일자는 시작일자보다 빠를 수 없습니다.',true);
     if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(cleaned.id) || !cleaned.name || cleaned.codes.some(c => !c.code || !c.decode)) return notice('필수 항목을 입력하고 영문 ID 형식을 확인해 주세요.',true);
     if(records.some(r => r.id !== originalId && r.id.toLowerCase() === cleaned.id.toLowerCase())) return notice('이미 등록된 마스터 코드 영문 ID입니다.',true);
     if(new Set(cleaned.codes.map(c => c.code)).size !== cleaned.codes.length) return notice('중복된 코드가 있습니다. 동일한 마스터 코드 내에서 코드는 고유해야 합니다.',true);
