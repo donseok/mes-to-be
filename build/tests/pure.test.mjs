@@ -5,8 +5,8 @@ import {seed, pure, rules, dict, pureSrc} from '../oc_pure.mjs';
 test('하네스 — 시드와 순수 구역이 Node에서 로드된다', () => {
   assert.equal(rules.length, 138);
   assert.equal(dict.fields.length, 66);
-  assert.equal(dict.valueLabels.length, 41);
-  assert.equal(seed.content_hash, '83af2e6596a0');
+  assert.equal(dict.valueLabels.length, 40);
+  assert.equal(seed.content_hash, 'ae3e6d926dab');
 });
 
 test('fieldLabel — 사전에 있으면 한국어 라벨, 없으면 키 그대로', () => {
@@ -79,7 +79,7 @@ test('condCellText — 값 목록은 4개 이상이면 앞 3개 + "외 N개"', (
 test('condCellText — 138건 전부 표 한 줄에 들어간다', () => {
   const lens = rules.map(r => plain(r).length).sort((a, b) => a - b);
   assert.equal(lens[Math.floor(lens.length / 2)], 31);          // 중앙값
-  assert.equal(lens[Math.floor(lens.length * 0.9)], 53);        // p90
+  assert.equal(lens[Math.floor(lens.length * 0.9)], 52);        // p90
   assert.equal(lens[lens.length - 1], 62);                      // 최대
   assert.ok(lens[lens.length - 1] <= 64, '표 셀 상한 초과');
 });
