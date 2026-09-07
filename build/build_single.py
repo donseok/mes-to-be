@@ -133,6 +133,12 @@ index = index.replace(
     'loading="lazy" srcdoc="' + escaped_sim + '"></iframe>', 1)
 
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
+module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
+old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'
+assert old_iframe_mc in index, 'master-code iframe block not found'
+escaped_mc = module_mc.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(old_iframe_mc, '<iframe id="module-frame-mc" title="마스터코드 관리" loading="lazy" srcdoc="' + escaped_mc + '"></iframe>', 1)
+
 assert '</body>' in index
 head_part, sep, tail_part = index.rpartition('</body>')
 index = head_part + '<script>\n' + js + '</script>\n' + sep + tail_part

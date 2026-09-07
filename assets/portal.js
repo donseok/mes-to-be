@@ -6,6 +6,13 @@
   'use strict';
 
   var ROUTES = {
+    'master-code': {
+      hash: '#/master-data/master-code',
+      viewId: 'master-code-view',
+      title: '마스터코드',
+      crumbs: ['마스터데이터'],
+      openLink: true
+    },
     'quality-spec': {
       hash: '#/quality-design/module-management/quality-spec',
       viewId: 'quality-spec-view',

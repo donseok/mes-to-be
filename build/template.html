@@ -23,6 +23,12 @@
       </div>
 
       <nav class="portal-nav" aria-label="품질 모듈">
+        <button class="nav-parent" type="button" data-tree-toggle="master-code-tree" aria-expanded="true" aria-controls="master-code-tree">
+          <span>마스터데이터</span><span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="nav-tree open" id="master-code-tree">
+          <a class="nav-link" href="#/master-data/master-code" data-route="master-code">마스터코드</a>
+        </div>
         <button class="nav-parent" type="button" data-tree-toggle="quality-design-tree" aria-expanded="true" aria-controls="quality-design-tree">
           <span>품질설계</span><span class="chevron" aria-hidden="true">⌄</span>
         </button>
@@ -119,6 +125,9 @@
       </header>
 
       <main class="main-content" id="main-content">
+        <section class="route-view" id="master-code-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>
+        </section>
         <section class="route-view active" id="quality-spec-view" aria-labelledby="page-title">
           <iframe
             id="module-frame"
