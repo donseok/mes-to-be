@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>W-ERR 주문단중에러관리</title>
 <script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
 /* ============================================================
    W-ERR — MES 생산가부관리 주문단중에러관리 목업
@@ -14,31 +14,31 @@
    palette·타입은 Q-SPEC 모듈과 동일한 디자인 시스템 사용.
    ============================================================ */
 :root{
-  --bg:#F4F6F9;
+  --bg:#F5F4F0;
   --surface:#FFFFFF;
-  --surface-2:#EDF1F6;
-  --surface-3:#E3E9F0;
-  --border:#D9E0E8;
-  --border-strong:#B9C4D0;
-  --ink:#18222F;
-  --ink-2:#4C5A6B;
-  --ink-3:#7C8798;
-  --accent:#1D5FBF;
-  --accent-strong:#174C99;
+  --surface-2:#F1F0EB;
+  --surface-3:#E9E7E1;
+  --border:#E8E6E1;
+  --border-strong:#D6D2CA;
+  --ink:#1C2126;
+  --ink-2:#4A5158;
+  --ink-3:#8A9198;
+  --accent:#166578;
+  --accent-strong:#0F4854;
   --accent-on:#FFFFFF;
-  --accent-soft:#E4EDFA;
-  --accent-soft-ink:#174C99;
-  --result:#B45309;
-  --result-soft:#F9EFE0;
-  --danger:#B91C1C;
-  --danger-bg:#FBE4E4;
-  --code-bg:#EEF2F7;
-  --scrim:rgba(16,24,34,.44);
-  --shadow:0 8px 28px rgba(23,42,68,.14);
-  --topbar-bg:#14202E;
-  --topbar-ink:#D8E1EC;
-  --topbar-dim:#8DA0B5;
-  --focus:#1D5FBF;
+  --accent-soft:#E4EEF1;
+  --accent-soft-ink:#0F4854;
+  --result:#96610E;
+  --result-soft:#FBF0DC;
+  --danger:#B03A32;
+  --danger-bg:#F7E4E2;
+  --code-bg:#F1F0EC;
+  --scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;
+  --topbar-ink:#3A4148;
+  --topbar-dim:#7A8188;
+  --focus:#166578;
   /* 참조 엑셀 화면 색 */
   --xl-head:#FFF200;         /* 헤더(분할·열번호·Min/Max 라벨) 노랑 */
   --xl-head-ink:#111111;
@@ -50,11 +50,11 @@
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
   font-size:14px;line-height:1.55;min-height:100vh;
 }
 body.modal-open{overflow:hidden}
-.mono{font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
 .num{font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select{font:inherit;color:var(--ink)}
@@ -66,7 +66,7 @@ input,select{font:inherit;color:var(--ink)}
 
 /* ---------- top bar ---------- */
 .topbar{
-  background:var(--topbar-bg);color:var(--topbar-ink);
+  background:var(--topbar-bg);color:var(--topbar-ink);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;height:52px;padding:0 20px;
   position:sticky;top:0;z-index:30;
 }
@@ -75,11 +75,11 @@ input,select{font:inherit;color:var(--ink)}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-mark{
   width:22px;height:22px;border-radius:5px;
-  background:linear-gradient(135deg,#2E71D4 0%,#1D5FBF 55%,#B45309 130%);
+  background:linear-gradient(135deg,#2A7D93 0%,#166578 55%,#96610E 130%);
   display:inline-flex;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:#fff;
+  font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;color:#fff;
 }
-.brand-name{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
+.brand-name{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;letter-spacing:.04em}
 .crumb{color:var(--topbar-dim);font-size:12.5px;white-space:nowrap;overflow:hidden}
 .crumb b{color:var(--topbar-ink);font-weight:500}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -156,7 +156,7 @@ input,select{font:inherit;color:var(--ink)}
 }
 .mm-box input{
   border:none;width:84px;padding:7px 10px;text-align:right;
-  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;
 }
 .mm-box input:focus{outline:none;background:var(--accent-soft)}
 
@@ -178,7 +178,7 @@ input,select{font:inherit;color:var(--ink)}
 .tbl-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:260px}
 table.matrix{
   border-collapse:separate;border-spacing:0;
-  font-family:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+  font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;
   font-size:13px;min-width:760px;width:100%;
 }
 .matrix th,.matrix td{
@@ -194,7 +194,7 @@ table.matrix{
 .matrix th:first-child,.matrix td:first-child{border-left:1px solid var(--xl-grid)}
 .matrix tbody th{
   background:var(--surface);font-weight:700;text-align:right;
-  position:sticky;left:0;z-index:2;font-family:'IBM Plex Sans KR',sans-serif;
+  position:sticky;left:0;z-index:2;font-family:'Gothic A1',sans-serif;
   font-variant-numeric:tabular-nums;
 }
 .matrix td{background:var(--surface);color:var(--ink);cursor:default}

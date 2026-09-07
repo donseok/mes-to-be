@@ -10,85 +10,85 @@
       hash: '#/quality-design/module-management/quality-spec',
       viewId: 'quality-spec-view',
       title: '품질사양 관리',
-      crumbs: ['품질설계', '모듈관리'],
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
       title: '주문단중에러관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'order-consistency': {
       hash: '#/quality-design/feasibility-management/order-consistency',
       viewId: 'order-consistency-view',
       title: '주문정합성관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'production-feasibility': {
       hash: '#/quality-design/feasibility-management/production-feasibility',
       viewId: 'production-feasibility-view',
       title: '생산가부관리',
-      crumbs: ['품질설계', '생산가부관리'],
+      crumbs: ['품질관리', '품질설계', '생산가부관리'],
       openLink: true
     },
     'quality-design-result': {
       hash: '#/quality-design/result-management/quality-design-result',
       viewId: 'quality-design-result-view',
       title: '품질설계결과',
-      crumbs: ['품질설계', '설계결과관리'],
+      crumbs: ['품질관리', '품질설계', '설계결과관리'],
       openLink: true
     },
     'simulation': {
       hash: '#/quality-design/simulation',
       viewId: 'simulation-view',
       title: '시뮬레이션',
-      crumbs: ['품질설계'],
-      openLink: false
+      crumbs: ['품질관리', '품질설계'],
+      openLink: true
     },
     'color-submaterial': {
       hash: '#/quality-design/master-data-management/color-submaterial',
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
-      crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      crumbs: ['품질관리', '품질설계', '기준정보관리'],
+      openLink: true
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
-      crumbs: ['품질설계', '기준정보관리'],
-      openLink: false
+      crumbs: ['품질관리', '품질설계', '기준정보관리'],
+      openLink: true
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
       viewId: 'quality-judgment-view',
       title: '품질판정',
-      crumbs: ['품질 업무'],
-      openLink: false
+      crumbs: ['품질관리', '품질판정'],
+      openLink: true
     },
     'quality-certificate': {
       hash: '#/output-management/quality-certificate',
       viewId: 'quality-certificate-view',
       title: '품질보증서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'inspection-certificate': {
       hash: '#/output-management/inspection-certificate',
       viewId: 'inspection-certificate-view',
       title: '검사증명서관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     },
     'tag-management': {
       hash: '#/output-management/tag-management',
       viewId: 'tag-management-view',
       title: 'Tag관리',
       crumbs: ['출력물관리'],
-      openLink: false
+      openLink: true
     }
   };
   var DEFAULT_ROUTE = 'quality-spec';

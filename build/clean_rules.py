@@ -124,8 +124,6 @@ VALUE_LABELS = (
       "certainty": "추정", "evidence": "order#76 'G/L Spangle 선택 오류'(품명 L)·order#26 'G/L 조관수지용'"},
      {"field": "PRD_NM_CD", "code": "3", "label": "CCGI",
       "certainty": "추정", "evidence": "cross#65 'CCGI Spangle 선택 오류'(품명 3 단독)"},
-     {"field": "PRD_NM_CD", "code": "6", "label": "CCGI",
-      "certainty": "추정", "evidence": "order#77 'CCGI Spangle 선택 오류'(품명 3,6)"},
      {"field": "PRD_NM_CD", "code": "4", "label": "CCLI",
       "certainty": "추정", "evidence": "cross#66 'CCLI Spangle 선택 오류'(품명 4 단독)"},
      {"field": "PRD_NM_CD", "code": "5", "label": "CCAI",
@@ -318,7 +316,14 @@ def derive_labels(parsed_by_source):
     return labels
 
 
+#: 휴리스틱이 놓치는 명시 타입 — PRD_SHP은 C(코일형)/S(시트형) 2값 코드 필드인데
+#: 라벨('제품형태')과 키가 코드 접미 규칙에 안 걸려 string으로 오분류된다(2R 검증 지적).
+FIELD_TYPE_OVERRIDE = {"PRD_SHP": "code"}
+
+
 def field_type(key, label):
+    if key in FIELD_TYPE_OVERRIDE:
+        return FIELD_TYPE_OVERRIDE[key]
     if label and any(k in label for k in NUMBER_KEYWORDS) \
             and not label.endswith(NUMBER_EXCLUDE_SUFFIX):
         return "number"
@@ -340,15 +345,21 @@ def _num(v, ctx):
     return int(f) if f == int(f) else f
 
 
-def _display_hint(op, num):
-    """C-6 ±0.001/+1 보정값 표시용 자연어. 소수 3자리&끝자리1(LT/GE), 정수&끝자리1(GE, >=100)."""
+def _semantic_convert(op, num):
+    """C-6 ±0.001/+1 인코딩의 의미보존 변환 (2라운드 검증 지적 반영).
+
+    원본은 '2200 초과'를 GE 2201로, '0.8 이하'를 LT 0.801로 인코딩했다. 정수 입력에서는
+    동치지만 소수 입력(단중 2200.5, 두께 0.8005)에서는 표시문과 반대로 동작한다.
+    GT/LE는 엔진이 이미 지원하므로 연산자 자체를 바꿔 표시와 판정을 일치시킨다.
+    원 인코딩은 조건의 converted 필드와 lineage 원문(rawbox)에 남는다.
+    반환: (새 op, 새 값) 또는 None."""
     s = str(num)
     if op == "LT" and re.fullmatch(r"\d+\.\d{2}1", s):
-        return f"{round(num - 0.001, 3):g} 이하"
+        return ("LE", round(num - 0.001, 3))
     if op == "GE" and re.fullmatch(r"\d+\.\d{2}1", s):
-        return f"{round(num - 0.001, 3):g} 초과"
+        return ("GT", round(num - 0.001, 3))
     if op == "GE" and isinstance(num, int) and num >= 100 and s.endswith("1"):
-        return f"{num - 1:g} 초과"
+        return ("GT", num - 1)
     return None
 
 
@@ -369,10 +380,13 @@ def clean_condition(field_key, op, v1, v2, ftype, ctx, stats):
             raise PipelineError(f"{ctx}: {op}에 비교값2 존재")
         num = _num(v1, ctx)
         cond = {"field": field_key, "op": OP_MAP[op], "values": [num]}
-        hint = _display_hint(cond["op"], num)
-        if hint:
-            cond["display"] = hint
-            stats["display_hints"].append({"where": ctx, "op": cond["op"], "value": num, "display": hint})
+        conv = _semantic_convert(cond["op"], num)
+        if conv:
+            cond["converted"] = {"op": cond["op"], "value": num}   # 원 인코딩 보존(화면 병기용)
+            cond["op"], cond["values"] = conv[0], [conv[1]]
+            stats["semantic_conversions"].append(
+                {"where": ctx, "from": f"{cond['converted']['op']} {num}",
+                 "to": f"{conv[0]} {conv[1]}"})
         return cond
     if op in ("IN", "NOT_IN"):
         if v1 is None:
@@ -467,11 +481,14 @@ def conds_json(conds):
     return [dict(c) for c in conds]
 
 
-def lineage_entry(r, diff=None):
+def lineage_entry(r, diff=None, discarded=False):
     e = {"source": r["source"], "row": r["row"], "err_code": r["err_code"],
          "raw_message": r["raw_message"], "conds": r["raw_conds"]}
     if diff:
         e["diff"] = diff
+    if discarded:
+        # 호스트 룰의 조상이 아니라 M6로 폐기된 구기준 — 화면이 원본 대조행과 구분해 그린다.
+        e["discarded"] = True
     return e
 
 
@@ -636,7 +653,8 @@ def build_ruleset(order_clean, cross_clean, labels, stats):
                                        "union 시 신정책이 허용한 주문을 구정책이 기각하는 역행 발생")
         merged[row]["cross_lineage"].append(lineage_entry(
             c85, diff="M6 폐기: 구 일반상한 >8000(품명 1~6·제품형태 C) — 룰 미탑재. "
-                      "A451~A460 두께·수요가별 세분 가족(5000~16000)으로 대체(union 금지 · 이슈 I-C3)"))
+                      "A451~A460 두께·수요가별 세분 가족(5000~16000)으로 대체(union 금지 · 이슈 I-C3)",
+            discarded=True))
 
     # --- M3 보칙: 시그니처 완전 동일 쌍의 실체는 (order#77, cross#69)였다 ---
     # 코드·메시지(A72 'CCGI Spangle 선택 오류')로 재짝지어 cross#65를 order#77의 계보로 채택했으므로,
@@ -830,11 +848,21 @@ def build_issues(rules, cross85, detail, labels):
         "rule_ids": ["R-135", "R-136"], "status": "open",
     })
     issues.append({
-        "id": "I-D4", "type": "data_defect", "title": "의미론적 포함(그림자) 룰 3쌍 — 동시발화 안내",
-        "body": "order#77[A72] ⊆ order#81[A722], cross#65[A72] ⊆ cross#69[A722](병합 후 R-077/R-081로 수렴), "
-                "order#115[A664] ⊆ order#87[A663]. 좁은 룰이 발화하는 모든 주문에서 넓은 룰도 발화한다 — "
+        "id": "I-D4", "type": "data_defect", "title": "의미론적 포함(그림자) 룰 2쌍 — 동시발화 안내",
+        "body": "병합 후 실재 2쌍: order#77[A72] ⊆ order#81[A722] / order#115[A664] ⊆ order#87[A663]. "
+                "(cross#65 ⊆ cross#69는 같은 쌍의 병합 전 cross 측 계보 — 별도 쌍이 아니다.) "
+                "좁은 룰이 발화하는 모든 주문에서 넓은 룰도 발화한다 — "
                 "모순이 아니라 다중 결함이며, first-match 엔진이면 한쪽이 영구 은폐된다(전수 평가 채택 근거).",
         "rule_ids": ["R-077", "R-081", "R-087", "R-115"], "status": "open",
+    })
+    issues.append({
+        "id": "I-D6", "type": "data_defect", "title": "컬러 단중상한 A45x 두께 밴드 공백 4구간",
+        "body": "두께 밴드 상한이 0.449 / 0.599 / 0.799 / 0.999로 인코딩되어 (0.449,0.45) (0.599,0.6) "
+                "(0.799,0.8) (0.999,1.0) 구간의 두께는 어느 상한 룰에도 걸리지 않는다 — 단중 상한 검사가 "
+                "조용히 빠지는 무주지. 폭 밴드([800,1101) 등)는 무겹침 완전 분할이 맞지만 두께 밴드는 아니다. "
+                "냉연 두께는 통상 소수 3자리라 실발생 확률은 낮으나, 원본 값 보정(0.449→0.45 미만)은 업무 "
+                "확인이 필요해 룰을 고치지 않고 결함으로만 등재한다.",
+        "rule_ids": ["R-098", "R-099", "R-128", "R-129", "R-130", "R-131"], "status": "open",
     })
     issues.append({
         "id": "I-D5", "type": "data_defect", "title": "에러코드 네이밍 충돌: A46 vs A460 (+A894 결번)",
@@ -977,7 +1005,7 @@ def apply_masking(seed, mm):
 
 
 def build_seed(order_path, cross_path, mask=True):
-    stats = {"display_hints": [], "in_demoted": 0, "not_in_demoted": 0}
+    stats = {"semantic_conversions": [], "in_demoted": 0, "not_in_demoted": 0}
     parsed_order = parse_workbook(order_path)
     parsed_cross = parse_workbook(cross_path)
     labels = derive_labels({"order": parsed_order, "cross": parsed_cross})
@@ -1063,7 +1091,20 @@ def build_seed(order_path, cross_path, mask=True):
           all("R-C85" != r["id"] for r in rules)
           and cross85["err_code"] == "A451"
           and 85 in cross_rows_lineage and 85 in cross_rows_issues)
-    check("이슈 수 = 상충3 + 확인필요6 + 데이터결함5 = 14", len(issues) == 14, f"실제 {len(issues)}")
+    check("이슈 수 = 상충3 + 확인필요6 + 데이터결함6 = 15", len(issues) == 15, f"실제 {len(issues)}")
+    # 2R 의미론 검증 반영: ±1 인코딩의 의미보존 변환. 정확히 5건이며, 변환 후 시드에
+    # LT x.xx1 / GE x.xx1 / GE 정수끝1(>=100) 패턴이 남아 있으면 안 된다.
+    n_conv = len(stats["semantic_conversions"])
+    residue = []
+    for _r in rules:
+        for _c in _r.get("when", []) + _r.get("context", []):
+            if _c.get("op") in ("LT", "GE") and _c.get("values"):
+                _s = str(_c["values"][0])
+                if re.fullmatch(r"\d+\.\d{2}1", _s) or \
+                        (_c["op"] == "GE" and _s.isdigit() and int(_s) >= 100 and _s.endswith("1")):
+                    residue.append(f"{_r['id']} {_c['op']} {_s}")
+    check("의미보존 변환 5건 + ±1 인코딩 잔존 0건", n_conv == 5 and not residue,
+          f"변환 {n_conv} · 잔존 {residue or '없음'}")
     n_review_alt = sum(1 for r in rules if r["merge"].get("review_alternatives"))
     check("cross 대안값 병기 5건(M5)", n_review_alt == 5, f"실제 {n_review_alt}")
     field_keys = {f["key"] for f in fields}
