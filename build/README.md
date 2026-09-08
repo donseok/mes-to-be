@@ -90,8 +90,9 @@ python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 �
 ## 주요 구현 메모
 
 - 목업 데이터는 브라우저 localStorage에만 저장 (`LS_KEY` 버전을 올리면 시드로 초기화됨)
-- 마스터코드는 `mes-master-codes-v2` 사용. v2 데이터가 없고 v1이 있으면 v1을 읽어 코드에 카테고리(ID/명) 빈 값을 채우고,
-  `addedInV2` 목록의 마스터코드(AS-IS 이관분 `ORD_THK_MNG_CD`·`THK_COR_UNT`)만 추가한다 — 사용자가 지운 기존 시드는 되살리지 않는다
+- 마스터코드는 `mes-master-codes-v2` 사용. v2 데이터가 없고 v1이 있으면 v1을 읽어 코드에 카테고리(ID/명) 빈 값을 채운다.
+  AS-IS 이관분(`asIsImports`: `ORD_THK_MNG_CD`·`THK_COR_UNT`·`PRD_NM_CD`)은 저장 데이터가 이미 있어도 `mes-master-codes-imported` 마커에 없는 것만 한 번 합류시킨다
+  — 사용자가 지운 이관분·기존 시드는 되살리지 않는다. 이관분을 늘릴 때는 시드에 추가하고 `asIsImports` 끝에 id를 붙인다
 - 페이지 크기(10/20)는 `qspec-pagesize` 키로 별도 저장
 - 변경 이력은 사양과 독립된 `state.changelog`에 전/후 값을 보존 (삭제돼도 유지)
 - 엑셀 다운로드는 외부 라이브러리 없이 xlsx(zip)를 직접 생성

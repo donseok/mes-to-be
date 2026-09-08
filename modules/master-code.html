@@ -50,6 +50,7 @@
   'use strict';
   const KEY = 'mes-master-codes-v2';
   const LEGACY_KEY = 'mes-master-codes-v1';
+  const IMPORT_KEY = 'mes-master-codes-imported';
   const NO_CATEGORY = '__NONE__'; // 카테고리가 비어 있는 코드를 고르는 필터 값
   const $ = id => document.getElementById(id);
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -88,10 +89,43 @@
       {code:'GVT',decode:'Galvanized TCT(도금TCT)',categoryId:'SZ0000',categoryName:'공통'},
       {code:'PCN',decode:'PERCENT(주문두께에 대한 %)',categoryId:'SZ0000',categoryName:'공통'},
       {code:'TRK',decode:'Target(확정값)',categoryId:'SZ0000',categoryName:'공통'}
+    ]},
+    // AS-IS 마스타코드 내용상세 화면(PRD_NM_CD) 이관 — 유효일시 2011-11-25 14:37:54 ~, 담당자 MASTDATA(GlueMaster), 부서/공정 품질설계·품질
+    // 캡처된 1~28행(공통 SZ0000)만 이관. 29행 이후(종합판정 SJ0000 등 3~5페이지)는 원본 화면 확보 후 추가한다.
+    {id:'PRD_NM_CD',name:'품명코드',registeredDate:'2011-11-25',registrantName:'MASTDATA',startDate:'2011-11-25',endDate:'',codes:[
+      {code:'1',decode:'CCI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'2',decode:'CCEI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'3',decode:'CCGI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'4',decode:'CCLI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'5',decode:'CCAI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'6',decode:'CCGX',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'7',decode:'CCUS',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'8',decode:'CCNI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'9',decode:'CCLX',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'A',decode:'P/O Skin Pass',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'B',decode:'P/O No Skin Pass',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'C',decode:'CR',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'D',decode:'F/H',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'E',decode:'EGI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'G',decode:'GI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'H',decode:'Hot Coil',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'J',decode:'G/A',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'K',decode:'HGI',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'L',decode:'G/L',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'M',decode:'Mini Mill',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'N',decode:'ZnNi',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'S',decode:'SUS',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'U',decode:'Aluminum',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'V',decode:'GIX',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'W',decode:'GLX',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'X',decode:'HR SKELP',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'Y',decode:'포장재',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'Z',decode:'통판재',categoryId:'SZ0000',categoryName:'공통'}
     ]}
   ];
-  // v1 저장 데이터를 v2로 옮길 때 새로 합류시키는 마스터코드 (사용자가 지운 기존 시드는 되살리지 않는다)
-  const addedInV2 = ['ORD_THK_MNG_CD','THK_COR_UNT'];
+  // AS-IS 이관 마스터코드. 저장 데이터가 이미 있어도 아직 합류시키지 않은 이관분만 한 번 추가한다
+  // (합류 이력은 IMPORT_KEY에 남기므로, 사용자가 지운 이관분·기존 시드는 되살리지 않는다)
+  const asIsImports = ['ORD_THK_MNG_CD','THK_COR_UNT','PRD_NM_CD'];
   let records = [], originalId = null, draft = null, baseline = '', mode = 'list', page = 1, keyword = '', storageError = false;
   let codeFilter = {category:'',field:'all',keyword:''};
   function validRecords(data) {
@@ -105,19 +139,27 @@
   }
   try {
     const raw = localStorage.getItem(KEY);
+    let imported = null;
     if (raw !== null) {
       records = JSON.parse(raw);
       if (!validRecords(records)) throw new Error('Invalid stored records');
       records = records.map(normalize);
+      // 합류 이력이 없거나 읽을 수 없는 v2 데이터는 v2 도입 시점 이관분(앞 2종)까지만 합류된 것으로 본다
+      try { imported = JSON.parse(localStorage.getItem(IMPORT_KEY)); } catch (e) { imported = null; }
+      if (!Array.isArray(imported) || !imported.every(id => typeof id === 'string')) imported = asIsImports.slice(0,2);
     } else {
       const legacy = localStorage.getItem(LEGACY_KEY);
-      if (legacy === null) { records = clone(seed).map(normalize); }
+      if (legacy === null) { records = clone(seed).map(normalize); imported = []; } // 시드에 이미 들어 있으므로 합류 이력만 남긴다
       else {
         const parsed = JSON.parse(legacy);
         if (!validRecords(parsed)) throw new Error('Invalid stored records');
-        records = parsed.map(normalize);
-        clone(seed).filter(s => addedInV2.includes(s.id) && !records.some(r => r.id.toLowerCase() === s.id.toLowerCase())).forEach(s => records.push(normalize(s)));
+        records = parsed.map(normalize); imported = [];
       }
+    }
+    const pending = asIsImports.filter(id => !imported.includes(id));
+    if (pending.length) {
+      clone(seed).filter(s => pending.includes(s.id) && !records.some(r => r.id.toLowerCase() === s.id.toLowerCase())).forEach(s => records.push(normalize(s)));
+      try { localStorage.setItem(IMPORT_KEY,JSON.stringify(asIsImports)); } catch (e) { /* 저장 실패 시 다음 로드에서 다시 합류 (id 중복 검사로 안전) */ }
     }
   } catch (e) { storageError = true; records = []; }
   function notice(message = '', error = false) { $('notice').textContent = message; $('notice').className = 'notice' + (error ? ' error' : ''); }
