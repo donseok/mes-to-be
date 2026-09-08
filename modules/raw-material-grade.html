@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R-MAT 원자재강종관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   R-MAT 원자재강종관리 — 품질설계 기준 룰 (조건 → 결과)
+   도금(G·GI) 기준 룰과 칼라(3·CCGI) 룰의 원판연계(상속) 관리:
+   - 도금기준(BASE) / 칼라파생(DERIVED) / 칼라전용(STANDALONE)
+   - 칼라파생: 재질코드·적정원료는 원판 상속, 차선원료는 자체값 없으면 상속
+   - 원판 결과 변경 시 파생 룰에 '재검토 필요' 플래그
+   탭: 룰 목록 · 원판연계 · 간편판정 · 변경 이력 · 코드 범례
+   시드는 AS-IS 룰 시트(주문두께 기준 캡쳐)를 정리한 목업 데이터.
+   ============================================================ */
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;
+  --accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;
+  --ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:14px;line-height:1.55}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* 상단바 · 탭 */
+.topbar{position:sticky;top:0;z-index:40;height:52px;display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--topbar-bg);border-bottom:1px solid var(--border);color:var(--topbar-ink)}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);color:var(--accent-on);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.brand-name{font-weight:800;letter-spacing:.4px}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock-flag{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--result);background:var(--result-soft);border:1px solid #EAD9B5;border-radius:5px;padding:3px 8px}
+.embedded .topbar{display:none}
+.tabs{position:sticky;top:52px;z-index:30;display:flex;gap:2px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.embedded .tabs{top:0}
+.tab{padding:12px 14px;font-weight:700;font-size:13.5px;color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink-2)}
+.tab.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
+.tab .cnt{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:999px;background:var(--surface-3);color:var(--ink-2);font-size:11px;text-align:center}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:18px 18px 60px}
+.screen{display:none}
+.screen.on{display:block}
+.screen-head{margin:4px 0 14px}
+.screen-head h2{margin:0 0 4px;font-size:18px}
+.screen-head p{margin:0;color:var(--ink-2);font-size:13px}
+
+/* 조회 바 · 입력 */
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.f-field{display:flex;flex-direction:column;gap:4px}
+.f-field>label{font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.3px}
+.inp{height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;min-width:0}
+textarea.inp{height:auto;padding:8px 10px;resize:vertical}
+.inp[readonly]{background:var(--surface-2);color:var(--ink-2)}
+.f-check{display:flex;align-items:center;gap:6px;height:34px;font-size:13px;color:var(--ink-2)}
+.f-spacer{flex:1}
+.fbar-meta{font-size:12.5px;color:var(--ink-3);align-self:center}
+.btn{height:34px;padding:0 14px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);font-weight:700;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-warn{background:var(--result-soft);border-color:#EAD9B5;color:var(--result-soft-ink)}
+.btn-danger{background:var(--danger-bg);border-color:#EAC7C4;color:var(--danger)}
+.btn-sm{height:26px;padding:0 9px;font-size:12px;border-radius:6px}
+
+/* 패널 · 테이블 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.panel-head h3{margin:0;font-size:14.5px}
+.panel-head .sub{color:var(--ink-3);font-size:12px}
+.panel-body{padding:12px 14px}
+.panel-note{padding:10px 14px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--ink-2)}
+.tbl-scroll{overflow:auto;max-height:calc(100vh - 280px)}
+table.tbl{border-collapse:collapse;width:100%;min-width:1080px;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--ink-2);font-size:11.5px;text-align:left;padding:9px 10px;border-bottom:1px solid var(--border-strong);white-space:nowrap;z-index:1}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#F8FAF9}
+.tbl tr.sel td{background:var(--accent-soft)}
+.tbl td.num{text-align:right}
+.tbl td.c{text-align:center}
+.msg-cell{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.empty{padding:36px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+
+/* 뱃지 */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.chip.base{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.derived{background:var(--hold-bg);color:var(--hold)}
+.chip.alone{background:var(--result-soft);color:var(--result-soft-ink)}
+.chip.review{background:var(--danger-bg);color:var(--danger)}
+.chip.exc{background:var(--danger-bg);color:var(--danger)}
+.chip.cell{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.range{background:var(--result-soft);color:var(--result-soft-ink)}
+.chip.reset{background:var(--danger-bg);color:var(--danger)}
+.inherit{color:var(--ink-3);font-size:11px}
+.baseref{color:var(--accent-strong);font-size:11.5px;font-weight:700}
+
+/* 원판연계 */
+.link-sum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.sum-chip{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12.5px;color:var(--ink-2)}
+.sum-chip b{font-size:16px;margin-right:4px;color:var(--ink)}
+.link-base{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);cursor:pointer}
+.link-base:hover{background:var(--surface-3)}
+.link-child{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 14px 9px 34px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px}
+.link-child:hover{background:#F8FAF9}
+.link-child:last-child,.link-base:last-child{border-bottom:0}
+.link-arrow{color:var(--ink-3);font-weight:700}
+.link-none{padding:8px 14px 8px 34px;color:var(--ink-3);font-size:12.5px;border-bottom:1px solid var(--border)}
+
+/* 간편판정 */
+.judge-hint{font-size:12px;color:var(--ink-3);margin:6px 0 0}
+.apply-row td{background:#F2F7F4}
+
+/* 범례 */
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-3);font-weight:700}
+.kv dd{margin:0}
+
+/* 드로어 */
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:660px;max-width:96vw;background:var(--surface);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .2s;z-index:60;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-close{width:30px;height:30px;border-radius:7px;color:var(--ink-3);font-size:15px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:14px 18px}
+.d-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--border)}
+.d-sect{margin-bottom:16px}
+.d-sect h4{margin:0 0 8px;font-size:12px;color:var(--ink-3);letter-spacing:.5px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.form-grid .wide{grid-column:1 / -1}
+.form-grid .f-field>label .req{color:var(--danger)}
+.cond-row{display:grid;grid-template-columns:150px 1fr;gap:8px}
+.thk-row{display:grid;grid-template-columns:150px 1fr 1fr;gap:8px}
+.f-help{font-size:11.5px;color:var(--ink-3)}
+.f-help.err{color:var(--danger)}
+
+/* 모달 · 토스트 */
+.modal-back{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:70}
+.modal-back.on{display:flex}
+.modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);width:400px;max-width:92vw;padding:18px}
+.modal h3{margin:0 0 8px;font-size:15px}
+.modal p{margin:0 0 16px;color:var(--ink-2);font-size:13px}
+.modal .m-foot{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:80;max-width:88vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--danger)}
+
+@media (max-width:720px){
+  .wrap{padding:12px 10px 50px}
+  .form-grid{grid-template-columns:1fr}
+  .cond-row,.thk-row{grid-template-columns:1fr}
+  .drawer{width:100%}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">M</span><span class="brand-name">R-MAT</span></div>
+  <span class="crumb">품질관리 › 품질설계 › 모듈관리 › 원자재강종관리</span>
+  <span class="mock-flag">MOCK-UP</span>
+</header>
+<nav class="tabs" role="tablist" aria-label="원자재강종관리 탭">
+  <button class="tab on" role="tab" data-tab="list" aria-selected="true" aria-controls="sc-list" tabindex="0">룰 목록 <span class="cnt" id="cnt-list">0</span></button>
+  <button class="tab" role="tab" data-tab="link" aria-selected="false" aria-controls="sc-link" tabindex="-1">원판연계 <span class="cnt" id="cnt-review" title="재검토 필요">0</span></button>
+  <button class="tab" role="tab" data-tab="judge" aria-selected="false" aria-controls="sc-judge" tabindex="-1">간편판정</button>
+  <button class="tab" role="tab" data-tab="hist" aria-selected="false" aria-controls="sc-hist" tabindex="-1">변경 이력 <span class="cnt" id="cnt-hist">0</span></button>
+  <button class="tab" role="tab" data-tab="legend" aria-selected="false" aria-controls="sc-legend" tabindex="-1">코드 범례</button>
+</nav>
+<main class="wrap" id="main-content">
+
+  <!-- ── 룰 목록 ─────────────────────────────────────────── -->
+  <section class="screen on" id="sc-list" role="tabpanel" aria-label="룰 목록">
+    <div class="screen-head">
+      <h2>원자재강종 결정 룰</h2>
+      <p>조건(품명코드·규격약호·주문용도·두께범위)에 따라 재질코드와 적정·차선원료를 결정합니다. 칼라(CCGI) 룰은 도금(GI) 원판 룰에서 재질코드·적정원료를 상속합니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="f-prod">품명코드</label>
+        <select class="inp" id="f-prod"><option value="">전체</option><option value="G">G — 도금(GI)</option><option value="3">3 — 칼라(CCGI)</option></select></div>
+      <div class="f-field"><label for="f-kind">기준유형</label>
+        <select class="inp" id="f-kind"><option value="">전체</option><option value="BASE">도금기준</option><option value="DERIVED">칼라파생</option><option value="STANDALONE">칼라전용</option></select></div>
+      <div class="f-field"><label for="f-st">상태</label>
+        <select class="inp" id="f-st"><option value="">전체</option><option value="Y">Y — 사용중</option><option value="S">S — 대기상태</option><option value="F">F — 미완료</option><option value="N">N — 사용종료</option></select></div>
+      <div class="f-field"><label for="f-q">검색</label>
+        <input class="inp" id="f-q" type="search" placeholder="규격약호, 재질, 원료, 메시지" style="width:210px"></div>
+      <label class="f-check"><input type="checkbox" id="f-review"> 재검토 필요만</label>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="list-meta" aria-live="polite"></div>
+      <button class="btn btn-pri" data-action="new-rule">＋ 룰 등록</button>
+    </div>
+    <div class="panel">
+      <div class="tbl-scroll" id="list-grid"></div>
+      <div class="panel-note">순번 <b>0</b>은 예외 룰로, 판정 시 데이터 순번(1, 2, 3…)보다 먼저 평가됩니다. <b>칼라파생</b> 룰의 재질코드·적정원료는 원판(도금) 룰에서 상속되고, 차선원료는 자체값이 없으면 원판 값을 따릅니다. 시드는 AS-IS 룰 시트를 정리한 목업 데이터입니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 원판연계 ────────────────────────────────────────── -->
+  <section class="screen" id="sc-link" role="tabpanel" aria-label="원판연계 현황">
+    <div class="screen-head">
+      <h2>도금 ↔ 칼라 원판연계 현황</h2>
+      <p>도금기준 룰별 파생 칼라 룰을 확인합니다. 도금 룰의 결과가 바뀌면 파생 룰에 재검토 필요가 표시됩니다.</p>
+    </div>
+    <div class="link-sum" id="link-sum"></div>
+    <div id="link-body"></div>
+  </section>
+
+  <!-- ── 간편판정 ────────────────────────────────────────── -->
+  <section class="screen" id="sc-judge" role="tabpanel" aria-label="간편판정">
+    <div class="screen-head">
+      <h2>간편판정</h2>
+      <p>주문 조건을 입력하면 매칭되는 룰과 결정 결과(재질코드·적정원료·차선원료)를 확인합니다. 상태 Y(사용중) 룰만 사용합니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="j-prod">품명코드</label>
+        <select class="inp" id="j-prod"><option value="G">G — 도금(GI)</option><option value="3" selected>3 — 칼라(CCGI)</option></select></div>
+      <div class="f-field"><label for="j-spec">규격약호</label>
+        <input class="inp" id="j-spec" value="KS-3-CGCC" style="width:170px"></div>
+      <div class="f-field"><label for="j-thk">두께 (mm)</label>
+        <input class="inp" id="j-thk" type="number" step="0.01" min="0" value="0.4" style="width:110px"></div>
+      <div class="f-field"><label for="j-use">주문용도코드</label>
+        <input class="inp" id="j-use" placeholder="(선택)" style="width:130px"></div>
+      <button class="btn btn-pri" data-action="judge-run">판정</button>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="judge-meta" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <div class="tbl-scroll" id="judge-grid"><div class="empty">조건을 입력하고 판정을 실행해 주세요.</div></div>
+      <div class="panel-note">여러 룰이 매칭되면 순번(0=예외 우선) 순으로 정렬되며 첫 번째 룰이 <b>적용</b>됩니다. 나머지는 후보로 표시합니다.</div>
+    </div>
+    <p class="judge-hint">예: 품명 3 · 규격 KS-3-CGCC · 두께 0.4 → 예외(순번 0) BA 룰이 적용되고, 일반(순번 1) 1A 룰은 후보로 표시됩니다.</p>
+  </section>
+
+  <!-- ── 변경 이력 ───────────────────────────────────────── -->
+  <section class="screen" id="sc-hist" role="tabpanel" aria-label="변경 이력">
+    <div class="screen-head">
+      <h2>변경 이력</h2>
+      <p>룰 등록·수정·삭제와 원판 변경에 따른 재검토 흐름이 기록됩니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="h-from">시작일</label><input class="inp" id="h-from" type="date"></div>
+      <div class="f-field"><label for="h-to">종료일</label><input class="inp" id="h-to" type="date"></div>
+      <div class="f-field"><label for="h-kind">구분</label>
+        <select class="inp" id="h-kind"><option value="">전체</option><option>룰 등록</option><option>룰 수정</option><option>룰 삭제</option><option>원판 변경</option><option>재검토 확인</option></select></div>
+      <div class="f-field"><label for="h-q">검색</label><input class="inp" id="h-q" type="search" placeholder="대상, 작업자" style="width:190px"></div>
+      <button class="btn" data-action="h-reset">초기화</button>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="h-meta" aria-live="polite"></div>
+    </div>
+    <div class="panel"><div class="tbl-scroll" id="hist-grid"></div></div>
+  </section>
+
+  <!-- ── 코드 범례 ───────────────────────────────────────── -->
+  <section class="screen" id="sc-legend" role="tabpanel" aria-label="코드 범례">
+    <div class="screen-head">
+      <h2>코드 범례</h2>
+      <p>AS-IS 룰 시트 하단 범례를 기준으로 정리했습니다.</p>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>기준유형 (원판연계)</h3></div><div class="panel-body"><dl class="kv">
+      <dt><span class="chip base">도금기준</span></dt><dd>품명 G(도금·GI) 룰. 칼라 룰의 원판이 됩니다.</dd>
+      <dt><span class="chip derived">칼라파생</span></dt><dd>품명 3(칼라·CCGI) 룰. 재질코드·적정원료는 원판에서 상속하고, 차선원료는 자체값이 없으면 원판 값을 따릅니다. 두께범위는 원판 범위 안이어야 합니다.</dd>
+      <dt><span class="chip alone">칼라전용</span></dt><dd>도금 정의가 없는 칼라 룰(예: KS-3-CGC400). 결과를 자체로 정의합니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>유형</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">1A0</dt><dd>일반</dd><dt class="mono">1A1</dt><dd>매트릭스</dd><dt class="mono">1A2</dt><dd>판정성일반</dd>
+      <dt class="mono">1B0</dt><dd>조건판단</dd><dt class="mono">1B1</dt><dd>연관판단 — 도금·칼라 원판연계 룰은 이 유형을 사용합니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>상태 · 순번</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">S</dt><dd>대기상태</dd><dt class="mono">F</dt><dd>미완료</dd><dt class="mono">Y</dt><dd>사용중 — 간편판정은 Y 룰만 사용합니다.</dd><dt class="mono">N</dt><dd>사용종료</dd>
+      <dt class="mono">no. 0</dt><dd>예외 룰 — 데이터 순번(1, 2, 3…)보다 먼저 평가</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>연산자</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">NOT_CHECK</dt><dd>체크 안함</dd>
+      <dt class="mono">= / !=</dt><dd>같다 / 다르다</dd>
+      <dt class="mono">&gt; &gt;= &lt; &lt;=</dt><dd>비교</dd>
+      <dt class="mono">BETWEEN1</dt><dd>값1 ≤ 변수 ≤ 값2</dd><dt class="mono">BETWEEN2</dt><dd>값1 ≤ 변수 &lt; 값2</dd>
+      <dt class="mono">BETWEEN3</dt><dd>값1 &lt; 변수 ≤ 값2</dd><dt class="mono">BETWEEN4</dt><dd>값1 &lt; 변수 &lt; 값2</dd>
+      <dt class="mono">LIKE1</dt><dd>%LIKE% (포함)</dd><dt class="mono">LIKE2</dt><dd>%LIKE (끝 일치)</dd><dt class="mono">LIKE3</dt><dd>LIKE% (시작 일치)</dd>
+      <dt class="mono">IN / NOT_IN</dt><dd>목록 포함 / 미포함 (쉼표 구분)</dd>
+      <dt class="mono">NOT_NULL / IS_NULL</dt><dd>값 있음 / 값 없음</dd>
+    </dl></div></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="d-head"><h3 id="d-title">상세</h3><button class="d-close" data-action="drawer-close" aria-label="닫기">✕</button></div>
+  <div class="d-body" id="d-body"></div>
+  <div class="d-foot" id="d-foot"></div>
+</aside>
+<div class="modal-back" id="modal-back">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <h3 id="m-title">룰 삭제</h3>
+    <p id="m-body"></p>
+    <div class="m-foot"><button class="btn" data-action="modal-close">취소</button><button class="btn btn-danger" data-action="modal-ok">삭제</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ── 헬퍼 ─────────────────────────────────────────────── */
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function now(){return Date.now();}
+function pad2(n){return (n<10?'0':'')+n;}
+function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function ymd(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+var toastTimer=null;
+function toast(msg,type){var t=$('#toast');t.textContent=msg;t.className='toast on'+(type==='err'?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);}
+
+/* ── 상수 ─────────────────────────────────────────────── */
+var LS_KEY='rmg-mock-v1';
+var CUR_USER='주인';
+var PROD={'G':'도금(GI)','3':'칼라(CCGI)'};
+var KIND={BASE:{l:'도금기준',cls:'base'},DERIVED:{l:'칼라파생',cls:'derived'},STANDALONE:{l:'칼라전용',cls:'alone'}};
+var STATUS={Y:{l:'사용중',cls:'ok'},S:{l:'대기상태',cls:'hold'},F:{l:'미완료',cls:'warn'},N:{l:'사용종료',cls:'dim'}};
+var TYPE={'1A0':'일반','1A1':'매트릭스','1A2':'판정성일반','1B0':'조건판단','1B1':'연관판단'};
+var TEXT_OPS=['NOT_CHECK','=','!=','LIKE1','LIKE2','LIKE3','IN','NOT_IN','NOT_NULL','IS_NULL'];
+var NUM_OPS=['NOT_CHECK','=','!=','>','>=','<','<=','BETWEEN1','BETWEEN2','BETWEEN3','BETWEEN4'];
+function opNeedsValue(op){return op!=='NOT_CHECK'&&op!=='NOT_NULL'&&op!=='IS_NULL';}
+function isBetween(op){return op.indexOf('BETWEEN')===0;}
+
+/* ── 상태 · 시드 ──────────────────────────────────────── */
+var state=null;
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function loadState(){
+  try{var raw=localStorage.getItem(LS_KEY);if(raw){var st=JSON.parse(raw);if(st&&st.v===LS_KEY)return st;}}catch(e){}
+  return seedState();
+}
+function ago(days,hours){return now()-((days||0)*24+(hours||0))*60*60*1000;}
+function rule(o){return {
+  id:o.id,no:o.no,kind:o.kind,baseId:o.baseId||null,
+  prodOp:o.prodOp||'=',prod:o.prod||'',specOp:o.specOp||'=',spec:o.spec||'',
+  useOp:o.useOp||'NOT_CHECK',use:o.use||'',
+  thkOp:o.thkOp||'BETWEEN2',thk1:(o.thk1==null?null:o.thk1),thk2:(o.thk2==null?null:o.thk2),
+  mat:o.mat||'',pri:o.pri||'',alt:o.alt||[],msg:o.msg||'',
+  type:o.type||'1A0',status:o.status||'Y',review:!!o.review,note:o.note||''
+};}
+function seedState(){
+  var st={v:LS_KEY,seq:1,ruleSeq:13,rules:[],changelog:[]};
+  // AS-IS 룰 시트(주문두께 기준 캡쳐)를 원판연계 모델로 정리한 시드
+  st.rules=[
+    rule({id:'RM-001',no:1,kind:'BASE',prod:'G',spec:'KS-G-SGCC',thk1:0.2,thk2:3.0,mat:'1A',pri:'H32',alt:['D32'],msg:'도금',type:'1A0'}),
+    rule({id:'RM-002',no:1,kind:'DERIVED',baseId:'RM-001',prod:'3',spec:'KS-3-CGCC',thk1:0.2,thk2:1.6,alt:['D32','G32'],msg:'위 도금을 원판으로 사용',type:'1B1'}),
+    rule({id:'RM-003',no:1,kind:'BASE',prod:'G',spec:'KSG-SGCD1',thk1:0.25,thk2:2.5,mat:'3A',pri:'H32',alt:['D32'],msg:'도금',type:'1A0'}),
+    rule({id:'RM-004',no:1,kind:'DERIVED',baseId:'RM-003',prod:'3',spec:'KS-3-CGCD-1',thk1:0.25,thk2:1.6,alt:['D32','G32'],msg:'위 도금을 원판으로 사용',type:'1B1'}),
+    rule({id:'RM-005',no:1,kind:'STANDALONE',prod:'3',spec:'KS-3-CGC400',thk1:0.35,thk2:0.55,mat:'3C',pri:'H37',alt:[],
+      msg:'삼성 고장력강(SAE1015) 세탁기 CASE · CGL 열처리 조건 FULL ANN 연결조건에서 투입 필요(800~830℃ 수준 관리) · 열처리 변경시점 작업 연결 사용 금지(연결시점 투입 시 설계자 연락 요망)',
+      type:'1A0',status:'F',note:'차선원료 고객사양 확인 필요 (AS-IS: "고객사양으로??")'}),
+    rule({id:'RM-006',no:1,kind:'BASE',prod:'G',spec:'KSG-SGCD2',thk1:0.2,thk2:2.5,mat:'4B',pri:'H2J',alt:[],msg:'도금',type:'1A0'}),
+    rule({id:'RM-007',no:1,kind:'DERIVED',baseId:'RM-006',prod:'3',spec:'KS3-CGCD-2',thk1:0.25,thk2:1.6,alt:['G25'],type:'1B1',review:true}),
+    rule({id:'RM-008',no:1,kind:'STANDALONE',prod:'3',spec:'KS3-CGCD-3',thk1:0.35,thk2:1.6,mat:'5A',pri:'H7J',type:'1A0',note:'원판(도금) 기준 미확인 — 연계 검토 대상'}),
+    rule({id:'RM-009',no:2,kind:'STANDALONE',prod:'3',spec:'KS3-CGCD-3',thk1:0.38,thk2:1.6,mat:'5B',pri:'H7J',type:'1A0',note:'원판(도금) 기준 미확인 — 연계 검토 대상'}),
+    rule({id:'RM-010',no:3,kind:'STANDALONE',prod:'3',spec:'KS3-CGCD-3',thk1:0.49,thk2:1.0,mat:'8C',pri:'H8C',
+      msg:'삼성전자향 HS IF-Steel · YP 220~280MPa 관리(중요) · CGL F.ce Strip Temp. 780~800℃(Target 790℃) 관리 · 조도관리 제품: SPM 상향 170~180톤',
+      type:'1A0',note:'원판(도금) 기준 미확인 — 연계 검토 대상'}),
+    rule({id:'RM-011',no:0,kind:'STANDALONE',prod:'3',spec:'KS-3-CGCC',thk1:0.35,thk2:0.45,mat:'BA',pri:'H32',alt:['H32','D32','G32'],type:'1A0',note:'예외(순번 0) — AS-IS 중복 2행을 1건으로 정리'}),
+    rule({id:'RM-012',no:0,kind:'STANDALONE',prod:'3',spec:'KS-3-CGCC',thk1:0.45,thk2:1.6,mat:'BA',pri:'H36',alt:['H36','D36','G36'],type:'1A0',note:'예외(순번 0)'})
+  ];
+  function log(ts,by,kind,item,before,after){st.changelog.push({id:'c'+(st.seq++),ts:ts,by:by,kind:kind,item:item,before:before,after:after});}
+  log(ago(6,4),'김민석','룰 등록','RM-011 · KS-3-CGCC (예외)','','재질 BA · 적정 H32');
+  log(ago(3,2),'박서연','룰 수정','RM-006 · KSG-SGCD2 · 두께범위','0.2 ≤ t < 2.2','0.2 ≤ t < 2.5');
+  log(ago(3,2),'박서연','원판 변경','RM-007 · KS3-CGCD-2','','원판 RM-006 결과 변경 — 재검토 필요');
+  log(ago(1,1),'이도현','룰 등록','RM-005 · KS-3-CGC400','','재질 3C · 적정 H37 · 상태 F(미완료)');
+  return st;
+}
+state=loadState();saveState();
+function addLog(kind,item,before,after,by){state.changelog.push({id:'c'+(state.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before,after:after});}
+function findRule(id){var f=null;state.rules.forEach(function(r){if(r.id===id)f=r;});return f;}
+function childrenOf(id){return state.rules.filter(function(r){return r.kind==='DERIVED'&&r.baseId===id;});}
+
+/* ── 해석(상속) ───────────────────────────────────────── */
+function resolve(r){
+  if(r.kind!=='DERIVED')return {mat:r.mat,pri:r.pri,alt:r.alt,inherited:false,altInherited:false,base:null,broken:false};
+  var b=r.baseId?findRule(r.baseId):null;
+  if(!b)return {mat:r.mat,pri:r.pri,alt:r.alt,inherited:false,altInherited:false,base:null,broken:true};
+  var altOwn=r.alt&&r.alt.length>0;
+  return {mat:b.mat,pri:b.pri,alt:altOwn?r.alt:b.alt,inherited:true,altInherited:!altOwn,base:b,broken:false};
+}
+
+/* ── 표시 헬퍼 ────────────────────────────────────────── */
+function fmtThk(r){
+  var o=r.thkOp,a=r.thk1,b=r.thk2;
+  if(o==='NOT_CHECK')return '체크 안함';
+  if(o==='BETWEEN1')return a+' ≤ t ≤ '+b;
+  if(o==='BETWEEN2')return a+' ≤ t < '+b;
+  if(o==='BETWEEN3')return a+' < t ≤ '+b;
+  if(o==='BETWEEN4')return a+' < t < '+b;
+  return 't '+o+' '+a;
+}
+function fmtCond(op,val){
+  if(op==='NOT_CHECK')return '<span class="inherit">체크 안함</span>';
+  if(op==='NOT_NULL')return '<span class="inherit">값 있음</span>';
+  if(op==='IS_NULL')return '<span class="inherit">값 없음</span>';
+  return (op==='='?'':'<span class="inherit">'+esc(op)+'</span> ')+'<span class="mono">'+esc(val)+'</span>';
+}
+function kindChipHtml(r){
+  var k=KIND[r.kind]||{l:r.kind,cls:'alone'};
+  var h='<span class="chip '+k.cls+'">'+esc(k.l)+'</span>';
+  if(r.kind==='DERIVED')h+=' <span class="baseref">↳ '+esc(r.baseId||'?')+'</span>';
+  if(r.review)h+=' <span class="chip review">재검토 필요</span>';
+  return h;
+}
+function statusPill(s){var m=STATUS[s]||{l:s,cls:'dim'};return '<span class="pill '+m.cls+'">'+esc(s)+' '+esc(m.l)+'</span>';}
+function altHtml(r){
+  var res=resolve(r);
+  if(!res.alt||!res.alt.length)return '<span class="inherit">—</span>';
+  var t='<span class="mono">'+esc(res.alt.join(', '))+'</span>';
+  if(r.kind==='DERIVED'&&res.altInherited)t+=' <span class="inherit">(원판 상속)</span>';
+  return t;
+}
+function matHtml(r){
+  var res=resolve(r);
+  if(res.broken)return '<span class="mono">'+esc(r.mat||'?')+'</span> <span class="chip review">원판 없음</span>';
+  var t='<span class="mono">'+esc(res.mat)+'</span>';
+  if(res.inherited)t+=' <span class="inherit">(상속)</span>';
+  return t;
+}
+function priHtml(r){
+  var res=resolve(r);
+  var t='<span class="mono">'+esc(res.pri)+'</span>';
+  if(res.inherited)t+=' <span class="inherit">(상속)</span>';
+  return t;
+}
+function ruleLabel(r){return r.id+' · '+r.spec;}
+function summary(r){
+  var res=resolve(r);
+  return '재질 '+res.mat+' · 적정 '+res.pri+' · 차선 '+(res.alt.length?res.alt.join(','):'—')+' · 두께 '+fmtThk(r)+' · 상태 '+r.status;
+}
+function resultKey(r){return [r.mat,r.pri,(r.alt||[]).join('|'),r.thkOp,r.thk1,r.thk2].join('§');}
+
+/* ── 탭 ───────────────────────────────────────────────── */
+function setTab(name){
+  $$('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===name;
+    t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;
+  });
+  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
+  if(name==='link')renderLink();
+  if(name==='hist')renderHist();
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
+
+/* ── 룰 목록 ──────────────────────────────────────────── */
+var ui={q:'',prod:'',kind:'',st:'',reviewOnly:false,histFrom:'',histTo:'',histKind:'',histQ:''};
+var sel=null;
+function listRows(){
+  var q=ui.q.trim().toLowerCase();
+  return state.rules.filter(function(r){
+    if(ui.prod&&r.prod!==ui.prod)return false;
+    if(ui.kind&&r.kind!==ui.kind)return false;
+    if(ui.st&&r.status!==ui.st)return false;
+    if(ui.reviewOnly&&!r.review)return false;
+    if(q){
+      var res=resolve(r);
+      var hay=(r.id+' '+r.spec+' '+r.msg+' '+r.note+' '+res.mat+' '+res.pri+' '+res.alt.join(' ')).toLowerCase();
+      if(hay.indexOf(q)<0)return false;
+    }
+    return true;
+  });
+}
+function renderList(){
+  var rows=listRows();
+  $('#list-meta').textContent='총 '+state.rules.length+'건 중 '+rows.length+'건 표시';
+  if(!rows.length){$('#list-grid').innerHTML='<div class="empty">조건에 맞는 룰이 없습니다.</div>';return;}
+  var h='<table class="tbl" aria-label="원자재강종 룰 목록"><thead><tr>'
+    +'<th>순번</th><th>룰 ID</th><th>기준유형</th><th>품명</th><th>규격약호</th><th>주문용도</th><th>두께범위</th>'
+    +'<th>재질코드</th><th>적정원료</th><th>차선원료</th><th>원자재강종 메시지</th><th>유형</th><th>상태</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr class="row'+(sel===r.id?' sel':'')+'" data-open="'+esc(r.id)+'">'
+      +'<td class="c">'+(r.no===0?'<span class="chip exc">0 예외</span>':esc(r.no))+'</td>'
+      +'<td class="mono">'+esc(r.id)+'</td>'
+      +'<td>'+kindChipHtml(r)+'</td>'
+      +'<td>'+esc(r.prod)+' <span class="inherit">'+esc(PROD[r.prod]||'')+'</span></td>'
+      +'<td>'+fmtCond(r.specOp,r.spec)+'</td>'
+      +'<td>'+fmtCond(r.useOp,r.use)+'</td>'
+      +'<td class="mono">'+esc(fmtThk(r))+'</td>'
+      +'<td>'+matHtml(r)+'</td>'
+      +'<td>'+priHtml(r)+'</td>'
+      +'<td>'+altHtml(r)+'</td>'
+      +'<td><div class="msg-cell" title="'+esc(r.msg)+'">'+(r.msg?esc(r.msg):'<span class="inherit">—</span>')+'</div></td>'
+      +'<td class="mono">'+esc(r.type)+'</td>'
+      +'<td>'+statusPill(r.status)+'</td></tr>';
+  });
+  $('#list-grid').innerHTML=h+'</tbody></table>';
+}
+['f-prod','f-kind','f-st'].forEach(function(id){$('#'+id).addEventListener('change',function(){ui[id==='f-prod'?'prod':id==='f-kind'?'kind':'st']=this.value;renderList();});});
+$('#f-q').addEventListener('input',function(){ui.q=this.value;renderList();});
+$('#f-review').addEventListener('change',function(){ui.reviewOnly=this.checked;renderList();});
+
+/* ── 원판연계 ─────────────────────────────────────────── */
+function childLine(c){
+  var res=resolve(c);
+  return '<div class="link-child" data-open="'+esc(c.id)+'">'
+    +'<span class="link-arrow">↳</span><span class="mono">'+esc(c.id)+'</span>'
+    +'<span class="mono">'+esc(c.spec)+'</span>'
+    +'<span class="inherit">두께 '+esc(fmtThk(c))+'</span>'
+    +'<span class="inherit">차선 '+esc(res.alt.length?res.alt.join(','):'—')+(res.altInherited?' (상속)':' (자체)')+'</span>'
+    +(c.review?'<span class="chip review">재검토 필요</span>':'')
+    +statusPill(c.status)+'</div>';
+}
+function renderLink(){
+  var bases=state.rules.filter(function(r){return r.kind==='BASE';});
+  var alone=state.rules.filter(function(r){return r.kind==='STANDALONE';});
+  var derived=state.rules.filter(function(r){return r.kind==='DERIVED';});
+  var broken=derived.filter(function(r){return !r.baseId||!findRule(r.baseId);});
+  var review=state.rules.filter(function(r){return r.review;});
+  $('#link-sum').innerHTML=
+    '<div class="sum-chip"><b>'+bases.length+'</b>도금기준</div>'
+    +'<div class="sum-chip"><b>'+derived.length+'</b>칼라파생</div>'
+    +'<div class="sum-chip"><b>'+alone.length+'</b>칼라전용</div>'
+    +'<div class="sum-chip"><b>'+review.length+'</b>재검토 필요</div>';
+  var h='';
+  bases.forEach(function(b){
+    var kids=childrenOf(b.id);
+    h+='<div class="panel"><div class="link-base" data-open="'+esc(b.id)+'">'
+      +'<span class="chip base">도금기준</span><span class="mono">'+esc(b.id)+'</span><b class="mono">'+esc(b.spec)+'</b>'
+      +'<span class="inherit">두께 '+esc(fmtThk(b))+'</span>'
+      +'<span class="inherit">재질 <b>'+esc(b.mat)+'</b> · 적정 <b>'+esc(b.pri)+'</b> · 차선 '+esc(b.alt.length?b.alt.join(','):'—')+'</span>'
+      +statusPill(b.status)+'</div>';
+    h+=kids.length?kids.map(childLine).join(''):'<div class="link-none">파생 칼라 룰 없음</div>';
+    h+='</div>';
+  });
+  if(alone.length){
+    h+='<div class="panel"><div class="panel-head"><h3>칼라전용 (원판 없음)</h3><span class="sub">도금 정의가 없어 결과를 자체 정의하는 룰</span></div>';
+    h+=alone.map(function(c){
+      return '<div class="link-child" data-open="'+esc(c.id)+'" style="padding-left:14px">'
+        +'<span class="chip alone">칼라전용</span><span class="mono">'+esc(c.id)+'</span><span class="mono">'+esc(c.spec)+'</span>'
+        +'<span class="inherit">두께 '+esc(fmtThk(c))+'</span>'
+        +'<span class="inherit">재질 '+esc(c.mat)+' · 적정 '+esc(c.pri)+'</span>'
+        +(c.no===0?'<span class="chip exc">예외</span>':'')
+        +(c.note?'<span class="inherit">'+esc(c.note)+'</span>':'')
+        +statusPill(c.status)+'</div>';
+    }).join('');
+    h+='</div>';
+  }
+  if(broken.length){
+    h+='<div class="panel"><div class="panel-head"><h3>연계 오류</h3><span class="sub">원판 룰을 찾을 수 없는 칼라파생 룰</span></div>';
+    h+=broken.map(childLine).join('')+'</div>';
+  }
+  $('#link-body').innerHTML=h||'<div class="panel"><div class="empty">등록된 룰이 없습니다.</div></div>';
+}
+
+/* ── 간편판정 ─────────────────────────────────────────── */
+function cmpText(op,condVal,input){
+  var c=String(condVal||'').trim().toUpperCase(),v=String(input||'').trim().toUpperCase();
+  switch(op){
+    case 'NOT_CHECK':return true;
+    case '=':return v===c;
+    case '!=':return v!==c;
+    case 'LIKE1':return v.indexOf(c)>=0;
+    case 'LIKE2':return c!==''&&v.slice(-c.length)===c;
+    case 'LIKE3':return v.indexOf(c)===0;
+    case 'IN':return c.split(',').map(function(s){return s.trim();}).indexOf(v)>=0;
+    case 'NOT_IN':return c.split(',').map(function(s){return s.trim();}).indexOf(v)<0;
+    case 'NOT_NULL':return v!=='';
+    case 'IS_NULL':return v==='';
+    default:return false;
+  }
+}
+function cmpNum(op,a,b,t){
+  switch(op){
+    case 'NOT_CHECK':return true;
+    case '=':return t===a;
+    case '!=':return t!==a;
+    case '>':return t>a;
+    case '>=':return t>=a;
+    case '<':return t<a;
+    case '<=':return t<=a;
+    case 'BETWEEN1':return t>=a&&t<=b;
+    case 'BETWEEN2':return t>=a&&t<b;
+    case 'BETWEEN3':return t>a&&t<=b;
+    case 'BETWEEN4':return t>a&&t<b;
+    default:return false;
+  }
+}
+function matches(r,prod,spec,use,thk){
+  return cmpText(r.prodOp,r.prod,prod)&&cmpText(r.specOp,r.spec,spec)&&cmpText(r.useOp,r.use,use)&&cmpNum(r.thkOp,r.thk1,r.thk2,thk);
+}
+function runJudge(){
+  var prod=$('#j-prod').value,spec=$('#j-spec').value.trim(),use=$('#j-use').value.trim(),thk=parseFloat($('#j-thk').value);
+  if(!spec){toast('규격약호를 입력해 주세요.','err');return;}
+  if(isNaN(thk)){toast('두께를 숫자로 입력해 주세요.','err');return;}
+  var hits=state.rules.filter(function(r){return r.status==='Y'&&matches(r,prod,spec,use,thk);})
+    .sort(function(a,b){return a.no-b.no||(a.id<b.id?-1:a.id>b.id?1:0);});
+  $('#judge-meta').textContent='매칭 '+hits.length+'건';
+  if(!hits.length){
+    $('#judge-grid').innerHTML='<div class="empty">매칭되는 룰이 없습니다. 상태 Y(사용중) 룰만 판정에 사용합니다.</div>';
+    return;
+  }
+  var h='<table class="tbl" aria-label="판정 결과"><thead><tr><th>구분</th><th>순번</th><th>룰 ID</th><th>기준유형</th><th>규격약호</th><th>두께범위</th><th>재질코드</th><th>적정원료</th><th>차선원료</th><th>메시지</th><th>출처</th></tr></thead><tbody>';
+  hits.forEach(function(r,i){
+    var res=resolve(r);
+    var src=r.kind==='DERIVED'&&res.base?('원판 '+res.base.id+' 상속'+(res.altInherited?' (차선 포함)':'')):'자체 기준';
+    h+='<tr class="row'+(i===0?' apply-row':'')+'" data-open="'+esc(r.id)+'">'
+      +'<td>'+(i===0?'<span class="pill ok">적용</span>':'<span class="pill dim">후보</span>')+'</td>'
+      +'<td class="c">'+(r.no===0?'<span class="chip exc">0 예외</span>':esc(r.no))+'</td>'
+      +'<td class="mono">'+esc(r.id)+'</td>'
+      +'<td>'+kindChipHtml(r)+'</td>'
+      +'<td class="mono">'+esc(r.spec)+'</td>'
+      +'<td class="mono">'+esc(fmtThk(r))+'</td>'
+      +'<td class="mono"><b>'+esc(res.mat)+'</b></td>'
+      +'<td class="mono"><b>'+esc(res.pri)+'</b></td>'
+      +'<td class="mono">'+esc(res.alt.length?res.alt.join(', '):'—')+'</td>'
+      +'<td><div class="msg-cell" title="'+esc(r.msg)+'">'+(r.msg?esc(r.msg):'—')+'</div></td>'
+      +'<td>'+esc(src)+'</td></tr>';
+  });
+  $('#judge-grid').innerHTML=h+'</tbody></table>';
+}
+
+/* ── 변경 이력 ────────────────────────────────────────── */
+function kindChip(kind){
+  var cls=kind==='원판 변경'||kind==='룰 삭제'?'reset':kind==='룰 수정'?'range':'cell';
+  return '<span class="chip '+cls+'">'+esc(kind)+'</span>';
+}
+function histDefaults(){
+  ui.histFrom=ymd(ago(7,0));ui.histTo=ymd(now());ui.histKind='';ui.histQ='';
+  $('#h-from').value=ui.histFrom;$('#h-to').value=ui.histTo;$('#h-kind').value='';$('#h-q').value='';
+}
+function renderHist(){
+  var from=ui.histFrom?new Date(ui.histFrom+'T00:00:00').getTime():-Infinity;
+  var to=ui.histTo?new Date(ui.histTo+'T23:59:59').getTime():Infinity;
+  var q=(ui.histQ||'').trim().toLowerCase();
+  var arr=state.changelog.filter(function(r){
+    return r.ts>=from&&r.ts<=to&&(!ui.histKind||r.kind===ui.histKind)
+      &&(!q||(r.item+' '+r.by+' '+r.kind).toLowerCase().indexOf(q)>=0);
+  }).sort(function(a,b){return b.ts-a.ts;});
+  $('#h-meta').textContent=arr.length+'건 표시';
+  $('#cnt-hist').textContent=state.changelog.length;
+  if(!arr.length){$('#hist-grid').innerHTML='<div class="empty">해당 기간의 이력이 없습니다.</div>';return;}
+  var h='<table class="tbl" aria-label="변경 이력" style="min-width:820px"><thead><tr><th>일시</th><th>구분</th><th>대상</th><th>변경 전</th><th>변경 후</th><th>작업자</th></tr></thead><tbody>';
+  arr.forEach(function(r){
+    h+='<tr><td class="mono">'+fmtDT(r.ts)+'</td><td>'+kindChip(r.kind)+'</td><td>'+esc(r.item)+'</td>'
+      +'<td class="mono">'+esc(r.before||'—')+'</td><td class="mono"><b>'+esc(r.after||'—')+'</b></td><td>'+esc(r.by)+'</td></tr>';
+  });
+  $('#hist-grid').innerHTML=h+'</tbody></table>';
+}
+['h-from','h-to'].forEach(function(id){$('#'+id).addEventListener('change',function(){ui[id==='h-from'?'histFrom':'histTo']=this.value;renderHist();});});
+$('#h-kind').addEventListener('change',function(){ui.histKind=this.value;renderHist();});
+$('#h-q').addEventListener('input',function(){ui.histQ=this.value;renderHist();});
+
+/* ── 드로어: 상세 ─────────────────────────────────────── */
+function openDrawer(){$('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderList();}
+function kvRow(l,v){return '<dt>'+esc(l)+'</dt><dd>'+v+'</dd>';}
+function openDetail(id){
+  var r=findRule(id);if(!r)return;
+  sel=id;renderList();
+  var res=resolve(r);
+  $('#d-title').textContent=r.id+' · '+r.spec;
+  var h='<div class="d-sect"><h4>기준유형</h4><div>'+kindChipHtml(r)
+    +(r.kind==='DERIVED'&&res.base?' <button class="btn btn-sm" data-open-base="'+esc(res.base.id)+'">원판 '+esc(res.base.id)+' 보기</button>':'')
+    +(res.broken?' <span class="chip review">원판 룰을 찾을 수 없습니다</span>':'')+'</div></div>';
+  h+='<div class="d-sect"><h4>조건</h4><dl class="kv">'
+    +kvRow('품명코드',esc(r.prod)+' <span class="inherit">'+esc(PROD[r.prod]||'')+'</span>')
+    +kvRow('규격약호',fmtCond(r.specOp,r.spec))
+    +kvRow('주문용도코드',fmtCond(r.useOp,r.use))
+    +kvRow('두께범위','<span class="mono">'+esc(fmtThk(r))+'</span>'
+      +(r.kind==='DERIVED'&&res.base?' <span class="inherit">원판 범위: '+esc(fmtThk(res.base))+'</span>':''))
+    +'</dl></div>';
+  h+='<div class="d-sect"><h4>결과</h4><dl class="kv">'
+    +kvRow('재질코드',matHtml(r))
+    +kvRow('적정원료',priHtml(r))
+    +kvRow('차선원료',altHtml(r))
+    +kvRow('메시지',r.msg?esc(r.msg):'<span class="inherit">—</span>')
+    +'</dl></div>';
+  h+='<div class="d-sect"><h4>관리</h4><dl class="kv">'
+    +kvRow('유형','<span class="mono">'+esc(r.type)+'</span> <span class="inherit">'+esc(TYPE[r.type]||'')+'</span>')
+    +kvRow('상태',statusPill(r.status))
+    +kvRow('순번',r.no===0?'0 <span class="chip exc">예외 — 우선 평가</span>':esc(r.no))
+    +kvRow('비고',r.note?esc(r.note):'<span class="inherit">—</span>')
+    +'</dl></div>';
+  var kids=childrenOf(r.id);
+  if(r.kind==='BASE'){
+    h+='<div class="d-sect"><h4>파생 칼라 룰 ('+kids.length+')</h4>'
+      +(kids.length?kids.map(function(c){return '<div><button class="btn btn-sm" data-open-base="'+esc(c.id)+'">'+esc(c.id)+' · '+esc(c.spec)+'</button>'+(c.review?' <span class="chip review">재검토 필요</span>':'')+'</div>';}).join('')
+      :'<span class="inherit">없음</span>')
+      +'<div class="f-help" style="margin-top:6px">이 룰의 결과(재질·원료·두께범위)를 수정하면 파생 룰에 재검토 필요가 표시됩니다.</div></div>';
+  }
+  $('#d-body').innerHTML=h;
+  var foot='<button class="btn" data-action="drawer-close">닫기</button>';
+  if(r.review)foot+='<button class="btn btn-warn" data-action="confirm-review" data-id="'+esc(r.id)+'">재검토 확인</button>';
+  foot+='<button class="btn btn-danger" data-action="delete-rule" data-id="'+esc(r.id)+'">삭제</button>';
+  foot+='<button class="btn btn-pri" data-action="edit-rule" data-id="'+esc(r.id)+'">수정</button>';
+  $('#d-foot').innerHTML=foot;
+  openDrawer();
+}
+
+/* ── 드로어: 등록/수정 폼 ─────────────────────────────── */
+var editingId=null;
+function opOptions(ops,cur){return ops.map(function(o){return '<option'+(o===cur?' selected':'')+'>'+o+'</option>';}).join('');}
+function baseOptions(cur,ownId){
+  var h='<option value="">— 원판 룰 선택 —</option>';
+  state.rules.forEach(function(b){
+    if(b.kind!=='BASE'||b.id===ownId)return;
+    h+='<option value="'+esc(b.id)+'"'+(b.id===cur?' selected':'')+'>'+esc(b.id+' · '+b.spec+' ('+fmtThk(b)+') → '+b.mat+'/'+b.pri)+'</option>';
+  });
+  return h;
+}
+function openForm(id){
+  var r=id?findRule(id):rule({id:'(신규)',no:1,kind:'DERIVED',prod:'3'});
+  if(id&&!r)return;
+  editingId=id||null;
+  $('#d-title').textContent=id?('룰 수정 · '+r.id):'룰 등록';
+  var h='<div class="form-grid">'
+    +'<div class="f-field"><label for="fm-kind">기준유형 <span class="req">*</span></label><select class="inp" id="fm-kind">'
+      +'<option value="BASE"'+(r.kind==='BASE'?' selected':'')+'>도금기준 (품명 G)</option>'
+      +'<option value="DERIVED"'+(r.kind==='DERIVED'?' selected':'')+'>칼라파생 (원판 상속)</option>'
+      +'<option value="STANDALONE"'+(r.kind==='STANDALONE'?' selected':'')+'>칼라전용 (원판 없음)</option></select></div>'
+    +'<div class="f-field"><label for="fm-no">순번 <span class="req">*</span></label><input class="inp" id="fm-no" type="number" min="0" step="1" value="'+esc(r.no)+'"><span class="f-help">0 = 예외(우선 평가)</span></div>'
+    +'<div class="f-field wide" id="fm-base-row"><label for="fm-base">원판(도금) 룰 <span class="req">*</span></label><select class="inp" id="fm-base">'+baseOptions(r.baseId,r.id)+'</select>'
+      +'<span class="f-help" id="fm-base-help">재질코드·적정원료는 원판에서 상속됩니다.</span></div>'
+    +'<div class="f-field"><label for="fm-prod">품명코드 <span class="req">*</span></label><select class="inp" id="fm-prod">'
+      +'<option value="G"'+(r.prod==='G'?' selected':'')+'>G — 도금(GI)</option><option value="3"'+(r.prod==='3'?' selected':'')+'>3 — 칼라(CCGI)</option></select></div>'
+    +'<div class="f-field"><label for="fm-type">유형 <span class="req">*</span></label><select class="inp" id="fm-type">'
+      +Object.keys(TYPE).map(function(k){return '<option value="'+k+'"'+(r.type===k?' selected':'')+'>'+k+' — '+TYPE[k]+'</option>';}).join('')+'</select></div>'
+    +'<div class="f-field wide"><label>규격약호 <span class="req">*</span></label><div class="cond-row">'
+      +'<select class="inp" id="fm-specop" aria-label="규격약호 연산자">'+opOptions(TEXT_OPS,r.specOp)+'</select>'
+      +'<input class="inp" id="fm-spec" value="'+esc(r.spec)+'" placeholder="예: KS-3-CGCC"></div></div>'
+    +'<div class="f-field wide"><label>주문용도코드</label><div class="cond-row">'
+      +'<select class="inp" id="fm-useop" aria-label="주문용도 연산자">'+opOptions(TEXT_OPS,r.useOp)+'</select>'
+      +'<input class="inp" id="fm-use" value="'+esc(r.use)+'" placeholder="값 (연산자에 따라)"></div></div>'
+    +'<div class="f-field wide"><label>두께범위 (mm) <span class="req">*</span></label><div class="thk-row">'
+      +'<select class="inp" id="fm-thkop" aria-label="두께 연산자">'+opOptions(NUM_OPS,r.thkOp)+'</select>'
+      +'<input class="inp" id="fm-thk1" type="number" step="0.01" value="'+(r.thk1==null?'':esc(r.thk1))+'" placeholder="값1" aria-label="두께 값1">'
+      +'<input class="inp" id="fm-thk2" type="number" step="0.01" value="'+(r.thk2==null?'':esc(r.thk2))+'" placeholder="값2" aria-label="두께 값2"></div>'
+      +'<span class="f-help" id="fm-thk-help"></span></div>'
+    +'<div class="f-field"><label for="fm-mat">재질코드 <span class="req">*</span></label><input class="inp" id="fm-mat" value="'+esc(r.mat)+'" placeholder="예: 1A"></div>'
+    +'<div class="f-field"><label for="fm-pri">적정원료 <span class="req">*</span></label><input class="inp" id="fm-pri" value="'+esc(r.pri)+'" placeholder="예: H32"></div>'
+    +'<div class="f-field wide"><label for="fm-alt">차선원료 <span class="inherit">(쉼표 구분 · 우선순위 순)</span></label><input class="inp" id="fm-alt" value="'+esc((r.alt||[]).join(', '))+'" placeholder="예: D32, G32"><span class="f-help" id="fm-alt-help"></span></div>'
+    +'<div class="f-field wide"><label for="fm-msg">원자재강종 메시지</label><textarea class="inp" id="fm-msg" rows="3">'+esc(r.msg)+'</textarea></div>'
+    +'<div class="f-field"><label for="fm-status">상태 <span class="req">*</span></label><select class="inp" id="fm-status">'
+      +Object.keys(STATUS).map(function(k){return '<option value="'+k+'"'+(r.status===k?' selected':'')+'>'+k+' — '+STATUS[k].l+'</option>';}).join('')+'</select></div>'
+    +'<div class="f-field"><label for="fm-note">비고</label><input class="inp" id="fm-note" value="'+esc(r.note)+'"></div>'
+    +'</div>';
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML='<button class="btn" data-action="form-cancel">취소</button><button class="btn btn-pri" data-action="form-save">저장</button>';
+  $('#fm-kind').addEventListener('change',syncForm);
+  $('#fm-base').addEventListener('change',syncForm);
+  syncForm();
+  openDrawer();
+  $('#fm-kind').focus();
+}
+function syncForm(){
+  var kind=$('#fm-kind').value;
+  var derived=kind==='DERIVED';
+  $('#fm-base-row').style.display=derived?'':'none';
+  var base=derived?findRule($('#fm-base').value):null;
+  var mat=$('#fm-mat'),pri=$('#fm-pri');
+  mat.readOnly=derived;pri.readOnly=derived;
+  if(derived){
+    mat.value=base?base.mat:'';pri.value=base?base.pri:'';
+    mat.placeholder='원판 상속';pri.placeholder='원판 상속';
+    $('#fm-alt-help').textContent='비워 두면 원판 차선원료('+(base&&base.alt.length?base.alt.join(', '):'—')+')를 상속합니다.';
+    $('#fm-thk-help').textContent=base?('원판 범위: '+fmtThk(base)+' — 이 범위 안이어야 합니다.'):'원판 룰을 먼저 선택해 주세요.';
+  }else{
+    $('#fm-alt-help').textContent='';
+    $('#fm-thk-help').textContent='';
+  }
+  // 기준유형에 맞는 품명 기본값 (수동 변경 가능, 저장 시 검증)
+  if(kind==='BASE'&&$('#fm-prod').value!=='G')$('#fm-prod').value='G';
+  if(kind!=='BASE'&&$('#fm-prod').value!=='3')$('#fm-prod').value='3';
+}
+function collectForm(){
+  function num(id){var v=$('#'+id).value.trim();return v===''?null:parseFloat(v);}
+  return {
+    kind:$('#fm-kind').value,baseId:$('#fm-base').value||null,
+    no:parseInt($('#fm-no').value,10),
+    prodOp:'=',prod:$('#fm-prod').value,
+    specOp:$('#fm-specop').value,spec:$('#fm-spec').value.trim(),
+    useOp:$('#fm-useop').value,use:$('#fm-use').value.trim(),
+    thkOp:$('#fm-thkop').value,thk1:num('fm-thk1'),thk2:num('fm-thk2'),
+    mat:$('#fm-mat').value.trim(),pri:$('#fm-pri').value.trim(),
+    alt:$('#fm-alt').value.split(',').map(function(s){return s.trim();}).filter(function(s){return s;}),
+    msg:$('#fm-msg').value.trim(),type:$('#fm-type').value,status:$('#fm-status').value,
+    note:$('#fm-note').value.trim()
+  };
+}
+function validateForm(f){
+  if(isNaN(f.no)||f.no<0)return '순번은 0 이상의 정수여야 합니다.';
+  if(f.kind==='BASE'&&f.prod!=='G')return '도금기준 룰의 품명코드는 G(도금)여야 합니다.';
+  if(f.kind!=='BASE'&&f.prod!=='3')return '칼라 룰(파생·전용)의 품명코드는 3(칼라)이어야 합니다.';
+  if(opNeedsValue(f.specOp)&&!f.spec)return '규격약호를 입력해 주세요.';
+  if(opNeedsValue(f.useOp)&&!f.use)return '주문용도코드 값을 입력하거나 연산자를 NOT_CHECK로 변경해 주세요.';
+  if(f.thkOp!=='NOT_CHECK'){
+    if(f.thk1==null||isNaN(f.thk1))return '두께 값1을 입력해 주세요.';
+    if(isBetween(f.thkOp)){
+      if(f.thk2==null||isNaN(f.thk2))return 'BETWEEN 연산자는 두께 값2가 필요합니다.';
+      if(f.thk1>=f.thk2)return '두께 값1은 값2보다 작아야 합니다.';
+    }
+  }
+  if(f.kind==='DERIVED'){
+    if(!f.baseId)return '칼라파생 룰은 원판(도금) 룰을 선택해야 합니다.';
+    var base=findRule(f.baseId);
+    if(!base||base.kind!=='BASE')return '원판 룰은 도금기준(BASE) 룰이어야 합니다.';
+    if(isBetween(f.thkOp)&&isBetween(base.thkOp)&&base.thk1!=null&&base.thk2!=null){
+      if(f.thk1<base.thk1||f.thk2>base.thk2)return '두께범위('+f.thk1+'~'+f.thk2+')가 원판 룰 범위('+base.thk1+'~'+base.thk2+')를 벗어납니다.';
+    }
+  }else{
+    if(!f.mat)return '재질코드를 입력해 주세요.';
+    if(!f.pri)return '적정원료를 입력해 주세요.';
+  }
+  return null;
+}
+function pad3(n){return ('00'+n).slice(-3);}
+function saveForm(){
+  var f=collectForm();
+  var err=validateForm(f);
+  if(err){toast(err,'err');return;}
+  var isNew=!editingId;
+  var r,before='';
+  if(isNew){
+    r=rule(f);r.id='RM-'+pad3(state.ruleSeq++);
+    state.rules.push(r);
+  }else{
+    r=findRule(editingId);if(!r)return;
+    if(r.kind==='BASE'&&f.kind!=='BASE'&&childrenOf(r.id).length)
+      return toast('파생 칼라 룰이 연결된 도금기준은 유형을 변경할 수 없습니다. 연결을 먼저 해제해 주세요.','err');
+    before=summary(r);
+    var oldKey=r.kind==='BASE'?resultKey(r):null;
+    Object.keys(f).forEach(function(k){r[k]=f[k];});
+    if(r.kind==='DERIVED'){var b=findRule(r.baseId);if(b){r.mat=b.mat;r.pri=b.pri;}}
+    if(oldKey!==null&&r.kind==='BASE'&&resultKey(r)!==oldKey){
+      var kids=childrenOf(r.id);
+      kids.forEach(function(c){c.review=true;addLog('원판 변경',ruleLabel(c),'','원판 '+r.id+' 결과 변경 — 재검토 필요');});
+      if(kids.length)toast('원판 변경 — 파생 룰 '+kids.length+'건에 재검토 필요를 표시했습니다.');
+    }
+  }
+  if(r.kind==='DERIVED'){var bb=findRule(r.baseId);if(bb){r.mat=bb.mat;r.pri=bb.pri;}}
+  addLog(isNew?'룰 등록':'룰 수정',ruleLabel(r),before,summary(r));
+  saveState();
+  editingId=null;
+  renderAll();
+  openDetail(r.id);
+  toast((isNew?'룰이 등록':'룰이 수정')+'되었습니다 · 이력에 기록되었습니다.');
+}
+
+/* ── 삭제 · 재검토 ────────────────────────────────────── */
+var pendingDelete=null;
+function askDelete(id){
+  var r=findRule(id);if(!r)return;
+  var kids=childrenOf(id);
+  if(kids.length)return toast('파생 칼라 룰 '+kids.length+'건이 연결되어 있어 삭제할 수 없습니다. 연결 해제 후 삭제해 주세요.','err');
+  pendingDelete=id;
+  $('#m-body').textContent=ruleLabel(r)+' 룰을 삭제하시겠습니까? 삭제는 이력에 기록됩니다.';
+  $('#modal-back').classList.add('on');
+}
+function doDelete(){
+  var r=findRule(pendingDelete);
+  $('#modal-back').classList.remove('on');
+  if(!r)return;
+  state.rules=state.rules.filter(function(x){return x.id!==r.id;});
+  addLog('룰 삭제',ruleLabel(r),summary(r),'');
+  pendingDelete=null;
+  saveState();closeDrawer();renderAll();
+  toast('룰이 삭제되었습니다 · 이력에 기록되었습니다.');
+}
+function confirmReview(id){
+  var r=findRule(id);if(!r||!r.review)return;
+  r.review=false;
+  addLog('재검토 확인',ruleLabel(r),'재검토 필요','확인 완료');
+  saveState();renderAll();openDetail(id);
+  toast('재검토 확인이 완료되었습니다.');
+}
+
+/* ── 공통 렌더 · 이벤트 ───────────────────────────────── */
+function renderAll(){
+  $('#cnt-list').textContent=state.rules.length;
+  $('#cnt-review').textContent=state.rules.filter(function(r){return r.review;}).length;
+  $('#cnt-hist').textContent=state.changelog.length;
+  renderList();
+  if($('#sc-link').classList.contains('on'))renderLink();
+  if($('#sc-hist').classList.contains('on'))renderHist();
+}
+document.addEventListener('click',function(e){
+  var openEl=e.target.closest('[data-open]');
+  if(openEl&&!e.target.closest('[data-action]')){openDetail(openEl.getAttribute('data-open'));return;}
+  var baseEl=e.target.closest('[data-open-base]');
+  if(baseEl){openDetail(baseEl.getAttribute('data-open-base'));return;}
+  var el=e.target.closest('[data-action]');if(!el)return;
+  switch(el.getAttribute('data-action')){
+    case 'new-rule':openForm(null);break;
+    case 'edit-rule':openForm(el.getAttribute('data-id'));break;
+    case 'delete-rule':askDelete(el.getAttribute('data-id'));break;
+    case 'confirm-review':confirmReview(el.getAttribute('data-id'));break;
+    case 'form-save':saveForm();break;
+    case 'form-cancel':editingId?openDetail(editingId):closeDrawer();editingId=null;break;
+    case 'drawer-close':closeDrawer();break;
+    case 'judge-run':runJudge();break;
+    case 'h-reset':histDefaults();renderHist();break;
+    case 'modal-close':$('#modal-back').classList.remove('on');pendingDelete=null;break;
+    case 'modal-ok':doDelete();break;
+  }
+});
+$('#scrim').addEventListener('click',closeDrawer);
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if($('#modal-back').classList.contains('on')){$('#modal-back').classList.remove('on');pendingDelete=null;return;}
+  if($('#drawer').classList.contains('on'))closeDrawer();
+});
+$('#j-spec').addEventListener('keydown',function(e){if(e.key==='Enter')runJudge();});
+$('#j-thk').addEventListener('keydown',function(e){if(e.key==='Enter')runJudge();});
+
+histDefaults();
+renderAll();
+})();
+</script>
+</body>
+</html>

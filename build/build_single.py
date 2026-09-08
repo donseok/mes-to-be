@@ -222,6 +222,21 @@ index = index.replace(
     '          <iframe id="module-frame-tag" title="Tag관리 목업" '
     'loading="lazy" srcdoc="' + escaped_tag + '"></iframe>', 1)
 
+# --- 2m. 원자재강종관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_rmg = open(path('modules', 'raw-material-grade.html'), encoding='utf-8').read()
+old_iframe_rmg = '''          <iframe
+            id="module-frame-rmg"
+            title="원자재강종관리 목업"
+            src="./modules/raw-material-grade.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_rmg in index, 'rmg iframe block not found'
+escaped_rmg = module_rmg.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_rmg,
+    '          <iframe id="module-frame-rmg" title="원자재강종관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_rmg + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
 old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'

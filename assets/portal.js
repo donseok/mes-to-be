@@ -20,6 +20,13 @@
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
+    'raw-material-grade': {
+      hash: '#/quality-design/module-management/raw-material-grade',
+      viewId: 'raw-material-grade-view',
+      title: '원자재강종관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
