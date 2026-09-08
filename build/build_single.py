@@ -237,6 +237,21 @@ index = index.replace(
     '          <iframe id="module-frame-rmg" title="원자재강종관리 목업" '
     'loading="lazy" srcdoc="' + escaped_rmg + '"></iframe>', 1)
 
+# --- 2n. 규격약호관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_sc = open(path('modules', 'spec-code.html'), encoding='utf-8').read()
+old_iframe_sc = '''          <iframe
+            id="module-frame-sc"
+            title="규격약호관리 목업"
+            src="./modules/spec-code.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_sc in index, 'sc iframe block not found'
+escaped_sc = module_sc.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_sc,
+    '          <iframe id="module-frame-sc" title="규격약호관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_sc + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
 old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'
