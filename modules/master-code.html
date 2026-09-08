@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>마스터코드 관리</title>
 <style>
-:root{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#18222f;background:#f4f6f9;font-size:14px}*{box-sizing:border-box}body{margin:0}main{padding:24px;max-width:1600px;margin:auto}h1{font-size:23px;margin:0 0 8px}h2{font-size:16px;margin:0}p{color:#647184;line-height:1.6;margin:0}.heading,.toolbar,.section-head,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.heading{margin-bottom:22px}.eyebrow{color:#1d5fbf;font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}.panel{background:white;border:1px solid #d9e0e8;border-radius:8px;margin-bottom:18px;overflow:hidden}.section-head{padding:17px 20px;border-bottom:1px solid #d9e0e8}.toolbar{padding:18px 20px;flex-wrap:wrap}.search{display:flex;align-items:end;gap:10px;flex:1}.search label{flex:1;max-width:560px}label{display:block;font-weight:600;font-size:13px}input{width:100%;border:1px solid #b9c4d0;border-radius:5px;padding:10px 11px;font:inherit;color:inherit;background:white;margin-top:7px}input:read-only{background:#f4f6f9;color:#4c5a6b}button{font:inherit;cursor:pointer;border:1px solid #b9c4d0;border-radius:5px;padding:9px 14px;background:white;color:#344255;white-space:nowrap}button:hover{background:#edf1f6}button.primary{background:#1d5fbf;border-color:#1d5fbf;color:white}button.primary:hover{background:#174c99}button.link{padding:0;border:0;background:none;color:#1d5fbf;text-decoration:underline;text-underline-offset:3px;font-family:monospace;font-size:14px}button:disabled{opacity:.45;cursor:default}:focus-visible{outline:3px solid #7aa7e9;outline-offset:2px}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:640px;text-align:left}th{font-size:12px;background:#edf1f6;color:#4c5a6b;padding:12px 20px;white-space:nowrap}td{padding:14px 20px;border-top:1px solid #e5eaf0;overflow-wrap:anywhere}tbody tr:hover{background:#f8faff}.mono{font-family:monospace;color:#174c99}.muted{color:#647184;font-size:12px}.badge{background:#e4edfa;color:#174c99;border-radius:20px;padding:4px 10px;font-size:12px}.empty{text-align:center;padding:60px 20px;color:#647184}.fields{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:22px 20px}.help{display:block;font-size:12px;color:#647184;font-weight:400;margin-top:7px}.required{color:#b91c1c}.actions{justify-content:flex-end;margin-top:18px}.notice{padding:12px 16px;border-radius:6px;margin-bottom:18px;background:#dff2e5;color:#166534}.notice.error{background:#fbe4e4;color:#991b1b}.notice:empty{display:none}[hidden]{display:none!important}.edit-table input{margin:0}.footnote{font-size:12px;margin-top:18px}.pager{padding:14px 20px;display:flex;gap:15px;align-items:center;justify-content:flex-end;border-top:1px solid #d9e0e8}@media(max-width:650px){main{padding:16px}.heading{align-items:flex-start}.fields{grid-template-columns:1fr}.search{flex-wrap:wrap}.search label{min-width:100%}.toolbar{align-items:stretch}.heading h1{font-size:20px}}
+:root{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#18222f;background:#f4f6f9;font-size:14px}*{box-sizing:border-box}body{margin:0}main{padding:24px;max-width:1600px;margin:auto}h1{font-size:23px;margin:0 0 8px}h2{font-size:16px;margin:0}p{color:#647184;line-height:1.6;margin:0}.heading,.toolbar,.section-head,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.heading{margin-bottom:22px}.eyebrow{color:#1d5fbf;font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:7px}.panel{background:white;border:1px solid #d9e0e8;border-radius:8px;margin-bottom:18px;overflow:hidden}.section-head{padding:17px 20px;border-bottom:1px solid #d9e0e8}.toolbar{padding:18px 20px;flex-wrap:wrap}.search{display:flex;align-items:end;gap:10px;flex:1}.search label{flex:1;max-width:560px}label{display:block;font-weight:600;font-size:13px}input,select{width:100%;border:1px solid #b9c4d0;border-radius:5px;padding:10px 11px;font:inherit;color:inherit;background:white;margin-top:7px}input:read-only{background:#f4f6f9;color:#4c5a6b}button{font:inherit;cursor:pointer;border:1px solid #b9c4d0;border-radius:5px;padding:9px 14px;background:white;color:#344255;white-space:nowrap}button:hover{background:#edf1f6}button.primary{background:#1d5fbf;border-color:#1d5fbf;color:white}button.primary:hover{background:#174c99}button.link{padding:0;border:0;background:none;color:#1d5fbf;text-decoration:underline;text-underline-offset:3px;font-family:monospace;font-size:14px}button:disabled{opacity:.45;cursor:default}:focus-visible{outline:3px solid #7aa7e9;outline-offset:2px}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:640px;text-align:left}th{font-size:12px;background:#edf1f6;color:#4c5a6b;padding:12px 20px;white-space:nowrap}td{padding:14px 20px;border-top:1px solid #e5eaf0;overflow-wrap:anywhere}tbody tr:hover{background:#f8faff}.mono{font-family:monospace;color:#174c99}.muted{color:#647184;font-size:12px}.badge{background:#e4edfa;color:#174c99;border-radius:20px;padding:4px 10px;font-size:12px}.empty{text-align:center;padding:60px 20px;color:#647184}.fields{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:22px 20px}.help{display:block;font-size:12px;color:#647184;font-weight:400;margin-top:7px}.required{color:#b91c1c}.actions{justify-content:flex-end;margin-top:18px}.notice{padding:12px 16px;border-radius:6px;margin-bottom:18px;background:#dff2e5;color:#166534}.notice.error{background:#fbe4e4;color:#991b1b}.notice:empty{display:none}[hidden]{display:none!important}.edit-table input,.edit-table select{margin:0}.edit-table{min-width:900px}.code-filter{padding:14px 20px;border-bottom:1px solid #d9e0e8}.code-filter .search{flex-wrap:wrap;align-items:end}.code-filter label{flex:0 0 auto;max-width:none;min-width:150px}.code-filter label.grow{flex:1;min-width:220px;max-width:420px}.filter-summary{padding:10px 20px;border-bottom:1px solid #e5eaf0;background:#f8faff}.footnote{font-size:12px;margin-top:18px}.pager{padding:14px 20px;display:flex;gap:15px;align-items:center;justify-content:flex-end;border-top:1px solid #d9e0e8}@media(max-width:650px){main{padding:16px}.heading{align-items:flex-start}.fields{grid-template-columns:1fr}.search{flex-wrap:wrap}.search label{min-width:100%}.toolbar{align-items:stretch}.heading h1{font-size:20px}}
 </style>
 </head>
 <body>
@@ -13,7 +13,7 @@
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <section id="list-view">
     <div class="heading"><div><p class="eyebrow">MASTER DATA</p><h1>마스터코드 리스트</h1><p>업무에서 사용하는 공통 코드와 코드명을 관리합니다.</p></div><button class="primary" id="new">＋ 마스터코드 등록</button></div>
-    <div class="panel"><form id="search-form" class="toolbar"><div class="search"><label for="query">통합 검색<input id="query" type="search" placeholder="마스터코드아이디, 한글명, 등록자명, 일자, 코드, 코드명 검색"></label><button class="primary" type="submit">조회</button><button id="reset" type="button">초기화</button></div></form></div>
+    <div class="panel"><form id="search-form" class="toolbar"><div class="search"><label for="query">통합 검색<input id="query" type="search" placeholder="마스터코드아이디, 한글명, 등록자명, 일자, 코드, 코드명, 카테고리 검색"></label><button class="primary" type="submit">조회</button><button id="reset" type="button">초기화</button></div></form></div>
     <div class="panel"><div class="section-head"><h2>마스터코드 목록 <span id="count" class="badge"></span></h2><span class="muted">아이디를 클릭하면 상세 화면으로 이동합니다.</span></div><div class="scroll"><table><thead><tr><th scope="col">마스터코드아이디</th><th scope="col">한글명</th><th scope="col">등록일자</th><th scope="col">등록자명</th><th scope="col">시작일자</th><th scope="col">종료일자</th></tr></thead><tbody id="list-body"></tbody></table></div><div class="pager"><button id="prev">이전</button><span id="page-info" class="muted"></span><button id="next">다음</button></div></div>
   </section>
   <section id="detail-view" hidden>
@@ -27,8 +27,19 @@
         <label for="start-date">시작일자 <span class="required">*</span><input id="start-date" type="date" required min="0001-01-01" max="9999-12-31"></label>
         <label for="end-date">종료일자<input id="end-date" type="date" min="0001-01-01" max="9999-12-31"><span class="help">종료일자가 없으면 비워 두세요.</span></label>
       </div></div>
-      <div class="panel"><div class="section-head"><h2>코드 / 코드명 <span id="code-count" class="badge"></span></h2><button id="add-code" type="button">＋ 코드 추가</button></div><div class="scroll"><table class="edit-table"><thead><tr><th scope="col" style="width:65px">번호</th><th scope="col" style="width:30%">코드 <span class="required">*</span></th><th scope="col">코드명 <span class="required">*</span></th><th scope="col" style="width:90px">관리</th></tr></thead><tbody id="code-body"></tbody></table></div></div>
-      <p class="muted">코드는 동일한 마스터 코드 내에서 중복할 수 없습니다. 코드명은 코드의 의미를 나타내는 표시명입니다.</p>
+      <div class="panel"><div class="section-head"><h2>코드 / 코드명 <span id="code-count" class="badge"></span></h2><button id="add-code" type="button">＋ 코드 추가</button></div>
+        <div class="code-filter"><div class="search">
+          <label for="filter-category">카테고리<select id="filter-category"></select></label>
+          <label for="filter-field">검색 항목<select id="filter-field"><option value="all">전체</option><option value="code">코드</option><option value="decode">코드명</option><option value="categoryId">카테고리 ID</option><option value="categoryName">카테고리명</option></select></label>
+          <label class="grow" for="filter-keyword">검색어<input id="filter-keyword" type="search" placeholder="코드, 코드명, 카테고리 검색"></label>
+          <button id="filter-apply" type="button" class="primary">조회</button>
+          <button id="filter-reset" type="button">초기화</button>
+        </div></div>
+        <div id="filter-summary" class="filter-summary muted" hidden></div>
+        <div class="scroll"><table class="edit-table"><thead><tr><th scope="col" style="width:65px">번호</th><th scope="col" style="width:20%">코드 <span class="required">*</span></th><th scope="col">코드명 <span class="required">*</span></th><th scope="col" style="width:16%">카테고리 ID</th><th scope="col" style="width:18%">카테고리명</th><th scope="col" style="width:90px">관리</th></tr></thead><tbody id="code-body"></tbody></table></div>
+        <datalist id="category-ids"></datalist>
+      </div>
+      <p class="muted">코드는 동일한 마스터 코드 내에서 중복할 수 없습니다. 코드명은 코드의 의미를 나타내는 표시명입니다. 카테고리는 코드를 용도별로 묶는 분류이며, 같은 카테고리 ID에는 동일한 카테고리명을 사용합니다.</p>
       <div class="actions"><button id="cancel" type="button">취소</button><button id="edit" type="button" class="primary">수정</button><button id="save" type="submit" class="primary">저장</button></div>
     </form>
   </section>
@@ -37,7 +48,9 @@
 <script>
 (() => {
   'use strict';
-  const KEY = 'mes-master-codes-v1';
+  const KEY = 'mes-master-codes-v2';
+  const LEGACY_KEY = 'mes-master-codes-v1';
+  const NO_CATEGORY = '__NONE__'; // 카테고리가 비어 있는 코드를 고르는 필터 값
   const $ = id => document.getElementById(id);
   const clone = value => JSON.parse(JSON.stringify(value));
   const metadata = {'registered-date':'registeredDate','registrant-name':'registrantName','start-date':'startDate','end-date':'endDate'};
@@ -47,23 +60,70 @@
   const seed = [
     {id:'PRODUCT_TYPE',name:'제품유형',codes:[{code:'GI',decode:'용융아연도금강판'},{code:'GL',decode:'용융알루미늄아연도금강판'},{code:'PPGI',decode:'착색아연도금강판'}]},
     {id:'QUALITY_STATUS',name:'품질판정상태',codes:[{code:'WAIT',decode:'판정대기'},{code:'PASS',decode:'합격'},{code:'FAIL',decode:'불합격'}]},
-    {id:'USE_YN',name:'사용여부',codes:[{code:'Y',decode:'사용'},{code:'N',decode:'미사용'}]}
+    {id:'USE_YN',name:'사용여부',codes:[{code:'Y',decode:'사용'},{code:'N',decode:'미사용'}]},
+    // AS-IS 마스타코드 내용상세 화면(ORD_THK_MNG_CD) 이관 — 유효일시 2011-11-22 16:20:50 ~, 담당자 MASTDATA(GlueMaster)
+    {id:'ORD_THK_MNG_CD',name:'주문두께관리코드',registeredDate:'2011-11-22',registrantName:'MASTDATA',startDate:'2011-11-22',endDate:'',codes:[
+      {code:'1',decode:'규격일반:(+/-)TOL',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'2',decode:'규격일반:(+/-)HALF TOL',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'3',decode:'규격일반:(+)ONLY',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'4',decode:'규격일반:(-)ONLY',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'5',decode:'특별관리(TCT → BMT관리)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'6',decode:'특별관리(BMT → TCT관리)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'A',decode:'규격일반:(+)보정10',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'B',decode:'규격일반:(-)보정10',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'C',decode:'규격일반:(+)보정20',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'D',decode:'규격일반:(-)보정20',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'E',decode:'규격일반:(+)보정30',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'F',decode:'규격일반:(-)보정30',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'G',decode:'규격일반:(+)보정40',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'H',decode:'규격일반:(-)보정40',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'J',decode:'규격일반:(+)보정50',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'K',decode:'규격일반:(-)보정50',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'Q',decode:'특별관리',categoryId:'SZ0000',categoryName:'공통'}
+    ]},
+    // AS-IS 마스타코드 내용상세 화면(THK_COR_UNT) 이관 — 유효일시 2012-04-26 17:00:17 ~, 담당자 MASTDATA(GlueMaster)
+    {id:'THK_COR_UNT',name:'두께보정기준단위',registeredDate:'2012-04-26',registrantName:'MASTDATA',startDate:'2012-04-26',endDate:'',codes:[
+      {code:'CLT',decode:'Color TCT(칼라TCT)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'CRN',decode:'Correction(보정값)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'GVT',decode:'Galvanized TCT(도금TCT)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'PCN',decode:'PERCENT(주문두께에 대한 %)',categoryId:'SZ0000',categoryName:'공통'},
+      {code:'TRK',decode:'Target(확정값)',categoryId:'SZ0000',categoryName:'공통'}
+    ]}
   ];
+  // v1 저장 데이터를 v2로 옮길 때 새로 합류시키는 마스터코드 (사용자가 지운 기존 시드는 되살리지 않는다)
+  const addedInV2 = ['ORD_THK_MNG_CD','THK_COR_UNT'];
   let records = [], originalId = null, draft = null, baseline = '', mode = 'list', page = 1, keyword = '', storageError = false;
+  let codeFilter = {category:'',field:'all',keyword:''};
   function validRecords(data) {
     return Array.isArray(data) && data.every(r => r && typeof r.id === 'string' && typeof r.name === 'string' && Array.isArray(r.codes) && r.codes.every(c => c && typeof c.code === 'string' && typeof c.decode === 'string'));
   }
+  // Preserve legacy codes, leave unknown registration metadata blank and treat missing categories as unclassified.
+  function normalize(r) {
+    return {...r,
+      ...Object.fromEntries(Object.values(metadata).map(key => [key,typeof r[key] === 'string' ? r[key] : ''])),
+      codes:r.codes.map(c => ({code:c.code,decode:c.decode,categoryId:typeof c.categoryId === 'string' ? c.categoryId : '',categoryName:typeof c.categoryName === 'string' ? c.categoryName : ''}))};
+  }
   try {
     const raw = localStorage.getItem(KEY);
-    records = raw === null ? clone(seed) : JSON.parse(raw);
-    if (!validRecords(records)) throw new Error('Invalid stored records');
-    // Preserve legacy codes and leave unknown registration metadata blank.
-    records = records.map(r => ({...r,...Object.fromEntries(Object.values(metadata).map(key => [key,typeof r[key] === 'string' ? r[key] : '']))}));
+    if (raw !== null) {
+      records = JSON.parse(raw);
+      if (!validRecords(records)) throw new Error('Invalid stored records');
+      records = records.map(normalize);
+    } else {
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy === null) { records = clone(seed).map(normalize); }
+      else {
+        const parsed = JSON.parse(legacy);
+        if (!validRecords(parsed)) throw new Error('Invalid stored records');
+        records = parsed.map(normalize);
+        clone(seed).filter(s => addedInV2.includes(s.id) && !records.some(r => r.id.toLowerCase() === s.id.toLowerCase())).forEach(s => records.push(normalize(s)));
+      }
+    }
   } catch (e) { storageError = true; records = []; }
   function notice(message = '', error = false) { $('notice').textContent = message; $('notice').className = 'notice' + (error ? ' error' : ''); }
   function renderList() {
     $('list-view').hidden = false; $('detail-view').hidden = true; mode = 'list';
-    const rows = records.filter(r => [r.id,r.name,r.registeredDate,r.registrantName,r.startDate,r.endDate,...r.codes.flatMap(c => [c.code,c.decode])].some(v => v.toLocaleLowerCase().includes(keyword)));
+    const rows = records.filter(r => [r.id,r.name,r.registeredDate,r.registrantName,r.startDate,r.endDate,...r.codes.flatMap(c => [c.code,c.decode,c.categoryId,c.categoryName])].some(v => v.toLocaleLowerCase().includes(keyword)));
     const pages = Math.max(1, Math.ceil(rows.length / 10)); page = Math.min(page,pages);
     $('count').textContent = rows.length + '건';
     $('list-body').innerHTML = rows.slice((page-1)*10,page*10).map(r => `<tr><td><button type="button" class="link" data-id="${esc(r.id)}">${esc(r.id)}</button></td><td>${esc(r.name)}</td><td>${esc(r.registeredDate || '—')}</td><td>${esc(r.registrantName || '—')}</td><td>${esc(r.startDate || '—')}</td><td>${esc(r.endDate || '—')}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">' + (keyword ? '검색 결과가 없습니다. 검색어를 변경해 주세요.' : '등록된 마스터코드가 없습니다. 마스터코드를 등록해 주세요.') + '</td></tr>';
@@ -81,14 +141,45 @@
     $('save').textContent = mode === 'new' ? '등록' : '저장';
     renderCodes(); if (focus) $('detail-title').focus();
   }
-  function renderCodes() {
-    const writable = mode !== 'view'; $('code-count').textContent = draft.codes.length + '건';
-    $('code-body').innerHTML = draft.codes.map((c,i) => `<tr><td class="muted">${i+1}</td><td><input aria-label="${i+1}행 코드" data-index="${i}" data-field="code" maxlength="64" required value="${esc(c.code)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 코드명" data-index="${i}" data-field="decode" maxlength="200" required value="${esc(c.decode)}" ${writable?'':'readonly'}></td><td>${writable?`<button type="button" data-remove="${i}" aria-label="${i+1}행 삭제" ${draft.codes.length===1?'disabled':''}>삭제</button>`:'—'}</td></tr>`).join('');
+  // 카테고리 ID → 카테고리명. 코드에 적힌 값 그대로를 카테고리 목록으로 쓴다.
+  function categories() {
+    const map = new Map();
+    draft.codes.forEach(c => { const id = c.categoryId.trim(); if (id && !map.get(id)) map.set(id, c.categoryName.trim()); });
+    return [...map].sort((a,b) => a[0].localeCompare(b[0]));
   }
-  function openRecord(id) { originalId = id; draft = clone(records.find(r => r.id === id)); baseline = JSON.stringify(draft); mode = 'view'; notice(); renderDetail(); }
+  function matchesFilter(c) {
+    const id = c.categoryId.trim();
+    if (codeFilter.category === NO_CATEGORY ? id !== '' : codeFilter.category && codeFilter.category !== id) return false;
+    if (!codeFilter.keyword) return true;
+    const fields = codeFilter.field === 'all' ? ['code','decode','categoryId','categoryName'] : [codeFilter.field];
+    return fields.some(f => c[f].toLocaleLowerCase().includes(codeFilter.keyword));
+  }
+  function renderCategoryFilter() {
+    const list = categories(), unclassified = draft.codes.some(c => !c.categoryId.trim());
+    $('filter-category').innerHTML = `<option value="">전체</option>` + list.map(([id,name]) => `<option value="${esc(id)}">${esc(name ? id + ' · ' + name : id)}</option>`).join('') + (unclassified ? `<option value="${NO_CATEGORY}">(미지정)</option>` : '');
+    if (codeFilter.category && ![...$('filter-category').options].some(o => o.value === codeFilter.category)) codeFilter.category = '';
+    $('filter-category').value = codeFilter.category;
+    $('category-ids').innerHTML = list.map(([id,name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
+  }
+  function renderCodes() {
+    const writable = mode !== 'view';
+    renderCategoryFilter();
+    const rows = draft.codes.map((c,i) => ({c,i})).filter(({c}) => matchesFilter(c));
+    const filtering = Boolean(codeFilter.category || codeFilter.keyword);
+    $('code-count').textContent = draft.codes.length + '건';
+    $('filter-summary').hidden = !filtering;
+    $('filter-summary').textContent = filtering ? `조회 결과 ${rows.length}건 / 전체 ${draft.codes.length}건 · 번호는 전체 목록 기준입니다.` : '';
+    $('code-body').innerHTML = rows.map(({c,i}) => `<tr><td class="muted">${i+1}</td><td><input aria-label="${i+1}행 코드" data-index="${i}" data-field="code" maxlength="64" required value="${esc(c.code)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 코드명" data-index="${i}" data-field="decode" maxlength="200" required value="${esc(c.decode)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 카테고리 아이디" data-index="${i}" data-field="categoryId" maxlength="64" list="category-ids" placeholder="예: SZ0000" value="${esc(c.categoryId)}" ${writable?'':'readonly'}></td><td><input aria-label="${i+1}행 카테고리명" data-index="${i}" data-field="categoryName" maxlength="100" placeholder="예: 공통" value="${esc(c.categoryName)}" ${writable?'':'readonly'}></td><td>${writable?`<button type="button" data-remove="${i}" aria-label="${i+1}행 삭제" ${draft.codes.length===1?'disabled':''}>삭제</button>`:'—'}</td></tr>`).join('') || `<tr><td colspan="6" class="empty">조회 조건에 맞는 코드가 없습니다. 카테고리 또는 검색어를 변경해 주세요.</td></tr>`;
+  }
+  function resetCodeFilter(render = true) {
+    codeFilter = {category:'',field:'all',keyword:''};
+    $('filter-field').value = 'all'; $('filter-keyword').value = '';
+    if (render) renderCodes();
+  }
+  function openRecord(id) { originalId = id; draft = clone(records.find(r => r.id === id)); baseline = JSON.stringify(draft); mode = 'view'; resetCodeFilter(false); notice(); renderDetail(); }
   function dirty() { return (mode === 'new' || mode === 'edit') && JSON.stringify(draft) !== baseline; }
   function canLeave() { return !dirty() || window.confirm('저장하지 않은 변경사항이 있습니다. 변경사항을 버리시겠습니까?'); }
-  $('new').onclick = () => { if(storageError) return notice('저장 데이터를 읽을 수 없어 등록할 수 없습니다. 브라우저 저장소 설정을 확인해 주세요.',true); originalId = null; draft = {id:'',name:'',registeredDate:today(),registrantName:'',startDate:today(),endDate:'',codes:[{code:'',decode:''}]}; baseline = JSON.stringify(draft); mode = 'new'; notice(); renderDetail(); $('master-id').focus(); };
+  $('new').onclick = () => { if(storageError) return notice('저장 데이터를 읽을 수 없어 등록할 수 없습니다. 브라우저 저장소 설정을 확인해 주세요.',true); originalId = null; draft = {id:'',name:'',registeredDate:today(),registrantName:'',startDate:today(),endDate:'',codes:[{code:'',decode:'',categoryId:'',categoryName:''}]}; baseline = JSON.stringify(draft); mode = 'new'; resetCodeFilter(false); notice(); renderDetail(); $('master-id').focus(); };
   $('list-body').onclick = e => { const button = e.target.closest('[data-id]'); if (button) openRecord(button.dataset.id); };
   $('search-form').onsubmit = e => { e.preventDefault(); keyword = $('query').value.trim().toLocaleLowerCase(); page = 1; renderList(); };
   $('reset').onclick = () => { $('query').value = ''; keyword = ''; page = 1; renderList(); };
@@ -98,18 +189,43 @@
   $('edit').onclick = () => { mode = 'edit'; notice(); renderDetail(); $('master-name').focus(); };
   $('master-id').oninput = e => { draft.id = e.target.value; }; $('master-name').oninput = e => { draft.name = e.target.value; };
   Object.entries(metadata).forEach(([id,key]) => { $(id).oninput = e => { draft[key] = e.target.value; }; });
-  $('code-body').oninput = e => { if(e.target.dataset.field) draft.codes[Number(e.target.dataset.index)][e.target.dataset.field] = e.target.value; };
-  $('add-code').onclick = () => { draft.codes.push({code:'',decode:''}); renderCodes(); $('code-body').lastElementChild.querySelector('input').focus(); };
+  $('code-body').oninput = e => {
+    const field = e.target.dataset.field; if(!field) return;
+    const index = Number(e.target.dataset.index); draft.codes[index][field] = e.target.value;
+    if(field === 'categoryId') {
+      // 이미 쓰고 있는 카테고리 ID를 입력하면 카테고리명을 채워 준다 (비어 있을 때만).
+      const known = draft.codes.find((c,i) => i !== index && c.categoryId.trim() === e.target.value.trim() && c.categoryName.trim());
+      if(known && !draft.codes[index].categoryName.trim()) {
+        draft.codes[index].categoryName = known.categoryName;
+        const nameInput = $('code-body').querySelector(`input[data-index="${index}"][data-field="categoryName"]`);
+        if(nameInput) nameInput.value = known.categoryName;
+      }
+    }
+    if(field === 'categoryId' || field === 'categoryName') renderCategoryFilter();
+  };
+  $('filter-category').onchange = e => { codeFilter.category = e.target.value; renderCodes(); };
+  $('filter-field').onchange = e => { codeFilter.field = e.target.value; if(codeFilter.keyword) renderCodes(); };
+  $('filter-keyword').onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); $('filter-apply').click(); } };
+  $('filter-apply').onclick = () => { codeFilter.keyword = $('filter-keyword').value.trim().toLocaleLowerCase(); renderCodes(); };
+  $('filter-reset').onclick = () => resetCodeFilter();
+  $('add-code').onclick = () => { resetCodeFilter(false); draft.codes.push({code:'',decode:'',categoryId:'',categoryName:''}); renderCodes(); $('code-body').lastElementChild.querySelector('input').focus(); };
   $('code-body').onclick = e => { const button = e.target.closest('[data-remove]'); if(button && draft.codes.length>1){draft.codes.splice(Number(button.dataset.remove),1);renderCodes();} };
   $('editor').onsubmit = e => {
     e.preventDefault(); if(mode !== 'new' && mode !== 'edit') return;
-    const cleaned = {id:draft.id.trim(),name:draft.name.trim(),...Object.fromEntries(Object.values(metadata).map(key => [key,draft[key].trim()])),codes:draft.codes.map(c => ({code:c.code.trim(),decode:c.decode.trim()}))};
+    const cleaned = {id:draft.id.trim(),name:draft.name.trim(),...Object.fromEntries(Object.values(metadata).map(key => [key,draft[key].trim()])),codes:draft.codes.map(c => ({code:c.code.trim(),decode:c.decode.trim(),categoryId:c.categoryId.trim(),categoryName:c.categoryName.trim()}))};
     if(!cleaned.registrantName) return notice('등록자명을 입력해 주세요.',true);
     if(!validDate(cleaned.registeredDate) || !validDate(cleaned.startDate) || (cleaned.endDate && !validDate(cleaned.endDate))) return notice('등록일자, 시작일자 및 종료일자를 올바르게 입력해 주세요.',true);
     if(cleaned.endDate && cleaned.endDate < cleaned.startDate) return notice('종료일자는 시작일자보다 빠를 수 없습니다.',true);
     if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(cleaned.id) || !cleaned.name || cleaned.codes.some(c => !c.code || !c.decode)) return notice('필수 항목을 입력하고 영문 ID 형식을 확인해 주세요.',true);
     if(records.some(r => r.id !== originalId && r.id.toLowerCase() === cleaned.id.toLowerCase())) return notice('이미 등록된 마스터 코드 영문 ID입니다.',true);
     if(new Set(cleaned.codes.map(c => c.code)).size !== cleaned.codes.length) return notice('중복된 코드가 있습니다. 동일한 마스터 코드 내에서 코드는 고유해야 합니다.',true);
+    if(cleaned.codes.some(c => c.categoryName && !c.categoryId)) return notice('카테고리명을 입력한 코드에는 카테고리 ID도 입력해 주세요.',true);
+    const categoryNames = new Map();
+    for(const c of cleaned.codes) {
+      if(!c.categoryId) continue;
+      if(!categoryNames.has(c.categoryId)) categoryNames.set(c.categoryId,c.categoryName);
+      else if(categoryNames.get(c.categoryId) !== c.categoryName) return notice(`카테고리 ID ${c.categoryId}에 서로 다른 카테고리명이 있습니다. 같은 카테고리 ID는 동일한 카테고리명을 사용해 주세요.`,true);
+    }
     const next = originalId === null ? [...records,cleaned] : records.map(r => r.id === originalId ? cleaned : r);
     try { localStorage.setItem(KEY,JSON.stringify(next)); } catch(e) { return notice('저장하지 못했습니다. 브라우저 저장소 설정 또는 여유 공간을 확인해 주세요. 입력 내용은 유지됩니다.',true); }
     const created = originalId === null; records = next; openRecord(cleaned.id); notice(created ? '마스터코드가 등록되었습니다.' : '변경사항이 저장되었습니다.');
