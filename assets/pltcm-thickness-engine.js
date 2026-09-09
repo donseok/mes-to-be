@@ -175,9 +175,182 @@
     return isNaN(ew) ? 0 : ew;
   }
 
+  /* ── 입력 정규화 (스펙 2.2) ── */
+  var CODE_KEYS = ['PRD_NM_CD', 'SPC_ORG_CD', 'SPC_AVR', 'ORD_USG_CD', 'FNL_CUS_CD', 'ORD_THK_TP',
+                   'ORD_THK_MNG_CD', 'GW_ASG_CD', 'MAT_CD', 'ORD_SPNL_TP'];
+  function normalizeInput(input) {
+    var src = input || {}, o = src.order || {}, rq = src.request || {}, ly = src.layers || {};
+    var order = {};
+    for (var i = 0; i < CODE_KEYS.length; i++) order[CODE_KEYS[i]] = codeStr(o[CODE_KEYS[i]]);
+    order.ORD_EXC_THK = toNum(o.ORD_EXC_THK);
+    order.ORD_EXC_WTH = toNum(o.ORD_EXC_WTH);
+    order.ORD_SLIT_GRP_CNT = toNum(o.ORD_SLIT_GRP_CNT);
+    order.ORD_MIX_WTH = Array.isArray(o.ORD_MIX_WTH) ? o.ORD_MIX_WTH.map(toNum) : [];
+    var rawReq = rq.value, reqInvalid = false, reqVal = 0;
+    if (!(rawReq == null || String(rawReq).trim() === '')) {
+      var pv = toNum(rawReq);
+      if (isNaN(pv)) reqInvalid = true; else reqVal = pv;
+    }
+    function um(v) { var n = toNum(v); return isNaN(n) ? 0 : n; }
+    return {
+      order: order,
+      request: { value: reqVal, unit: norm(rq.unit) },
+      layers: { galThkUm: um(ly.galThkUm), paintFrontUm: um(ly.paintFrontUm), paintBackUm: um(ly.paintBackUm) },
+      requestInvalid: reqInvalid
+    };
+  }
+  function projSet(r) { return { id: r.id == null ? '' : String(r.id), no: r.no, adj: toNum(r.adj), unit: norm(r.unit) }; }
+
+  /* ── 본 계산 (스펙 3장) ── */
+  function design(input, criteria) {
+    var res = {
+      ok: false, error: null, path: null,
+      values: { ORD_EXC_THK: null, CRM_THK: null, PLTCM_THK_TRV: null, PLTCM_SET_THK_TRV: null, PLTCM_THK_LLV: null, PLTCM_THK_ULV: null },
+      applied: { applyWidth: null, setRule: null, spRule: null, spRate: 0, tolRule: null },
+      steps: [], warnings: []
+    };
+    var sink = { warnings: [] };
+    function warn(code) {
+      for (var i = 0; i < res.warnings.length; i++) if (res.warnings[i].code === code) return;
+      res.warnings.push({ code: code, message: WARNING_CODES[code] || code });
+    }
+    function flush() { for (var i = 0; i < sink.warnings.length; i++) warn(sink.warnings[i]); sink.warnings.length = 0; }
+    function fail(code, stage, stepNo) { res.error = { code: code, stage: stage, stepNo: stepNo, message: ERROR_CODES[code] || code }; return res; }
+    function step(no, name, formula, inputs, output, note) {
+      res.steps.push({ no: no, name: name, formula: formula, inputs: inputs || {}, output: output === undefined ? null : output, note: note || '' });
+    }
+
+    /* 검증 — 기준 → 입력 (스펙 3.1) */
+    var crit = criteria || {}, tables = ['setCorrection', 'spCorrection', 'thkTolerance'];
+    for (var ti = 0; ti < tables.length; ti++) {
+      var tb = crit[tables[ti]];
+      if (!tb || !Array.isArray(tb.rules)) return fail('E_CRITERIA', '입력 검증', 0);
+    }
+    var inp = normalizeInput(input), o = inp.order, t = o.ORD_EXC_THK;
+    if (!(t > 0)) return fail('E_INPUT', '입력 검증', 0);
+    res.values.ORD_EXC_THK = t;
+    if (inp.requestInvalid) warn('W_REQUEST_INVALID');
+
+    /* ① 단위 변환 */
+    var g = inp.layers.galThkUm / 1000, pf = inp.layers.paintFrontUm / 1000, pb = inp.layers.paintBackUm / 1000;
+    step(1, '단위 변환', 'g = galThkUm / 1000 · pf = paintFrontUm / 1000 · pb = paintBackUm / 1000',
+         { galThkUm: inp.layers.galThkUm, paintFrontUm: inp.layers.paintFrontUm, paintBackUm: inp.layers.paintBackUm }, { g: g, pf: pf, pb: pb });
+
+    /* ② 적용폭 */
+    var derived = {};
+    var aw = applyWidth(o, sink); flush();
+    res.applied.applyWidth = aw; derived.applyWidth = aw;
+    step(2, '적용폭', o.ORD_SLIT_GRP_CNT > 0 ? 'ORD_MIX_WTH 합계 (슬리팅)' : 'ORD_EXC_WTH (주문폭)',
+         { ORD_SLIT_GRP_CNT: o.ORD_SLIT_GRP_CNT, ORD_MIX_WTH: o.ORD_MIX_WTH, ORD_EXC_WTH: o.ORD_EXC_WTH }, aw);
+
+    /* ③ 경로 선택 */
+    var special = (o.PRD_NM_CD === '5' || o.PRD_NM_CD === '7');
+    var path = special ? 'SPECIAL_57' : (inp.request.value === 0 && o.ORD_THK_TP !== '3') ? 'STANDARD' : 'CUSTOMER';
+    res.path = path;
+    step(3, '경로 선택', '품명 5·7 → SPECIAL_57 / 요청값 0 이고 두께구분 ≠ 3 → STANDARD / 그 외 CUSTOMER',
+         { PRD_NM_CD: o.PRD_NM_CD, requestValue: inp.request.value, requestUnit: inp.request.unit, ORD_THK_TP: o.ORD_THK_TP }, path);
+    if (o.ORD_THK_TP !== '1' && o.ORD_THK_TP !== '2' && o.ORD_THK_TP !== '3') warn('W_THK_TP_INVALID');
+
+    var crm = null, spForcedZero = false;
+    if (path === 'SPECIAL_57') {
+      warn('W_SPECIAL_57');
+      step(4, '기준 조회', '생략 (품명 5·7)', {}, null, '생략');
+      step(5, '압연목표', '생략 (품명 5·7)', {}, null, '생략');
+      step(6, 'SP 조회·적용', '생략 (품명 5·7)', {}, null, '생략');
+      step(7, '절삭', '생략 (품명 5·7)', {}, null, '생략');
+      res.values.PLTCM_THK_TRV = 0;
+      res.values.PLTCM_SET_THK_TRV = t;
+      step(8, 'SET 눈금', 'SET = 주문두께 (0.005 눈금 없음)', { t: t }, t);
+    } else {
+      if (path === 'STANDARD') {
+        /* ④ C10B2060 */
+        var hits = matchRules(crit.setCorrection, inp, derived, DEFAULT_DEFS.setCorrection);
+        var cands = hits.map(projSet);
+        if (hits.length === 0) { step(4, '기준 조회', 'C10B2060 조회', { hits: 0 }, 0); return fail('KK82', '기준 조회', 4); }
+        if (hits.length > 1) {
+          res.applied.setRule = { id: null, no: null, adj: null, unit: null, candidates: cands };
+          step(4, '기준 조회', 'C10B2060 조회', { hits: hits.length }, cands); return fail('KK83', '기준 조회', 4);
+        }
+        var sr = cands[0], c = sr.adj, unit = sr.unit;
+        res.applied.setRule = { id: sr.id, no: sr.no, adj: c, unit: unit, candidates: cands };
+        step(4, '기준 조회', 'C10B2060 조회 1건', { hits: 1 }, sr);
+        /* ⑤ 압연목표 (부록 A.1) */
+        var kind = o.ORD_THK_TP === '2' ? '2' : '1', mng = o.ORD_THK_MNG_CD;
+        var fam = unit === 'CRN' ? 'CRN' : unit === 'PCN' ? 'PCN' : 'TRK';
+        if (fam === 'TRK' && unit !== 'TRK') warn('W_UNIT_UNKNOWN');
+        var formula = '', val = null, empty = false, mismatch = false;
+        if (fam === 'CRN') {
+          if (kind === '2') { if (mng === '5') { formula = 't (round4)'; val = round4(t); } else { formula = 't − g + c (round4)'; val = round4(t - g + c); } }
+          else { if (mng === '6') { formula = 't − g'; val = t - g; } else { formula = 't + c'; val = t + c; } }
+        } else if (fam === 'PCN') {
+          if (kind === '2') { if (mng === '6') mismatch = true; else if (mng === '5') empty = true; else { formula = 't − g + t × c / 100'; val = t - g + t * c / 100; } }
+          else { if (mng === '5') mismatch = true; else if (mng === '6') empty = true; else { formula = 't + t × c / 100'; val = t + t * c / 100; } }
+        } else {
+          spForcedZero = true;
+          if (kind === '2') { if (mng === '6') mismatch = true; else if (mng === '5') empty = true; else { formula = 'c − g'; val = c - g; } }
+          else { if (mng === '5') mismatch = true; else if (mng === '6') empty = true; else { formula = 'c'; val = c; } }
+        }
+        if (mismatch) { step(5, '압연목표', '두께구분·관리코드 조합 불일치 (' + fam + '·' + kind + '·' + mng + ')', { t: t, g: g, c: c }, null); return fail('KK94', '압연목표', 5); }
+        if (empty) { val = 0; formula = '(AS-IS 계산문 없음) 0'; warn('W_EMPTY_BRANCH'); }
+        crm = val;
+        step(5, '압연목표', formula, { t: t, g: g, c: c, unit: unit, kind: kind, mng: mng }, crm);
+      } else {
+        /* CUSTOMER (스펙 3.4) */
+        step(4, '기준 조회', '생략 (고객사양 경로)', {}, null, '생략');
+        var b = (o.ORD_THK_TP === '3') ? (t - pf - pb - g) : t;
+        var rv = inp.request.value, ru = inp.request.unit, cf;
+        if (ru === 'CRN') { cf = 'b + r'; crm = b + rv; }
+        else if (ru === 'PCN') { cf = 'b + b × r / 100'; crm = b + b * rv / 100; }
+        else if (ru === 'TRK') { cf = 'r'; crm = rv; }
+        else { cf = 'b'; crm = b; }
+        step(5, '압연목표', (o.ORD_THK_TP === '3' ? 'b = t − pf − pb − g · ' : 'b = t · ') + cf, { t: t, g: g, pf: pf, pb: pb, b: b, r: rv, unit: ru }, crm);
+      }
+      res.values.CRM_THK = crm; derived.crmThk = crm;
+
+      /* ⑥ SP (스펙 3.5) */
+      var spHits = matchRules(crit.spCorrection, inp, derived, DEFAULT_DEFS.spCorrection), sp = 0;
+      if (spHits.length === 0) warn('W_NO_SP_RULE');
+      else {
+        if (spHits.length > 1) warn('W_MULTI_SP_RULE');
+        var s0 = spHits[0], rate = toNum(s0.rate);
+        res.applied.spRule = { id: s0.id == null ? '' : String(s0.id), no: s0.no, rate: rate };
+        sp = isNaN(rate) ? 0 : rate;
+      }
+      if (spForcedZero) sp = 0;
+      var outCalc, spf;
+      if (inp.request.unit === 'TRK') { sp = 0; outCalc = crm; spf = 'crm (고객 단위 TRK → SP 생략)'; }
+      else { outCalc = crm + crm * sp / 100; spf = 'crm + crm × sp / 100'; }
+      res.applied.spRate = sp;
+      step(6, 'SP 조회·적용', spf, { crm: crm, sp: sp, hits: spHits.length, forcedZero: spForcedZero }, outCalc);
+
+      /* ⑦ 절삭 · ⑧ SET (스펙 3.6) */
+      var thk = truncate3(outCalc, sink); flush();
+      res.values.PLTCM_THK_TRV = thk;
+      step(7, '절삭', 'truncate3(출측 계산값)', { x: outCalc }, thk);
+      var set = snapSet(thk, sink); flush();
+      res.values.PLTCM_SET_THK_TRV = set;
+      step(8, 'SET 눈금', 'snapSet(출측두께)', { x3: thk }, set);
+    }
+    if (res.values.PLTCM_SET_THK_TRV === 0) warn('W_ZERO_SET');
+
+    /* ⑨ 공차 (스펙 3.7) */
+    derived.setThk = res.values.PLTCM_SET_THK_TRV;
+    var tolHits = matchRules(crit.thkTolerance, inp, derived, DEFAULT_DEFS.thkTolerance);
+    if (tolHits.length === 0) { step(9, '공차', 'C10B2190 조회', { setThk: derived.setThk, hits: 0 }, 0); return fail('KK80', '공차', 9); }
+    if (tolHits.length > 1) { step(9, '공차', 'C10B2190 조회', { setThk: derived.setThk, hits: tolHits.length }, null); return fail('KK81', '공차', 9); }
+    var tr = tolHits[0], llv = toNum(tr.llv), ulv = toNum(tr.ulv), setv = res.values.PLTCM_SET_THK_TRV;
+    res.applied.tolRule = { id: tr.id == null ? '' : String(tr.id), no: tr.no, llv: llv, ulv: ulv };
+    res.values.PLTCM_THK_LLV = truncate3(setv + llv, sink);
+    res.values.PLTCM_THK_ULV = truncate3(setv + ulv, sink); flush();
+    step(9, '공차', 'LLV = truncate3(SET + llv) · ULV = truncate3(SET + ulv)', { set: setv, llv: llv, ulv: ulv },
+         { LLV: res.values.PLTCM_THK_LLV, ULV: res.values.PLTCM_THK_ULV });
+    res.ok = true;
+    return res;
+  }
+
   var api = {
     VERSION: VERSION, ERROR_CODES: ERROR_CODES, WARNING_CODES: WARNING_CODES, DEFAULT_DEFS: DEFAULT_DEFS,
-    matchRules: matchRules, truncate3: truncate3, snapSet: snapSet, round4: round4, applyWidth: applyWidth
+    design: design, matchRules: matchRules, truncate3: truncate3, snapSet: snapSet, round4: round4, applyWidth: applyWidth
   };
   return api;
 });
