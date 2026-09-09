@@ -244,9 +244,7 @@ a{ color:inherit; }
   flex:1; min-height:0;
 }
 
-#module-frame, #module-frame-qd, #module-frame-owe, #module-frame-oc, #module-frame-pf,
-#module-frame-sim, #module-frame-qj, #module-frame-csm, #module-frame-cbom,
-#module-frame-qc, #module-frame-ic, #module-frame-tag, #module-frame-mc{
+.route-view > iframe{
   flex:1; width:100%; border:0;
   background:var(--bg);
 }
