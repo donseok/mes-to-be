@@ -1604,12 +1604,16 @@ var SEED_SPECS=[
   {specNo:'320104-L01',cusCd:'320104',prdNm:'L',status:'확정',rev:1,author:'정하윤',
    conds:[{code:'ORD_EXC_THK',ko:'주문환산두께',op:'≤',val:'0.5'}],
    results:[{code:'POST_TRT',ko:'후처리',op:'=',val:'보호필름'}]}
+  ,{specNo:'110197-304',cusCd:'110197',prdNm:'3',status:'확정',rev:1,author:'김민석',
+   conds:[{code:'ORD_THK_MNG_CD',ko:'두께관리코드',op:'=',val:'D'}],
+   results:[{code:'CUS_ROL_THK',ko:'고객요청압연두께',op:'=',val:'0.01',unit:'mm'},
+            {code:'THK_COR_UNT',ko:'두께보정단위',op:'=',val:'CRN',unit:''}]}
 ];
 
 /* ============================================================
    상태 · 시드 케이스
    ============================================================ */
-var LS_KEY='sim-mock-v1';
+var LS_KEY='sim-mock-v2';
 var state=null, run=null;
 var ui={stage:6,provPath:null,openSec:{common:true},q:''};
 
@@ -1666,6 +1670,31 @@ function seedCases(){
      /* 이 케이스는 의도적으로 FAIL 한다 — 7CGL 기준이 없다는 사실을 회귀로 잡아두기 위한 것 */
      expect:{pins:[],verdicts:[{stage:4,expect:'P'}],golden:null,goldenAt:null},
      lastRun:null,author:'목업 사용자'}
+    ,(function(){var o=orderFromSeed(SEED_ORDERS.filter(function(x){return x.no==='D260831021';})[0]);
+      return {id:'TC-031',name:'GI 0.44 — C10B2060 no.69 1건 · SET 0.420',baseOrderRef:orderKey(o),order:o,
+        expect:{pins:[{path:'cgl.pltcm.X-Ray Set두께값',label:'X-Ray SET',op:'=',val:'0.420'},
+                      {path:'cgl.pltcm.두께목표값',label:'두께목표값',op:'~',val:'0.420'},
+                      {path:'cgl.pltcm.두께하한',label:'두께하한',op:'=',val:'0.404'},
+                      {path:'cgl.pltcm.두께상한',label:'두께상한',op:'=',val:'0.435'}],
+                verdicts:[{stage:6,expect:'P'}],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'};})()
+    ,(function(){var o=orderFromSeed(SEED_ORDERS.filter(function(x){return x.no==='D260831021';})[0]);o.ORD_EXC_THK='0.260';
+      return {id:'TC-032',name:'GI 0.26 — KK82 (no.69 하한 0.27 미만)',baseOrderRef:orderKey(o),order:o,
+        expect:{pins:[],verdicts:[{stage:6,expect:'F'}],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'};})()
+    ,(function(){var o=orderFromSeed(SEED_ORDERS[0]);
+      return {id:'TC-033',name:'CCGI 0.45 — CUSTOMER 고객요청 +0.01 CRN (사양 110197-304 필요)',baseOrderRef:orderKey(o),order:o,
+        expect:{pins:[{path:'cgl.pltcm.X-Ray Set두께값',label:'X-Ray SET',op:'=',val:'0.460'},
+                      {path:'cgl.pltcm.두께하한',label:'두께하한',op:'=',val:'0.445'},
+                      {path:'cgl.pltcm.두께상한',label:'두께상한',op:'=',val:'0.475'}],
+                verdicts:[{stage:6,expect:'P'}],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'};})()
+    ,(function(){var o=orderFromSeed(SEED_ORDERS[0]);o.ORD_THK_MNG_CD='Q';o.ORD_USG_CD='C11004';
+      return {id:'TC-034',name:'CCGI 관리코드 Q · 용도 C11004 — KK83 (no.14 + no.27)',baseOrderRef:orderKey(o),order:o,
+        expect:{pins:[],verdicts:[{stage:6,expect:'F'}],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'};})()
+    ,(function(){var o=orderFromSeed(SEED_ORDERS[0]);o.ORD_THK_MNG_CD='Q';
+      return {id:'TC-035',name:'CCGI 관리코드 Q — 고객사 110197 룰 no.27 · SET 0.410',baseOrderRef:orderKey(o),order:o,
+        expect:{pins:[{path:'cgl.pltcm.X-Ray Set두께값',label:'X-Ray SET',op:'=',val:'0.410'},
+                      {path:'cgl.pltcm.두께하한',label:'두께하한',op:'=',val:'0.394'},
+                      {path:'cgl.pltcm.두께상한',label:'두께상한',op:'=',val:'0.425'}],
+                verdicts:[{stage:6,expect:'P'}],golden:null,goldenAt:null},lastRun:null,author:'목업 사용자'};})()
   ];
 }
 function freshState(){
