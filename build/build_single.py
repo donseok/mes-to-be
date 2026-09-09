@@ -252,6 +252,21 @@ index = index.replace(
     '          <iframe id="module-frame-sc" title="규격약호관리 목업" '
     'loading="lazy" srcdoc="' + escaped_sc + '"></iframe>', 1)
 
+# --- 2o. 압연두께Set보정관리 모듈 iframe srcdoc 내장 ------------------------------
+module_rts = open(path('modules', 'rolling-thickness-set.html'), encoding='utf-8').read()
+old_iframe_rts = '''          <iframe
+            id="module-frame-rts"
+            title="압연두께Set보정관리 목업"
+            src="./modules/rolling-thickness-set.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_rts in index, 'rts iframe block not found'
+escaped_rts = module_rts.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_rts,
+    '          <iframe id="module-frame-rts" title="압연두께Set보정관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_rts + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
 old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'

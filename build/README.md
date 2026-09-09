@@ -11,6 +11,7 @@
 | `modules/quality-spec.html` | 품질사양 관리 모듈 (사양 목록·신규 등록·코드 사전·변경 이력·전송 이력·시뮬레이션 — 화면/기능의 대부분) |
 | `modules/raw-material-grade.html` | 원자재강종관리 모듈 (조건(품명·규격약호·주문용도·두께범위) → 결과(재질코드·적정/차선원료·메시지) 룰 관리 — 도금(G)↔칼라(3) 원판연계: 도금기준/칼라파생/칼라전용, 파생 룰 재질·적정원료 상속, 원판 변경 시 재검토 플래그, 간편판정·변경 이력·코드 범례) |
 | `modules/spec-code.html` | 규격약호관리 모듈 (규격코드 조건 → 결과 기준 2종: 규격코드→두께관리기준(BMT/TCT), 규격코드+강종코드→원판강종코드 — 목록·등록·수정·삭제, 간편조회, 변경 이력, 코드 범례. 데이터 접근은 `repo` 객체(localStorage)로 분리해 DB 연동 시 내부만 교체) |
+| `modules/rolling-thickness-set.html` | 압연두께Set보정관리 모듈 (AS-IS 업무기준 C10B2060 룰 82건 — 조건 10종(품명·규격기관·규격약호·주문용도·고객사·주문두께구분·두께관리코드·도금량코드·두께/폭범위) → 두께보정치·단위. 목록·등록·수정·삭제, 간편판정(Set 두께 계산), 변경 이력, 코드 범례. 시드는 `build/rolling_thickness_set_seed.py`가 `/*__RTS_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-design.html` | 품질설계 모듈 (좌: 의뢰현황 목록 · 우: 설계결과 — 구 탭 9종을 펼치기/접기 섹션으로 통합) |
 | `modules/order-weight-error.html` | 주문단중에러관리 모듈 (주문단중 × 분할 수 매트릭스 — Min/Max 허용범위 하이라이트·셀 수정·수정 이력) |
 | `modules/production-feasibility.html` | 생산가부관리 모듈 (B.D 생산범위(2CGL GI) 탭 — 참조 엑셀 시트 재현: 재질별 폭 × 두께 가부 매트릭스·가부 간편조회·셀 상태 수정·수정 이력) |
@@ -54,6 +55,19 @@ xlsx 없이도 기존 시드(`build/order_consistency_seed.json`)가 이미 모�
 
 ```bash
 python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 생성 → 모듈 주입(멱등)
+```
+
+## 룰 시드 파이프라인 (압연두께Set보정관리 모듈)
+
+`modules/rolling-thickness-set.html`의 룰 데이터도 손으로 쓰지 않는다. 원본 `압연두께Set치보정기준.xlsx`
+(RuleData C10B2060)를 `build/rolling_thickness_set_seed.py`가 파싱·정규화(연산자 대문자화, 목록 공백 제거,
+`+0.055` 같은 부호 표기 숫자화)해 `build/rolling_thickness_set_seed.json`을 만들고 모듈 마커 구간에 주입한다.
+원본은 `sources/`(gitignore)에 두거나 `RTS_XLSX` 환경변수 · `--xlsx` 옵션으로 지정한다. 룰에는 고객사 코드값만
+있고 실명은 없어 마스킹 단계가 없다.
+
+```bash
+python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 모듈 주입(멱등)
+python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없이 기존 JSON 재주입
 ```
 
 ### 고객사 실명 마스킹 (공개 저장소 배포)
