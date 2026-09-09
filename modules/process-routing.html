@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P-ROUTE 공정라우팅관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   P-ROUTE 공정라우팅관리 — 품질설계 기준 룰 (조건 → 결과)
+   주문 속성(제품군·재질코드·엠보스무늬·Spangle구분·도금량코드·표면처리코드·
+   두께범위·폭범위)에 따라 냉연도금공정(라우팅 코드)을 결정한다.
+   탭: 라우팅 룰 · 간편판정 · 변경 이력 · 코드 범례
+   데이터는 repo 객체(브라우저 localStorage)를 통해서만 읽고 쓴다.
+   실제 DB(REST API) 연동 시 repo 객체 내부만 교체하면 되도록 분리했다.
+   시드는 공정라우팅모듈.xlsx(조건 8열 · 결과 1열, 룰 2건)를 그대로 옮긴 것.
+   ============================================================ */
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;
+  --accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;
+  --ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:14px;line-height:1.55}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* 상단바 · 탭 */
+.topbar{position:sticky;top:0;z-index:40;height:52px;display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--topbar-bg);border-bottom:1px solid var(--border);color:var(--topbar-ink)}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);color:var(--accent-on);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.brand-name{font-weight:800;letter-spacing:.4px}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock-flag{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--result);background:var(--result-soft);border:1px solid #EAD9B5;border-radius:5px;padding:3px 8px}
+.embedded .topbar{display:none}
+.tabs{position:sticky;top:52px;z-index:30;display:flex;gap:2px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.embedded .tabs{top:0}
+.tab{padding:12px 14px;font-weight:700;font-size:13.5px;color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink-2)}
+.tab.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
+.tab .cnt{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:999px;background:var(--surface-3);color:var(--ink-2);font-size:11px;text-align:center}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:18px 18px 60px}
+.screen{display:none}
+.screen.on{display:block}
+.screen-head{margin:4px 0 14px}
+.screen-head h2{margin:0 0 4px;font-size:18px}
+.screen-head p{margin:0;color:var(--ink-2);font-size:13px}
+
+/* 조회 바 · 입력 */
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.f-field{display:flex;flex-direction:column;gap:4px}
+.f-field>label{font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.3px}
+.inp{height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;min-width:0}
+textarea.inp{height:auto;padding:8px 10px;resize:vertical}
+.inp[readonly]{background:var(--surface-2);color:var(--ink-2)}
+.inp:disabled{background:var(--surface-2);color:var(--ink-3)}
+.f-spacer{flex:1}
+.fbar-meta{font-size:12.5px;color:var(--ink-3);align-self:center}
+.btn{height:34px;padding:0 14px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);font-weight:700;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-danger{background:var(--danger-bg);border-color:#EAC7C4;color:var(--danger)}
+
+/* 패널 · 테이블 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.panel-head h3{margin:0;font-size:14.5px}
+.panel-body{padding:12px 14px}
+.panel-note{padding:10px 14px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--ink-2)}
+.tbl-scroll{overflow:auto;max-height:calc(100vh - 280px)}
+table.tbl{border-collapse:collapse;width:100%;min-width:1180px;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--ink-2);font-size:11.5px;text-align:left;padding:9px 10px;border-bottom:1px solid var(--border-strong);white-space:nowrap;z-index:1}
+.tbl thead tr.grp th{top:0;text-align:center;font-size:11px;letter-spacing:.6px;border-bottom:1px solid var(--border)}
+.tbl thead tr.grp+tr th{top:31px}
+.tbl th.g-cond{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.tbl th.g-res{background:var(--result-soft);color:var(--result-soft-ink)}
+.tbl th.g-etc{background:var(--surface-2);color:var(--ink-3)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap}
+.tbl td.res{background:#FFFCF5}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#F8FAF9}
+.tbl tr.row:hover td.res{background:#FBF5E6}
+.tbl tr.sel td{background:var(--accent-soft)}
+.tbl td.c{text-align:center}
+.tbl td.dim{color:var(--ink-3)}
+.note-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.empty{padding:36px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+
+/* 뱃지 */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--danger-bg);color:var(--danger)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.chip.route{background:var(--result-soft);color:var(--result-soft-ink)}
+.chip.cond{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.miss{background:var(--danger-bg);color:var(--danger)}
+.op{display:inline-block;min-width:22px;padding:0 5px;border-radius:5px;background:var(--code-bg);color:var(--ink-2);font-size:11.5px;text-align:center;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.inherit{color:var(--ink-3);font-size:11px}
+.skip{color:var(--ink-3);font-size:12px}
+
+/* 간편판정 */
+.lookup-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px}
+.lk-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.lk-head{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.lk-head h3{margin:0;font-size:13.5px}
+.lk-body{padding:14px}
+.lk-result{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.lk-result .val{font-size:26px;font-weight:800;color:var(--accent-strong)}
+.lk-result .val.miss{color:var(--danger);font-size:18px}
+.lk-desc{font-size:12.5px;color:var(--ink-2)}
+.lk-rule{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:12.5px;color:var(--ink-2)}
+.lk-rule a{color:var(--accent-strong);font-weight:700;cursor:pointer;text-decoration:underline}
+.lookup-hint{font-size:12px;color:var(--ink-3);margin:6px 0 0}
+
+/* 범례 */
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-3);font-weight:700}
+.kv dd{margin:0}
+
+/* 드로어 */
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:640px;max-width:96vw;background:var(--surface);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .2s;z-index:60;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-close{width:30px;height:30px;border-radius:7px;color:var(--ink-3);font-size:15px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:14px 18px}
+.d-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--border)}
+.d-sect{margin-bottom:16px}
+.d-sect h4{margin:0 0 8px;font-size:12px;color:var(--ink-3);letter-spacing:.5px}
+.d-sect h4.cond{color:var(--accent-soft-ink)}
+.d-sect h4.res{color:var(--result-soft-ink)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.form-grid .wide{grid-column:1 / -1}
+.form-grid .f-field>label .req{color:var(--danger)}
+.cond-row{display:grid;grid-template-columns:150px 1fr;gap:8px}
+.cond-row.range{grid-template-columns:150px 1fr 1fr}
+.f-help{font-size:11.5px;color:var(--ink-3)}
+
+/* 모달 · 토스트 */
+.modal-back{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:70}
+.modal-back.on{display:flex}
+.modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);width:400px;max-width:92vw;padding:18px}
+.modal h3{margin:0 0 8px;font-size:15px}
+.modal p{margin:0 0 16px;color:var(--ink-2);font-size:13px}
+.modal .m-foot{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:80;max-width:88vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--danger)}
+
+@media (max-width:900px){.lookup-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:720px){
+  .wrap{padding:12px 10px 50px}
+  .form-grid,.lookup-grid{grid-template-columns:1fr}
+  .cond-row,.cond-row.range{grid-template-columns:1fr}
+  .drawer{width:100%}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">M</span><span class="brand-name">P-ROUTE</span></div>
+  <span class="crumb">품질관리 › 품질설계 › 모듈관리 › 공정라우팅관리</span>
+  <span class="mock-flag">MOCK-UP</span>
+</header>
+<nav class="tabs" role="tablist" aria-label="공정라우팅관리 탭">
+  <button class="tab on" role="tab" data-tab="rules" aria-selected="true" aria-controls="pr-rules" tabindex="0">라우팅 룰 <span class="cnt" id="cnt-rules">0</span></button>
+  <button class="tab" role="tab" data-tab="lookup" aria-selected="false" aria-controls="pr-lookup" tabindex="-1">간편판정</button>
+  <button class="tab" role="tab" data-tab="hist" aria-selected="false" aria-controls="pr-hist" tabindex="-1">변경 이력 <span class="cnt" id="cnt-hist">0</span></button>
+  <button class="tab" role="tab" data-tab="legend" aria-selected="false" aria-controls="pr-legend" tabindex="-1">코드 범례</button>
+</nav>
+<main class="wrap" id="main-content">
+
+  <!-- ── 라우팅 룰 ───────────────────────────────────────── -->
+  <section class="screen on" id="pr-rules" role="tabpanel" aria-label="라우팅 룰">
+    <div class="screen-head">
+      <h2>공정라우팅 룰</h2>
+      <p>조건(제품군·재질코드·엠보스무늬·Spangle구분·도금량코드·표면처리코드·두께범위·폭범위)에 따라 냉연도금공정(라우팅 코드)을 결정합니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="r-prod">제품군</label>
+        <select class="inp" id="r-prod"><option value="">전체</option><option value="G">G — 도금</option><option value="3">3 — 칼라</option></select></div>
+      <div class="f-field"><label for="r-st">상태</label>
+        <select class="inp" id="r-st"><option value="">전체</option><option value="Y">Y — 사용중</option><option value="S">S — 대기상태</option><option value="F">F — 미완료</option><option value="N">N — 사용종료</option></select></div>
+      <div class="f-field"><label for="r-q">검색</label>
+        <input class="inp" id="r-q" type="search" placeholder="ID, 조건값, 공정코드, 비고" style="width:220px"></div>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="rules-meta" aria-live="polite"></div>
+      <button class="btn btn-pri" data-action="new-rule">＋ 룰 등록</button>
+    </div>
+    <div class="panel">
+      <div class="tbl-scroll" id="rules-grid"></div>
+      <div class="panel-note">행을 클릭하면 상세를 열고 수정·삭제할 수 있습니다. 조건 8개가 모두 같은 룰은 중복 등록할 수 없습니다. 시드는 공정라우팅모듈.xlsx의 룰 2건입니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 간편판정 ────────────────────────────────────────── -->
+  <section class="screen" id="pr-lookup" role="tabpanel" aria-label="간편판정">
+    <div class="screen-head">
+      <h2>간편판정</h2>
+      <p>주문 속성을 입력하면 적용되는 냉연도금공정을 확인합니다. 상태 Y(사용중) 룰만 사용하며, 순번이 빠른 룰이 먼저 적용됩니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="lookup-grid" id="lookup-form" style="flex:1"></div>
+      <button class="btn btn-pri" data-action="lookup-run">판정</button>
+      <button class="btn" data-action="lookup-reset">초기화</button>
+    </div>
+    <div class="fbar-meta" id="lookup-meta" aria-live="polite" style="margin:-6px 0 10px"></div>
+    <div id="lookup-body"><div class="lk-card"><div class="lk-head"><span class="chip route">냉연도금공정</span><h3>조건 → 냉연도금공정</h3></div><div class="lk-body"><div class="empty">조건을 입력하고 판정을 실행해 주세요.</div></div></div></div>
+    <p class="lookup-hint">예: 제품군 G · 두께 1.0 · 폭 1000 → 1P-83. 제품군 3 · 두께 0.5 · 폭 1200 → 1P-83-AX. 제품군 3 · 두께 2.0 은 두께범위(0.3 ≤ t &lt; 1.6) 밖이라 해당 없음.</p>
+  </section>
+
+  <!-- ── 변경 이력 ───────────────────────────────────────── -->
+  <section class="screen" id="pr-hist" role="tabpanel" aria-label="변경 이력">
+    <div class="screen-head">
+      <h2>변경 이력</h2>
+      <p>라우팅 룰의 등록·수정·삭제가 기록됩니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="h-from">시작일</label><input class="inp" id="h-from" type="date"></div>
+      <div class="f-field"><label for="h-to">종료일</label><input class="inp" id="h-to" type="date"></div>
+      <div class="f-field"><label for="h-kind">구분</label>
+        <select class="inp" id="h-kind"><option value="">전체</option><option>룰 등록</option><option>룰 수정</option><option>룰 삭제</option></select></div>
+      <div class="f-field"><label for="h-q">검색</label><input class="inp" id="h-q" type="search" placeholder="대상, 작업자" style="width:190px"></div>
+      <button class="btn" data-action="h-reset">초기화</button>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="h-meta" aria-live="polite"></div>
+    </div>
+    <div class="panel"><div class="tbl-scroll" id="hist-grid"></div></div>
+  </section>
+
+  <!-- ── 코드 범례 ───────────────────────────────────────── -->
+  <section class="screen" id="pr-legend" role="tabpanel" aria-label="코드 범례">
+    <div class="screen-head">
+      <h2>코드 범례</h2>
+      <p>공정라우팅관리에서 사용하는 조건 항목·코드·연산자를 정리했습니다.</p>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>조건 항목</h3></div><div class="panel-body"><dl class="kv">
+      <dt>제품군</dt><dd><span class="mono">G</span> 도금(GI) · <span class="mono">3</span> 칼라(CCGI)</dd>
+      <dt>재질코드</dt><dd>주문 재질코드 (예: 1A, 3A, BA)</dd>
+      <dt>엠보스무늬</dt><dd>엠보스 무늬 코드. 무늬 없음은 체크 안함으로 둡니다.</dd>
+      <dt>Spangle구분</dt><dd>스팽글 구분 코드 (예: R 레귤러, M 미니마이즈드, Z 제로)</dd>
+      <dt>도금량코드</dt><dd>도금 부착량 코드 (예: Z12, Z18, Z27)</dd>
+      <dt>표면처리코드</dt><dd>표면처리 코드 (예: C 크로메이트, O 오일링, N 무처리)</dd>
+      <dt>두께범위</dt><dd>주문두께(mm). 범위 연산자로 하한·상한을 적습니다.</dd>
+      <dt>폭범위</dt><dd>주문폭(mm). 범위 연산자로 하한·상한을 적습니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>결과 — 냉연도금공정</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">1P-83</dt><dd>도금(GI) 기본 라우팅 — 1P(PLTCM) → 83(CGL)</dd>
+      <dt class="mono">1P-83-AX</dt><dd>칼라(CCGI) 라우팅 — 1P(PLTCM) → 83(CGL) → AX(CCL)</dd>
+      <dt><span class="chip miss">미정</span></dt><dd>결과 공정이 아직 확정되지 않은 룰. 상태 F(미완료)로 등록해 두고 확정 후 수정합니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>상태</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">S</dt><dd>대기상태</dd><dt class="mono">F</dt><dd>미완료 — 결과값이 비어 있어도 등록할 수 있습니다.</dd>
+      <dt class="mono">Y</dt><dd>사용중 — 간편판정은 Y 룰만 사용합니다.</dd><dt class="mono">N</dt><dd>사용종료</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>연산자 — 문자 항목</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">NOT_CHECK</dt><dd>체크 안함 — 이 항목은 조건에서 제외</dd>
+      <dt class="mono">= / !=</dt><dd>같다 / 다르다</dd>
+      <dt class="mono">IN / NOT_IN</dt><dd>목록 포함 / 미포함 (쉼표 구분: Z12,Z18)</dd>
+      <dt class="mono">LIKE1</dt><dd>%LIKE% (포함)</dd><dt class="mono">LIKE2</dt><dd>%LIKE (끝 일치)</dd><dt class="mono">LIKE3</dt><dd>LIKE% (시작 일치)</dd>
+      <dt class="mono">NOT_NULL / IS_NULL</dt><dd>값 있음 / 값 없음</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>연산자 — 숫자 범위 항목</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">NOT_CHECK</dt><dd>체크 안함</dd>
+      <dt class="mono">= / != / &gt; / &gt;= / &lt; / &lt;=</dt><dd>비교값1과 비교</dd>
+      <dt class="mono">BETWEEN1</dt><dd>값1 ≤ 변수 ≤ 값2</dd><dt class="mono">BETWEEN2</dt><dd>값1 ≤ 변수 &lt; 값2</dd>
+      <dt class="mono">BETWEEN3</dt><dd>값1 &lt; 변수 ≤ 값2</dd><dt class="mono">BETWEEN4</dt><dd>값1 &lt; 변수 &lt; 값2</dd>
+    </dl></div></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="d-head"><h3 id="d-title">상세</h3><button class="d-close" data-action="drawer-close" aria-label="닫기">✕</button></div>
+  <div class="d-body" id="d-body"></div>
+  <div class="d-foot" id="d-foot"></div>
+</aside>
+<div class="modal-back" id="modal-back">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <h3 id="m-title">삭제</h3>
+    <p id="m-body"></p>
+    <div class="m-foot"><button class="btn" data-action="modal-close">취소</button><button class="btn btn-danger" data-action="modal-ok">삭제</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ── 헬퍼 ─────────────────────────────────────────────── */
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function now(){return Date.now();}
+function pad2(n){return (n<10?'0':'')+n;}
+function pad3(n){return ('00'+n).slice(-3);}
+function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function ymd(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function norm(s){return String(s==null?'':s).trim().toUpperCase();}
+var toastTimer=null;
+function toast(msg,type){var t=$('#toast');t.textContent=msg;t.className='toast on'+(type==='err'?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);}
+
+/* ── 상수 ─────────────────────────────────────────────── */
+var LS_KEY='process-routing-mock-v1';
+var CUR_USER='주인';
+var STATUS={Y:{l:'사용중',cls:'ok'},S:{l:'대기상태',cls:'hold'},F:{l:'미완료',cls:'warn'},N:{l:'사용종료',cls:'dim'}};
+var PROD={'G':'도금(GI)','3':'칼라(CCGI)'};
+var TEXT_OPS=['NOT_CHECK','=','!=','IN','NOT_IN','LIKE1','LIKE2','LIKE3','NOT_NULL','IS_NULL'];
+var NUM_OPS=['NOT_CHECK','=','!=','>','>=','<','<=','BETWEEN1','BETWEEN2','BETWEEN3','BETWEEN4'];
+var OP_LABEL={'NOT_CHECK':'체크 안함','=':'같다','!=':'다르다','IN':'목록 포함','NOT_IN':'목록 미포함','LIKE1':'포함 (%LIKE%)','LIKE2':'끝 일치 (%LIKE)','LIKE3':'시작 일치 (LIKE%)',
+  'NOT_NULL':'값 있음','IS_NULL':'값 없음','>':'초과','>=':'이상','<':'미만','<=':'이하',
+  'BETWEEN1':'값1 ≤ x ≤ 값2','BETWEEN2':'값1 ≤ x < 값2','BETWEEN3':'값1 < x ≤ 값2','BETWEEN4':'값1 < x < 값2'};
+/* 조건 항목 정의 — 엑셀 조건 열 순서 그대로. num 항목은 비교값1·비교값2(범위)를 가진다. */
+var FIELDS=[
+  {key:'prod',label:'제품군',type:'text',ph:'G 또는 3',hint:'G 도금 · 3 칼라'},
+  {key:'mat',label:'재질코드',type:'text',ph:'예: 1A'},
+  {key:'emb',label:'엠보스무늬',type:'text',ph:'예: E1'},
+  {key:'spg',label:'Spangle구분',type:'text',ph:'예: R'},
+  {key:'ctg',label:'도금량코드',type:'text',ph:'예: Z12'},
+  {key:'sfc',label:'표면처리코드',type:'text',ph:'예: C'},
+  {key:'thk',label:'두께범위',type:'num',unit:'mm',ph1:'하한',ph2:'상한',lkLabel:'주문두께(mm)'},
+  {key:'wid',label:'폭범위',type:'num',unit:'mm',ph1:'하한',ph2:'상한',lkLabel:'주문폭(mm)'}
+];
+function opsOf(f){return f.type==='num'?NUM_OPS:TEXT_OPS;}
+function opNeedsValue(op){return op!=='NOT_CHECK'&&op!=='NOT_NULL'&&op!=='IS_NULL';}
+function isBetween(op){return op.indexOf('BETWEEN')===0;}
+
+/* ── 데이터 접근 계층 ──────────────────────────────────
+   화면은 repo.rules / repo.log 를 통해서만 데이터를 읽고 쓴다.
+   지금은 localStorage 저장이며, 실제 DB 연동 시 이 객체의 내부 구현만
+   REST 호출(fetch)로 바꾸면 된다. 각 메서드는 저장된 레코드를 반환한다.
+   룰 구조: {id,no,cond:{prod:{op,v1,v2},…},route,status,note,createdAt,createdBy,updatedAt,updatedBy}
+   ────────────────────────────────────────────────────── */
+var repo=(function(){
+  function ago(days,hours){return now()-((days||0)*24+(hours||0))*60*60*1000;}
+  function stamp(o,ts,by){o.createdAt=o.createdAt||ts;o.createdBy=o.createdBy||by;o.updatedAt=ts;o.updatedBy=by;return o;}
+  function cond(op,v1,v2){return {op:op||'NOT_CHECK',v1:(v1==null?'':String(v1)),v2:(v2==null?'':String(v2))};}
+  function seed(){
+    var st={v:LS_KEY,seq:1,ruleSeq:1,rules:[],changelog:[]};
+    // 공정라우팅모듈.xlsx — 조건 8열 · 결과(냉연도금공정) 1열, 룰 2건
+    [
+      {prod:'G',thk:[0.2,2.5],wid:[600,1600],route:'1P-83'},
+      {prod:'3',thk:[0.3,1.6],wid:[600,1600],route:'1P-83-AX'}
+    ].forEach(function(p,i){
+      var r={id:'PR-'+pad3(st.ruleSeq++),no:i+1,route:p.route,status:'Y',note:'',cond:{
+        prod:cond('=',p.prod),mat:cond(),emb:cond(),spg:cond(),ctg:cond(),sfc:cond(),
+        thk:cond('BETWEEN2',p.thk[0],p.thk[1]),wid:cond('BETWEEN2',p.wid[0],p.wid[1])}};
+      st.rules.push(stamp(r,ago(20-i),'김민석'));
+    });
+    function log(ts,by,kind,item,before,after){st.changelog.push({id:'c'+(st.seq++),ts:ts,by:by,kind:kind,item:item,before:before,after:after});}
+    log(ago(20),'김민석','룰 등록','PR-001 · 제품군 G','','냉연도금공정 1P-83 · 상태 Y');
+    log(ago(19),'김민석','룰 등록','PR-002 · 제품군 3','','냉연도금공정 1P-83-AX · 상태 Y');
+    return st;
+  }
+  function read(){try{var raw=localStorage.getItem(LS_KEY);if(raw){var st=JSON.parse(raw);if(st&&st.v===LS_KEY)return st;}}catch(e){}return null;}
+  function write(){try{localStorage.setItem(LS_KEY,JSON.stringify(st));}catch(e){}}
+  var st=read()||seed();write();
+  function find(id){var f=null;st.rules.forEach(function(r){if(r.id===id)f=r;});return f;}
+  return {
+    rules:{
+      list:function(){return st.rules.slice();},
+      get:find,
+      create:function(data,by){
+        var r=JSON.parse(JSON.stringify(data));
+        r.id='PR-'+pad3(st.ruleSeq++);
+        r.no=st.rules.length+1;
+        stamp(r,now(),by||CUR_USER);
+        st.rules.push(r);write();return r;
+      },
+      update:function(id,patch,by){
+        var r=find(id);if(!r)return null;
+        var p=JSON.parse(JSON.stringify(patch));
+        Object.keys(p).forEach(function(k){r[k]=p[k];});
+        stamp(r,now(),by||CUR_USER);write();return r;
+      },
+      remove:function(id){
+        var r=find(id);if(!r)return null;
+        st.rules=st.rules.filter(function(x){return x.id!==id;});
+        st.rules.forEach(function(x,i){x.no=i+1;});
+        write();return r;
+      }
+    },
+    log:{
+      list:function(){return st.changelog.slice();},
+      append:function(kind,item,before,after,by){
+        var e={id:'c'+(st.seq++),ts:now(),by:by||CUR_USER,kind:kind,item:item,before:before||'',after:after||''};
+        st.changelog.push(e);write();return e;
+      }
+    }
+  };
+})();
+
+/* ── 조건 평가 ────────────────────────────────────────── */
+function listOf(v){return String(v||'').split(',').map(norm).filter(Boolean);}
+function textMatch(c,input){
+  var a=norm(c.v1),b=norm(input);
+  switch(c.op){
+    case 'NOT_CHECK':return true;
+    case 'NOT_NULL':return b!=='';
+    case 'IS_NULL':return b==='';
+    case '=':return a===b;
+    case '!=':return a!==b;
+    case 'IN':return listOf(c.v1).indexOf(b)>=0;
+    case 'NOT_IN':return listOf(c.v1).indexOf(b)<0;
+    case 'LIKE1':return a!==''&&b.indexOf(a)>=0;
+    case 'LIKE2':return a!==''&&b.slice(-a.length)===a;
+    case 'LIKE3':return a!==''&&b.indexOf(a)===0;
+  }
+  return false;
+}
+function numMatch(c,input){
+  if(c.op==='NOT_CHECK')return true;
+  var x=parseFloat(input),a=parseFloat(c.v1),b=parseFloat(c.v2);
+  if(isNaN(x))return false;
+  switch(c.op){
+    case '=':return x===a;case '!=':return x!==a;
+    case '>':return x>a;case '>=':return x>=a;case '<':return x<a;case '<=':return x<=a;
+    case 'BETWEEN1':return x>=a&&x<=b;case 'BETWEEN2':return x>=a&&x<b;
+    case 'BETWEEN3':return x>a&&x<=b;case 'BETWEEN4':return x>a&&x<b;
+  }
+  return false;
+}
+function ruleMatch(r,input){
+  return FIELDS.every(function(f){var c=r.cond[f.key]||{op:'NOT_CHECK'};return f.type==='num'?numMatch(c,input[f.key]):textMatch(c,input[f.key]);});
+}
+
+/* ── 표시 헬퍼 ────────────────────────────────────────── */
+function opHtml(op){return '<span class="op" title="'+esc(OP_LABEL[op]||op)+'">'+esc(op)+'</span>';}
+function statusPill(s){var m=STATUS[s]||{l:s,cls:'dim'};return '<span class="pill '+m.cls+'">'+esc(s)+' '+esc(m.l)+'</span>';}
+function routeHtml(v){return v?'<b class="mono">'+esc(v)+'</b>':'<span class="chip miss">미정</span>';}
+function condText(f,c){
+  if(!c||c.op==='NOT_CHECK')return '체크 안함';
+  if(c.op==='NOT_NULL')return '값 있음';
+  if(c.op==='IS_NULL')return '값 없음';
+  if(c.op==='BETWEEN1')return c.v1+' ≤ x ≤ '+c.v2;
+  if(c.op==='BETWEEN2')return c.v1+' ≤ x < '+c.v2;
+  if(c.op==='BETWEEN3')return c.v1+' < x ≤ '+c.v2;
+  if(c.op==='BETWEEN4')return c.v1+' < x < '+c.v2;
+  return (c.op==='='?'':c.op+' ')+c.v1;
+}
+function condHtml(f,c){
+  if(!c||c.op==='NOT_CHECK')return '<span class="skip">체크 안함</span>';
+  if(c.op==='NOT_NULL'||c.op==='IS_NULL')return opHtml(c.op);
+  if(isBetween(c.op))return '<span class="mono">'+esc(condText(f,c))+'</span> <span class="inherit">'+esc(c.op)+'</span>';
+  var val='<span class="mono"><b>'+esc(c.v1)+'</b></span>';
+  if(f.key==='prod'&&PROD[c.v1])val+=' <span class="inherit">'+esc(PROD[c.v1])+'</span>';
+  return (c.op==='='?'':opHtml(c.op)+' ')+val;
+}
+function ruleLabel(r){var p=r.cond.prod;return r.id+' · 제품군 '+(p&&p.op!=='NOT_CHECK'?condText(FIELDS[0],p):'(전체)');}
+function ruleSummary(r){return '냉연도금공정 '+(r.route||'(미정)')+' · 상태 '+r.status;}
+function condSummary(r){
+  return FIELDS.filter(function(f){var c=r.cond[f.key];return c&&c.op!=='NOT_CHECK';}).map(function(f){return f.label+' '+condText(f,r.cond[f.key]);}).join(' / ')||'조건 없음';
+}
+function userCell(r){return '<span class="mono">'+esc(fmtDT(r.updatedAt))+'</span> <span class="inherit">'+esc(r.updatedBy||'')+'</span>';}
+function ruleText(r){return FIELDS.map(function(f){var c=r.cond[f.key];return c?c.v1+' '+c.v2:'';}).concat([r.route,r.note,r.id]).join(' ');}
+
+/* ── UI 상태 ──────────────────────────────────────────── */
+var ui={prod:'',st:'',q:'',histFrom:'',histTo:'',histKind:'',histQ:''};
+var sel=null;          // 선택된 룰 id
+var editing=null;      // {id:string|null}
+var pendingDelete=null;
+
+/* ── 탭 ───────────────────────────────────────────────── */
+function setTab(name){
+  $$('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===name;
+    t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;
+  });
+  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='pr-'+name);});
+  if(name==='hist')renderHist();
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
+
+/* ── 라우팅 룰 목록 ───────────────────────────────────── */
+function renderRules(){
+  var rows=repo.rules.list().filter(function(r){
+    if(ui.prod){var p=r.cond.prod;if(!p||p.op!=='='||norm(p.v1)!==ui.prod)return false;}
+    if(ui.st&&r.status!==ui.st)return false;
+    if(ui.q&&norm(ruleText(r)).indexOf(norm(ui.q))<0)return false;
+    return true;
+  });
+  $('#rules-meta').textContent=rows.length+'건 / 전체 '+repo.rules.list().length+'건';
+  if(!rows.length){$('#rules-grid').innerHTML='<div class="empty">조건에 맞는 룰이 없습니다.</div>';return;}
+  var h='<table class="tbl"><thead>'
+    +'<tr class="grp"><th class="g-etc" colspan="2"></th><th class="g-cond" colspan="'+FIELDS.length+'">조건</th><th class="g-res">결과</th><th class="g-etc" colspan="3"></th></tr>'
+    +'<tr><th>순번</th><th>ID</th>'+FIELDS.map(function(f){return '<th>'+esc(f.label)+'</th>';}).join('')+'<th>냉연도금공정</th><th>상태</th><th>비고</th><th>최종 수정</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr class="row'+(sel===r.id?' sel':'')+'" data-open="'+esc(r.id)+'" tabindex="0">'
+      +'<td class="c dim">'+esc(r.no)+'</td><td class="mono">'+esc(r.id)+'</td>'
+      +FIELDS.map(function(f){return '<td>'+condHtml(f,r.cond[f.key])+'</td>';}).join('')
+      +'<td class="res">'+routeHtml(r.route)+'</td>'
+      +'<td>'+statusPill(r.status)+'</td><td class="note-cell" title="'+esc(r.note)+'">'+(r.note?esc(r.note):'<span class="inherit">—</span>')+'</td>'
+      +'<td>'+userCell(r)+'</td></tr>';
+  });
+  $('#rules-grid').innerHTML=h+'</tbody></table>';
+}
+$('#r-prod').addEventListener('change',function(){ui.prod=this.value;renderRules();});
+$('#r-st').addEventListener('change',function(){ui.st=this.value;renderRules();});
+$('#r-q').addEventListener('input',function(){ui.q=this.value;renderRules();});
+
+/* ── 간편판정 ─────────────────────────────────────────── */
+var LK_DEFAULT={prod:'G',mat:'',emb:'',spg:'',ctg:'',sfc:'',thk:'1.0',wid:'1000'};
+function renderLookupForm(){
+  $('#lookup-form').innerHTML=FIELDS.map(function(f){
+    return '<div class="f-field"><label for="lk-'+f.key+'">'+esc(f.lkLabel||f.label)+'</label>'
+      +'<input class="inp mono" id="lk-'+f.key+'" value="'+esc(LK_DEFAULT[f.key])+'" placeholder="'+esc(f.type==='num'?'숫자':(f.ph||''))+'" autocomplete="off"'+(f.type==='num'?' inputmode="decimal"':'')+'></div>';
+  }).join('');
+  $$('#lookup-form input').forEach(function(i){i.addEventListener('keydown',function(e){if(e.key==='Enter')runLookup();});});
+}
+function lookupInput(){var o={};FIELDS.forEach(function(f){o[f.key]=$('#lk-'+f.key).value.trim();});return o;}
+function runLookup(){
+  var input=lookupInput();
+  if(!input.prod){toast('제품군을 입력해 주세요.','err');$('#lk-prod').focus();return;}
+  var hits=repo.rules.list().filter(function(r){return r.status==='Y'&&ruleMatch(r,input);}).sort(function(a,b){return a.no-b.no;});
+  var m=hits[0];
+  var h='<div class="lk-card"><div class="lk-head"><span class="chip route">냉연도금공정</span><h3>조건 → 냉연도금공정</h3></div><div class="lk-body">';
+  if(m){
+    h+='<div class="lk-result"><span class="val mono">'+esc(m.route||'미정')+'</span><span class="lk-desc">제품군 <b class="mono">'+esc(input.prod)+'</b>'+(PROD[norm(input.prod)]?' ('+esc(PROD[norm(input.prod)])+')':'')+' · 두께 '+esc(input.thk||'—')+' · 폭 '+esc(input.wid||'—')+'</span></div>'
+      +'<div class="lk-rule">적용 룰 <a data-open="'+esc(m.id)+'">'+esc(m.id)+'</a> (순번 '+esc(m.no)+') · 조건 '+esc(condSummary(m))
+      +(hits.length>1?'<br>후보 '+(hits.length-1)+'건 더 있음(순번 빠른 룰 적용): '+hits.slice(1).map(function(x){return '<a data-open="'+esc(x.id)+'">'+esc(x.id)+'</a> → '+esc(x.route||'미정');}).join(', '):'')+'</div>';
+  }else h+='<div class="lk-result"><span class="val miss">해당 없음</span><span class="lk-desc">입력한 조건에 맞는 사용중(Y) 라우팅 룰이 없습니다. 두께·폭이 룰의 범위 안에 있는지 확인해 주세요.</span></div>';
+  h+='</div></div>';
+  $('#lookup-body').innerHTML=h;
+  $('#lookup-meta').textContent='매칭 룰 '+hits.length+'건';
+}
+function resetLookup(){FIELDS.forEach(function(f){$('#lk-'+f.key).value=LK_DEFAULT[f.key];});$('#lookup-meta').textContent='';
+  $('#lookup-body').innerHTML='<div class="lk-card"><div class="lk-head"><span class="chip route">냉연도금공정</span><h3>조건 → 냉연도금공정</h3></div><div class="lk-body"><div class="empty">조건을 입력하고 판정을 실행해 주세요.</div></div></div>';}
+
+/* ── 변경 이력 ────────────────────────────────────────── */
+function histDefaults(){
+  ui.histFrom=ymd(now()-30*24*60*60*1000);ui.histTo=ymd(now());ui.histKind='';ui.histQ='';
+  $('#h-from').value=ui.histFrom;$('#h-to').value=ui.histTo;$('#h-kind').value='';$('#h-q').value='';
+}
+function renderHist(){
+  var rows=repo.log.list().filter(function(r){
+    var d=ymd(r.ts);
+    if(ui.histFrom&&d<ui.histFrom)return false;
+    if(ui.histTo&&d>ui.histTo)return false;
+    if(ui.histKind&&r.kind!==ui.histKind)return false;
+    if(ui.histQ){var q=norm(ui.histQ);if(norm(r.item).indexOf(q)<0&&norm(r.by).indexOf(q)<0)return false;}
+    return true;
+  }).sort(function(a,b){return b.ts-a.ts;});
+  $('#h-meta').textContent=rows.length+'건';
+  if(!rows.length){$('#hist-grid').innerHTML='<div class="empty">조건에 맞는 이력이 없습니다.</div>';return;}
+  var h='<table class="tbl" style="min-width:800px"><thead><tr><th>일시</th><th>구분</th><th>대상</th><th>변경 전</th><th>변경 후</th><th>작업자</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td class="mono">'+esc(fmtDT(r.ts))+'</td><td><span class="chip cond">'+esc(r.kind)+'</span></td><td>'+esc(r.item)+'</td>'
+      +'<td class="mono" style="white-space:normal">'+esc(r.before||'—')+'</td><td class="mono" style="white-space:normal"><b>'+esc(r.after||'—')+'</b></td><td>'+esc(r.by)+'</td></tr>';
+  });
+  $('#hist-grid').innerHTML=h+'</tbody></table>';
+}
+['h-from','h-to'].forEach(function(id){$('#'+id).addEventListener('change',function(){ui[id==='h-from'?'histFrom':'histTo']=this.value;renderHist();});});
+$('#h-kind').addEventListener('change',function(){ui.histKind=this.value;renderHist();});
+$('#h-q').addEventListener('input',function(){ui.histQ=this.value;renderHist();});
+
+/* ── 드로어: 상세 ─────────────────────────────────────── */
+function openDrawer(){$('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;editing=null;renderRules();}
+function kvRow(l,v){return '<dt>'+esc(l)+'</dt><dd>'+v+'</dd>';}
+function openDetail(id){
+  var r=repo.rules.get(id);if(!r)return;
+  sel=id;editing=null;renderRules();
+  $('#d-title').textContent=ruleLabel(r);
+  var h='<div class="d-sect"><h4>구분</h4><div><span class="chip cond">라우팅 룰</span> <span class="inherit">순번 '+esc(r.no)+'</span></div></div>';
+  h+='<div class="d-sect"><h4 class="cond">조건</h4><dl class="kv">'
+    +FIELDS.map(function(f){return kvRow(f.label,condHtml(f,r.cond[f.key]));}).join('')+'</dl></div>';
+  h+='<div class="d-sect"><h4 class="res">결과</h4><dl class="kv">'+kvRow('냉연도금공정',routeHtml(r.route))+'</dl></div>';
+  h+='<div class="d-sect"><h4>관리</h4><dl class="kv">'
+    +kvRow('상태',statusPill(r.status))
+    +kvRow('비고',r.note?esc(r.note):'<span class="inherit">—</span>')
+    +kvRow('등록','<span class="mono">'+esc(fmtDT(r.createdAt))+'</span> <span class="inherit">'+esc(r.createdBy||'')+'</span>')
+    +kvRow('최종 수정','<span class="mono">'+esc(fmtDT(r.updatedAt))+'</span> <span class="inherit">'+esc(r.updatedBy||'')+'</span>')
+    +'</dl></div>';
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML='<button class="btn btn-danger" data-action="delete" data-id="'+esc(id)+'">삭제</button><div class="f-spacer"></div>'
+    +'<button class="btn" data-action="drawer-close">닫기</button><button class="btn btn-pri" data-action="edit" data-id="'+esc(id)+'">수정</button>';
+  openDrawer();
+}
+
+/* ── 드로어: 등록 · 수정 폼 ───────────────────────────── */
+function opSelect(f,cur){return '<select class="inp" id="e-'+f.key+'-op" data-op-for="'+f.key+'">'+opsOf(f).map(function(o){return '<option value="'+esc(o)+'"'+(o===cur?' selected':'')+'>'+esc(o)+' — '+esc(OP_LABEL[o])+'</option>';}).join('')+'</select>';}
+function statusSelect(cur){return '<select class="inp" id="e-status">'+Object.keys(STATUS).map(function(s){return '<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+' — '+esc(STATUS[s].l)+'</option>';}).join('')+'</select>';}
+function condRow(f,c){
+  c=c||{op:'NOT_CHECK',v1:'',v2:''};
+  var h='<div class="f-field wide"><label>'+esc(f.label)+(f.key==='prod'?' <span class="req">*</span>':'')+(f.unit?' <span class="inherit">('+esc(f.unit)+')</span>':'')+'</label>';
+  if(f.type==='num'){
+    h+='<div class="cond-row range">'+opSelect(f,c.op)
+      +'<input class="inp mono" id="e-'+f.key+'-v1" value="'+esc(c.v1)+'" placeholder="'+esc(f.ph1)+' (비교값1)" inputmode="decimal" autocomplete="off">'
+      +'<input class="inp mono" id="e-'+f.key+'-v2" value="'+esc(c.v2)+'" placeholder="'+esc(f.ph2)+' (비교값2)" inputmode="decimal" autocomplete="off"></div>';
+  }else{
+    h+='<div class="cond-row">'+opSelect(f,c.op)
+      +'<input class="inp mono" id="e-'+f.key+'-v1" value="'+esc(c.v1)+'" placeholder="'+esc(f.ph||'')+' (비교값1)" autocomplete="off"></div>';
+  }
+  if(f.hint)h+='<div class="f-help">'+esc(f.hint)+'</div>';
+  return h+'</div>';
+}
+function syncCondInputs(key){
+  var f=FIELDS.filter(function(x){return x.key===key;})[0];if(!f)return;
+  var op=$('#e-'+key+'-op').value,v1=$('#e-'+key+'-v1'),v2=$('#e-'+key+'-v2');
+  v1.disabled=!opNeedsValue(op);
+  if(v2)v2.disabled=!isBetween(op);
+}
+function openForm(id){
+  var r=id?repo.rules.get(id):null;
+  editing={id:id||null};
+  if(id)sel=id;
+  $('#d-title').textContent=(id?'라우팅 룰 수정 · '+r.id:'라우팅 룰 등록');
+  var h='<div class="d-sect"><h4 class="cond">조건</h4><div class="form-grid">'
+    +FIELDS.map(function(f){return condRow(f,r?r.cond[f.key]:(f.key==='prod'?{op:'=',v1:'',v2:''}:null));}).join('')
+    +'<div class="f-help wide">체크하지 않을 항목은 NOT_CHECK 로 둡니다. IN / NOT_IN 은 쉼표로 구분해 여러 코드를 적습니다 (예: Z12,Z18). 범위(BETWEEN)는 비교값1·비교값2를 모두 적습니다.</div>'
+    +'</div></div>';
+  h+='<div class="d-sect"><h4 class="res">결과</h4><div class="form-grid">'
+    +'<div class="f-field"><label>냉연도금공정 <span class="req">*</span></label><input class="inp mono" id="e-route" value="'+esc(r?r.route:'')+'" placeholder="예: 1P-83" list="route-list" autocomplete="off"><datalist id="route-list">'
+    +distinctRoutes().map(function(c){return '<option value="'+esc(c)+'">';}).join('')+'</datalist>'
+    +'<div class="f-help">비워 두려면 상태를 F(미완료)로 등록합니다.</div></div>'
+    +'<div class="f-field"><label>상태 <span class="req">*</span></label>'+statusSelect(r?r.status:'Y')+'</div>'
+    +'</div></div>';
+  h+='<div class="d-sect"><h4>관리</h4><div class="form-grid"><div class="f-field wide"><label>비고</label><textarea class="inp" id="e-note" rows="3">'+esc(r?r.note:'')+'</textarea></div></div></div>';
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML='<button class="btn" data-action="form-cancel">취소</button><button class="btn btn-pri" data-action="form-save">'+(id?'저장':'등록')+'</button>';
+  FIELDS.forEach(function(f){syncCondInputs(f.key);});
+  openDrawer();
+  setTimeout(function(){var f=$('#e-prod-v1');if(f)f.focus();},50);
+}
+function distinctRoutes(){var m={},o=[];repo.rules.list().forEach(function(r){var k=norm(r.route);if(k&&!m[k]){m[k]=1;o.push(r.route);}});return o.sort();}
+function collectForm(){
+  var f={cond:{},route:$('#e-route').value.trim().toUpperCase(),status:$('#e-status').value,note:$('#e-note').value.trim()};
+  FIELDS.forEach(function(fd){
+    var op=$('#e-'+fd.key+'-op').value;
+    var v1=opNeedsValue(op)?$('#e-'+fd.key+'-v1').value.trim():'';
+    var v2=(fd.type==='num'&&isBetween(op))?$('#e-'+fd.key+'-v2').value.trim():'';
+    if(fd.type!=='num')v1=v1.toUpperCase();
+    f.cond[fd.key]={op:op,v1:v1,v2:v2};
+  });
+  return f;
+}
+function condKey(f){return FIELDS.map(function(fd){var c=f.cond[fd.key]||{op:'NOT_CHECK',v1:'',v2:''};return c.op==='NOT_CHECK'?'-':c.op+':'+norm(c.v1)+':'+norm(c.v2);}).join('|');}
+function isNum(s){return s!==''&&!isNaN(parseFloat(s))&&isFinite(s);}
+function validateForm(f,editId){
+  var prod=f.cond.prod;
+  if(prod.op==='NOT_CHECK')return '제품군은 체크 안함으로 둘 수 없습니다. 연산자와 값을 지정해 주세요.';
+  for(var i=0;i<FIELDS.length;i++){
+    var fd=FIELDS[i],c=f.cond[fd.key];
+    if(!opNeedsValue(c.op))continue;
+    if(c.v1==='')return fd.label+'의 비교값1을 입력해 주세요.';
+    if(fd.type==='num'){
+      if(!isNum(c.v1))return fd.label+'의 비교값1은 숫자여야 합니다.';
+      if(isBetween(c.op)){
+        if(c.v2===''||!isNum(c.v2))return fd.label+'의 비교값2(상한)를 숫자로 입력해 주세요.';
+        if(parseFloat(c.v1)>parseFloat(c.v2))return fd.label+'의 하한이 상한보다 큽니다.';
+      }
+    }
+  }
+  if(f.status!=='F'&&!f.route)return '냉연도금공정을 입력해 주세요. 미정이면 상태를 F(미완료)로 등록합니다.';
+  var key=condKey(f),dup=null;
+  repo.rules.list().forEach(function(r){if(r.id!==editId&&condKey(r)===key)dup=r;});
+  if(dup)return '동일한 조건이 이미 등록되어 있습니다 ('+dup.id+').';
+  return null;
+}
+function saveForm(){
+  if(!editing)return;
+  var f=collectForm();
+  var err=validateForm(f,editing.id);
+  if(err){toast(err,'err');return;}
+  var isNew=!editing.id,r,before='';
+  if(isNew){
+    r=repo.rules.create(f);
+  }else{
+    var old=repo.rules.get(editing.id);if(!old)return;
+    before=ruleSummary(old)+' · 조건 '+condSummary(old);
+    r=repo.rules.update(editing.id,f);
+  }
+  var after=ruleSummary(r)+(isNew?'':' · 조건 '+condSummary(r));
+  repo.log.append(isNew?'룰 등록':'룰 수정',ruleLabel(r),before,after);
+  editing=null;
+  renderAll();
+  openDetail(r.id);
+  toast('라우팅 룰이 '+(isNew?'등록':'수정')+'되었습니다 · 이력에 기록되었습니다.');
+}
+
+/* ── 삭제 ─────────────────────────────────────────────── */
+function askDelete(id){
+  var r=repo.rules.get(id);if(!r)return;
+  pendingDelete=id;
+  $('#m-title').textContent='라우팅 룰 삭제';
+  $('#m-body').textContent=ruleLabel(r)+' 을(를) 삭제하시겠습니까? 삭제는 이력에 기록됩니다.';
+  $('#modal-back').classList.add('on');
+}
+function closeModal(){$('#modal-back').classList.remove('on');pendingDelete=null;}
+function doDelete(){
+  if(!pendingDelete)return;
+  var r=repo.rules.remove(pendingDelete);
+  closeModal();
+  if(!r)return;
+  repo.log.append('룰 삭제',ruleLabel(r),ruleSummary(r)+' · 조건 '+condSummary(r),'');
+  closeDrawer();renderAll();
+  toast('라우팅 룰이 삭제되었습니다 · 이력에 기록되었습니다.');
+}
+
+/* ── 공통 렌더 · 이벤트 ───────────────────────────────── */
+function renderAll(){
+  $('#cnt-rules').textContent=repo.rules.list().length;
+  $('#cnt-hist').textContent=repo.log.list().length;
+  renderRules();
+  if($('#pr-hist').classList.contains('on'))renderHist();
+}
+document.addEventListener('click',function(e){
+  var openEl=e.target.closest('[data-open]');
+  if(openEl&&!e.target.closest('[data-action]')){openDetail(openEl.getAttribute('data-open'));return;}
+  var el=e.target.closest('[data-action]');if(!el)return;
+  switch(el.getAttribute('data-action')){
+    case 'new-rule':openForm(null);break;
+    case 'edit':openForm(el.getAttribute('data-id'));break;
+    case 'delete':askDelete(el.getAttribute('data-id'));break;
+    case 'form-save':saveForm();break;
+    case 'form-cancel':if(editing&&editing.id){var id=editing.id;editing=null;openDetail(id);}else closeDrawer();break;
+    case 'drawer-close':closeDrawer();break;
+    case 'lookup-run':runLookup();break;
+    case 'lookup-reset':resetLookup();break;
+    case 'h-reset':histDefaults();renderHist();break;
+    case 'modal-close':closeModal();break;
+    case 'modal-ok':doDelete();break;
+  }
+});
+document.addEventListener('change',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-op-for');if(k)syncCondInputs(k);});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target.matches('tr.row[data-open]')){openDetail(e.target.getAttribute('data-open'));return;}
+  if(e.key!=='Escape')return;
+  if($('#modal-back').classList.contains('on')){closeModal();return;}
+  if($('#drawer').classList.contains('on'))closeDrawer();
+});
+$('#scrim').addEventListener('click',closeDrawer);
+
+histDefaults();
+renderLookupForm();
+renderAll();
+})();
+</script>
+</body>
+</html>

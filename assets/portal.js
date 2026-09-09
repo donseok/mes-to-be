@@ -41,6 +41,13 @@
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
+    'process-routing': {
+      hash: '#/quality-design/module-management/process-routing',
+      viewId: 'process-routing-view',
+      title: '공정라우팅관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',

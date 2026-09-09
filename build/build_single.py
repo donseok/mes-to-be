@@ -267,6 +267,21 @@ index = index.replace(
     '          <iframe id="module-frame-rts" title="압연두께Set보정관리 목업" '
     'loading="lazy" srcdoc="' + escaped_rts + '"></iframe>', 1)
 
+# --- 2q. 공정라우팅관리 모듈 iframe srcdoc 내장 ----------------------------------
+module_pr = open(path('modules', 'process-routing.html'), encoding='utf-8').read()
+old_iframe_pr = '''          <iframe
+            id="module-frame-pr"
+            title="공정라우팅관리 목업"
+            src="./modules/process-routing.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_pr in index, 'pr iframe block not found'
+escaped_pr = module_pr.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_pr,
+    '          <iframe id="module-frame-pr" title="공정라우팅관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_pr + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
 old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'
