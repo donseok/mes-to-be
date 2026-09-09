@@ -23,6 +23,12 @@
       </div>
 
       <nav class="portal-nav" aria-label="품질 모듈">
+        <button class="nav-parent" type="button" data-tree-toggle="master-code-tree" aria-expanded="true" aria-controls="master-code-tree">
+          <span>마스터데이터</span><span class="chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="nav-tree open" id="master-code-tree">
+          <a class="nav-link" href="#/master-data/master-code" data-route="master-code">마스터코드</a>
+        </div>
         <button class="nav-parent" type="button" data-tree-toggle="quality-management-tree" aria-expanded="true" aria-controls="quality-management-tree">
           <span>품질관리</span><span class="chevron" aria-hidden="true">⌄</span>
         </button>
@@ -37,6 +43,18 @@
             <div class="nav-tree nav-tree-inner open" id="module-management-tree">
               <a class="nav-link active" href="#/quality-design/module-management/quality-spec" data-route="quality-spec" aria-current="page">
                 품질사양 관리
+              </a>
+              <a class="nav-link" href="#/quality-design/module-management/raw-material-grade" data-route="raw-material-grade">
+                원자재강종관리
+              </a>
+              <a class="nav-link" href="#/quality-design/module-management/spec-code" data-route="spec-code">
+                규격약호관리
+              </a>
+              <a class="nav-link" href="#/quality-design/module-management/rolling-thickness-set" data-route="rolling-thickness-set">
+                압연두께Set보정관리
+              </a>
+              <a class="nav-link" href="#/quality-design/module-management/process-routing" data-route="process-routing">
+                공정라우팅관리
               </a>
             </div>
 
@@ -124,12 +142,47 @@
       </header>
 
       <main class="main-content" id="main-content">
+        <section class="route-view" id="master-code-view" aria-labelledby="page-title" hidden>
+          <iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>
+        </section>
         <section class="route-view active" id="quality-spec-view" aria-labelledby="page-title">
           <iframe
             id="module-frame"
             title="품질사양 관리 목업"
             src="./modules/quality-spec.html?embed=1"
             loading="eager">
+          </iframe>
+        </section>
+        <section class="route-view" id="raw-material-grade-view" aria-labelledby="page-title" hidden>
+          <iframe
+            id="module-frame-rmg"
+            title="원자재강종관리 목업"
+            src="./modules/raw-material-grade.html?embed=1"
+            loading="lazy">
+          </iframe>
+        </section>
+        <section class="route-view" id="spec-code-view" aria-labelledby="page-title" hidden>
+          <iframe
+            id="module-frame-sc"
+            title="규격약호관리 목업"
+            src="./modules/spec-code.html?embed=1"
+            loading="lazy">
+          </iframe>
+        </section>
+        <section class="route-view" id="rolling-thickness-set-view" aria-labelledby="page-title" hidden>
+          <iframe
+            id="module-frame-rts"
+            title="압연두께Set보정관리 목업"
+            src="./modules/rolling-thickness-set.html?embed=1"
+            loading="lazy">
+          </iframe>
+        </section>
+        <section class="route-view" id="process-routing-view" aria-labelledby="page-title" hidden>
+          <iframe
+            id="module-frame-pr"
+            title="공정라우팅관리 목업"
+            src="./modules/process-routing.html?embed=1"
+            loading="lazy">
           </iframe>
         </section>
 
@@ -187,22 +240,20 @@
           </iframe>
         </section>
 
-        <section class="route-view" id="color-submaterial-view" aria-labelledby="page-title" hidden>
-          <iframe
-            id="module-frame-csm"
-            title="칼라부재료관리 목업"
-            src="./modules/color-submaterial.html?embed=1"
-            loading="lazy">
-          </iframe>
+        <section class="route-view placeholder-view" id="color-submaterial-view" aria-labelledby="color-submaterial-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">COLOR SUB-MATERIAL</p>
+            <h2 id="color-submaterial-title">칼라부재료관리</h2>
+            <p>프로그램 재설계 예정입니다. 화면이 정의되면 이 메뉴 아래에 같은 방식으로 연결합니다.</p>
+          </div>
         </section>
 
-        <section class="route-view" id="color-bom-view" aria-labelledby="page-title" hidden>
-          <iframe
-            id="module-frame-cbom"
-            title="칼라BOM관리 목업"
-            src="./modules/color-bom.html?embed=1"
-            loading="lazy">
-          </iframe>
+        <section class="route-view placeholder-view" id="color-bom-view" aria-labelledby="color-bom-title" hidden>
+          <div class="placeholder-copy">
+            <p class="eyebrow">COLOR BOM</p>
+            <h2 id="color-bom-title">칼라BOM관리</h2>
+            <p>프로그램 재설계 예정입니다. 화면이 정의되면 이 메뉴 아래에 같은 방식으로 연결합니다.</p>
+          </div>
         </section>
 
         <section class="route-view" id="quality-certificate-view" aria-labelledby="page-title" hidden>

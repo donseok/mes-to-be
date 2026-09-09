@@ -6,10 +6,45 @@
   'use strict';
 
   var ROUTES = {
+    'master-code': {
+      hash: '#/master-data/master-code',
+      viewId: 'master-code-view',
+      title: '마스터코드',
+      crumbs: ['마스터데이터'],
+      openLink: true
+    },
     'quality-spec': {
       hash: '#/quality-design/module-management/quality-spec',
       viewId: 'quality-spec-view',
       title: '품질사양 관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
+    'raw-material-grade': {
+      hash: '#/quality-design/module-management/raw-material-grade',
+      viewId: 'raw-material-grade-view',
+      title: '원자재강종관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
+    'spec-code': {
+      hash: '#/quality-design/module-management/spec-code',
+      viewId: 'spec-code-view',
+      title: '규격약호관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
+    'rolling-thickness-set': {
+      hash: '#/quality-design/module-management/rolling-thickness-set',
+      viewId: 'rolling-thickness-set-view',
+      title: '압연두께Set보정관리',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: true
+    },
+    'process-routing': {
+      hash: '#/quality-design/module-management/process-routing',
+      viewId: 'process-routing-view',
+      title: '공정라우팅관리',
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
@@ -53,14 +88,14 @@
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
       crumbs: ['품질관리', '품질설계', '기준정보관리'],
-      openLink: true
+      openLink: false
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
       crumbs: ['품질관리', '품질설계', '기준정보관리'],
-      openLink: true
+      openLink: false
     },
     'quality-judgment': {
       hash: '#/quality-judgment',

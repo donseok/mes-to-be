@@ -7,14 +7,18 @@
 
 | 파일 | 역할 |
 |---|---|
+| `modules/master-code.html` | 마스터데이터 > 마스터코드 (마스터별 목록·검색·상세·등록·수정, 아이디/한글명/등록일자/등록자명/시작일자/종료일자와 코드·코드명·카테고리(ID/명) 다중 항목, 상세 화면 카테고리·항목별 조회, 브라우저 저장 및 기존 데이터 호환) |
 | `modules/quality-spec.html` | 품질사양 관리 모듈 (사양 목록·신규 등록·코드 사전·변경 이력·전송 이력·시뮬레이션 — 화면/기능의 대부분) |
+| `modules/raw-material-grade.html` | 원자재강종관리 모듈 (조건(품명·규격약호·주문용도·두께범위) → 결과(재질코드·적정/차선원료·메시지) 룰 관리 — 도금(G)↔칼라(3) 원판연계: 도금기준/칼라파생/칼라전용, 파생 룰 재질·적정원료 상속, 원판 변경 시 재검토 플래그, 간편판정·변경 이력·코드 범례) |
+| `modules/spec-code.html` | 규격약호관리 모듈 (규격코드 조건 → 결과 기준 2종: 규격코드→두께관리기준(BMT/TCT), 규격코드+강종코드→원판강종코드 — 목록·등록·수정·삭제, 간편조회, 변경 이력, 코드 범례. 데이터 접근은 `repo` 객체(localStorage)로 분리해 DB 연동 시 내부만 교체) |
+| `modules/process-routing.html` | 공정라우팅관리 모듈 (조건 8항목(제품군·재질코드·엠보스무늬·Spangle구분·도금량코드·표면처리코드·두께범위·폭범위) → 결과(냉연도금공정) 룰 관리 — 문자/숫자범위 연산자(NOT_CHECK·BETWEEN1~4 등), 등록·수정·삭제·간편판정·변경 이력·코드 범례. 시드는 공정라우팅모듈.xlsx 룰 2건) |
+| `modules/rolling-thickness-set.html` | 압연두께Set보정관리 모듈 (AS-IS 업무기준 C10B2060 룰 82건 — 조건 10종(품명·규격기관·규격약호·주문용도·고객사·주문두께구분·두께관리코드·도금량코드·두께/폭범위) → 두께보정치·단위. 목록·등록·수정·삭제, 간편판정(Set 두께 계산), 변경 이력, 코드 범례. 시드는 `build/rolling_thickness_set_seed.py`가 `/*__RTS_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-design.html` | 품질설계 모듈 (좌: 의뢰현황 목록 · 우: 설계결과 — 구 탭 9종을 펼치기/접기 섹션으로 통합) |
 | `modules/order-weight-error.html` | 주문단중에러관리 모듈 (주문단중 × 분할 수 매트릭스 — Min/Max 허용범위 하이라이트·셀 수정·수정 이력) |
 | `modules/production-feasibility.html` | 생산가부관리 모듈 (B.D 생산범위(2CGL GI) 탭 — 참조 엑셀 시트 재현: 재질별 폭 × 두께 가부 매트릭스·가부 간편조회·셀 상태 수정·수정 이력) |
+| `modules/simulation.html` | 품질설계 시뮬레이션 모듈 (주문 1건을 ①입력검증 ②주문정합성 ③주문단중 ④생산가부 ⑤품질사양매칭 ⑥설계값산출 6단계에 태워 기준 반영을 추적 — 좌: 검증 케이스·주문 입력·변경 이력, 중: 파이프라인 단계 상세·기대값 대조, 우: 근거 추적 3층·이상징후. 기준 데이터는 다른 모듈의 localStorage를 먼저 읽고 없으면 내장 축약 시드 사용) |
 | `modules/order-consistency.html` | 주문정합성체크 모듈 (엑셀 룰 2종을 정제·병합한 통합 룰셋 138건 — 룰 목록·조건 빌더·주문 시뮬레이션·검토 이슈·코드 사전·변경 이력 6탭. 시드는 `build/clean_rules.py --inject`가 `/*__OC_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-judgment.html` | 품질판정 1차 화면 (판정 대기 목록 · 검사값 vs 기준값 drawer · 합격/불합격/보류) |
-| `modules/color-submaterial.html` | 칼라부재료관리 1차 화면 (부재료 마스터 목록 · 색상 · 사용/중지) |
-| `modules/color-bom.html` | 칼라BOM관리 1차 화면 (BOM 목록 · 도장 층 구성 drawer) |
 | `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · PDF 발행) |
 | `modules/inspection-certificate.html` | 검사증명서관리 1차 화면 (MTC 목록 · 기계적성질 · 화학 성분) |
 | `modules/tag-management.html` | Tag관리 1차 화면 (Tag 발행 목록 · Tag 레이아웃 미리보기) |
@@ -44,7 +48,7 @@ node --test build/tests/*.test.mjs
 python3 build/build_single.py
 ```
 
-`build/template.html`에 CSS/JS를 인라인하고 열두 모듈(품질사양·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·칼라부재료·칼라BOM·품질보증서·검사증명서·Tag) 전체를 iframe `srcdoc`으로 내장해
+`build/template.html`에 CSS/JS를 인라인하고 `modules/` 아래 모든 모듈(품질사양·원자재강종·규격약호·압연두께Set보정·공정라우팅·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·품질보증서·검사증명서·Tag·마스터코드)을 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
 
 ## 룰 시드 파이프라인 (주문정합성체크 모듈 전용)
@@ -68,6 +72,19 @@ xlsx 없이도 기존 시드(`build/order_consistency_seed.json`)가 이미 모�
 
 ```bash
 python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 생성 → 모듈 주입(멱등)
+```
+
+## 룰 시드 파이프라인 (압연두께Set보정관리 모듈)
+
+`modules/rolling-thickness-set.html`의 룰 데이터도 손으로 쓰지 않는다. 원본 `압연두께Set치보정기준.xlsx`
+(RuleData C10B2060)를 `build/rolling_thickness_set_seed.py`가 파싱·정규화(연산자 대문자화, 목록 공백 제거,
+`+0.055` 같은 부호 표기 숫자화)해 `build/rolling_thickness_set_seed.json`을 만들고 모듈 마커 구간에 주입한다.
+원본은 `sources/`(gitignore)에 두거나 `RTS_XLSX` 환경변수 · `--xlsx` 옵션으로 지정한다. 룰에는 고객사 코드값만
+있고 실명은 없어 마스킹 단계가 없다.
+
+```bash
+python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 모듈 주입(멱등)
+python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없이 기존 JSON 재주입
 ```
 
 ### 고객사 실명 마스킹 (공개 저장소 배포)
@@ -105,6 +122,9 @@ python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 �
 ## 주요 구현 메모
 
 - 목업 데이터는 브라우저 localStorage에만 저장 (`LS_KEY` 버전을 올리면 시드로 초기화됨)
+- 마스터코드는 `mes-master-codes-v2` 사용. v2 데이터가 없고 v1이 있으면 v1을 읽어 코드에 카테고리(ID/명) 빈 값을 채운다.
+  AS-IS 이관분(`asIsImports`: `ORD_THK_MNG_CD`·`THK_COR_UNT`·`PRD_NM_CD`)은 저장 데이터가 이미 있어도 `mes-master-codes-imported` 마커에 없는 것만 한 번 합류시킨다
+  — 사용자가 지운 이관분·기존 시드는 되살리지 않는다. 이관분을 늘릴 때는 시드에 추가하고 `asIsImports` 끝에 id를 붙인다
 - 페이지 크기(10/20)는 `qspec-pagesize` 키로 별도 저장
 - 변경 이력은 사양과 독립된 `state.changelog`에 전/후 값을 보존 (삭제돼도 유지)
 - 엑셀 다운로드는 외부 라이브러리 없이 xlsx(zip)를 직접 생성
