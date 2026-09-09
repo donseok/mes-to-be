@@ -1983,6 +1983,46 @@ function renderDesign(){
   }).join('');
 }
 
+function fmtStepOut(v){
+  if(v==null)return '—';
+  if(typeof v==='number')return String(v);
+  if(typeof v==='object')return Object.keys(v).map(function(k){return k+'='+(v[k]==null?'—':(typeof v[k]==='number'?v[k]:JSON.stringify(v[k])));}).join(' · ');
+  return String(v);
+}
+function renderThkBand(d){
+  var r=d.thkCalc,inp=d.thkInput;if(!r||!inp)return '';
+  var v=r.values,a=r.applied,f3=function(x){return x==null?'—':Number(x).toFixed(3);};
+  var src=function(k){var t=CRIT.thk[k];return t&&t.live?'라이브':'임시 시드';};
+  var kv=function(items){return '<div class="kv-grid">'+items.map(function(it){
+    return '<div class="kv"><label>'+esc(it[0])+'</label><span class="val" style="cursor:default">'+esc(it[1])+'</span></div>';}).join('')+'</div>';};
+  var h='<div class="band-title">PLTCM 두께 계산 근거 <span class="pill '+(r.ok?'sent':'fail')+'">'+(r.ok?'계산 성공':'실패 '+esc(r.error.code))+
+        '</span> <span class="code-badge">'+esc(r.path||'')+'</span></div>';
+  h+=kv([['주문두께',f3(v.ORD_EXC_THK)],['압연목표 (CRM_THK)',f3(v.CRM_THK)],['출측두께 (PLTCM_THK_TRV)',f3(v.PLTCM_THK_TRV)],
+         ['X-Ray SET (PLTCM_SET_THK_TRV)',f3(v.PLTCM_SET_THK_TRV)],['하한 ~ 상한',f3(v.PLTCM_THK_LLV)+' ~ '+f3(v.PLTCM_THK_ULV)]]);
+  var setTxt='—';
+  if(a.setRule){
+    if(a.setRule.id)setTxt=a.setRule.id+' · 순번 '+a.setRule.no+' · '+(a.setRule.adj>0?'+':'')+a.setRule.adj+' '+a.setRule.unit;
+    else setTxt='후보 '+a.setRule.candidates.length+'건: '+a.setRule.candidates.map(function(c){return c.id+'(no.'+c.no+' '+(c.adj>0?'+':'')+c.adj+')';}).join(', ');
+  }
+  h+='<div class="band-title">적용 기준</div><div class="tbl-scroll"><table class="grid"><thead><tr><th>기준</th><th>출처</th><th>적용</th></tr></thead><tbody>'
+    +'<tr><td>C10B2060 보정</td><td>'+src('setCorrection')+'</td><td class="mono">'+esc(setTxt)+'</td></tr>'
+    +'<tr><td>C10B2070 SP</td><td>'+src('spCorrection')+'</td><td class="mono">'+(a.spRule?esc(a.spRule.id+' · '+a.spRule.rate+'%'):'0건')+' → 적용 '+esc(a.spRate)+'%</td></tr>'
+    +'<tr><td>C10B2190 공차</td><td>'+src('thkTolerance')+'</td><td class="mono">'+(a.tolRule?esc(a.tolRule.id+' · '+a.tolRule.llv+' / +'+a.tolRule.ulv):'—')+'</td></tr>'
+    +'<tr><td>목표도금두께</td><td>'+src('coatThk')+'</td><td class="mono">'+esc(inp.order.GW_ASG_CD+' → '+inp.layers.galThkUm+' µm')+'</td></tr>'
+    +'<tr><td>적용폭</td><td>주문</td><td class="mono">'+esc(a.applyWidth)+'</td></tr></tbody></table></div>';
+  h+='<div class="band-title">계산 단계</div><div class="tbl-scroll"><table class="grid"><thead><tr><th>#</th><th>단계</th><th>산식</th><th>결과</th></tr></thead><tbody>'
+    +r.steps.map(function(s){var bad=r.error&&r.error.stepNo===s.no;
+      return '<tr'+(bad?' class="ovr"':'')+'><td>'+s.no+'</td><td>'+esc(s.name)+'</td><td class="mono">'+esc(s.formula)+'</td>'
+        +'<td class="mono">'+esc(fmtStepOut(s.output))+(s.note?' <span class="cell-sub">'+esc(s.note)+'</span>':'')+'</td></tr>';}).join('')
+    +'</tbody></table></div>';
+  if(r.warnings.length)h+='<div class="band-title">경고</div><div class="pad">'+r.warnings.map(function(w){
+    return '<div style="margin-bottom:4px"><span class="pill warn">'+esc(w.code)+'</span> '+esc(w.message)+'</div>';}).join('')+'</div>';
+  h+='<div class="band-title">입력 요약</div>'+kv([['두께구분 / 관리코드',inp.order.ORD_THK_TP+' / '+inp.order.ORD_THK_MNG_CD],
+    ['규격기관 / 규격약호',inp.order.SPC_ORG_CD+' / '+inp.order.SPC_AVR],['고객요청 값 / 단위',inp.request.value+' / '+(inp.request.unit||'—')],
+    ['도막 전 / 후 (µm)',inp.layers.paintFrontUm+' / '+inp.layers.paintBackUm],['재질 / Spangle',inp.order.MAT_CD+' / '+inp.order.ORD_SPNL_TP],
+    ['적용폭',a.applyWidth]]);
+  return '<div class="pad">'+h+'</div>';
+}
 /* ============================================================
    렌더 — 단계 상세 디스패처
    ============================================================ */
@@ -2061,7 +2101,7 @@ function renderStage(){
       '<p class="f-hint"><a class="jump" href="#/quality-design/module-management/quality-spec" data-action="jump">품질사양관리 열기 →</a></p></div>';
 
   }else{
-    p.innerHTML=head+renderDesign();
+    p.innerHTML=head+renderThkBand(d)+renderDesign();
   }
 }
 
@@ -2070,6 +2110,22 @@ function renderStage(){
    ============================================================ */
 function provFor(path){
   var out=[], c=currentCase();
+  var THK_PATHS={'cgl.pltcm.X-Ray Set두께값':1,'cgl.pltcm.두께목표값':1,'cgl.pltcm.두께하한':1,'cgl.pltcm.두께상한':1};
+  if(THK_PATHS[path]&&run.thkCalc){
+    var r=run.thkCalc,a=r.applied,f3=function(x){return x==null?'—':Number(x).toFixed(3);};
+    out.push({cls:'prv calc',label:'기준 계산',
+      detail:'경로 '+r.path+(a.setRule&&a.setRule.id?' · C10B2060 '+a.setRule.id+' 보정 '+(a.setRule.adj>0?'+':'')+a.setRule.adj+' '+a.setRule.unit:'')+
+        ' · SP '+a.spRate+'%'+(a.tolRule?' · 공차 '+a.tolRule.llv+' / +'+a.tolRule.ulv:'')+
+        ' · 출측 '+f3(r.values.PLTCM_THK_TRV)+' → SET '+f3(r.values.PLTCM_SET_THK_TRV)+(r.error?' · 실패 '+r.error.code:''),
+      jump:'#/quality-design/module-management/rolling-thickness-set'});
+    if(run.thkInput.request.value!==0)
+      out.push({cls:'prv',label:'사양',detail:(run.thkSpecSrcs.request||[]).join(' → ')+' → 고객요청 '+run.thkInput.request.value+' '+(run.thkInput.request.unit||''),
+        jump:'#/quality-design/module-management/quality-spec'});
+    if(run.thkSpecSrcs.paint&&run.thkSpecSrcs.paint.length)
+      out.push({cls:'prv',label:'사양',detail:run.thkSpecSrcs.paint.join(' → ')+' → 전면 도막 '+run.thkInput.layers.paintFrontUm+' µm',
+        jump:'#/quality-design/module-management/quality-spec'});
+    return out;
+  }
   if(c.asisSnapshot&&c.asisSnapshot[path]!==undefined)
     out.push({cls:'prv asis',label:'AS-IS 실제값',detail:String(c.asisSnapshot[path])+
       ' · '+(c.baseOrderRef||'')+' 최초 실행 스냅샷',
