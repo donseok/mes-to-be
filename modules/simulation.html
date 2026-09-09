@@ -1064,6 +1064,7 @@ function matchSpecs(ctx,o){
     if(!map[key]){map[key]={code:key,ko:r.ko,unit:r.unit||'',base:'—',val:'',srcs:[]};order.push(key);}
     var row=map[key];
     row.val=(r.op==='='||r.op==='~'?'':r.op+' ')+r.val;
+    row.op=r.op;row.rawVal=r.val;
     row.srcs.push(e.s.specNo);
   });});
   var rows=order.map(function(k){return map[k];});
@@ -1246,6 +1247,77 @@ function toDesign(o){return {
 /* 사양 어휘(BASE_DESIGN 8항목) 중 설계결과 어휘에 의미가 확실히 대응되는 것만 */
 var SPEC_TO_DESIGN={CCL_BOM:'head.bom',PACK_CD:'post.pack',
   TOP_THK:'color.sum.thkT',RAW_MTRL:'cgl.lines.적정.1'};
+/* ⑥ 엔진이 소비하는 사양 코드 — 설계값 경로가 아니므로 mapped/unmapped 어디에도 넣지 않는다 (스펙 4.3-6) */
+var SPEC_TO_ENGINE={CUS_ROL_THK:'request.value',THK_COR_UNT:'request.unit',TOP_THK:'layers.paintFrontUm'};
+var THK_TP_NM={'1':'1 : BMT','2':'2 : TCT','3':'3 : 칼라TCT'};
+function specRowVal(rows,code){
+  var r=(rows||[]).filter(function(x){return x.code===code&&x.srcs&&x.srcs.length;})[0];
+  if(!r)return null;
+  return {op:r.op||'=',val:r.rawVal!=null?r.rawVal:r.val,srcs:r.srcs};
+}
+function setKv(rows,label,val){
+  for(var i=0;i<rows.length;i++)if(rows[i][0]===label){rows[i][1]=val;return i;}
+  rows.push([label,val]);return rows.length-1;
+}
+function insertKvAfter(rows,afterLabel,label,val){
+  for(var i=0;i<rows.length;i++)if(rows[i][0]===label){rows[i][1]=val;return;}
+  var at=rows.length;
+  for(var j=0;j<rows.length;j++)if(rows[j][0]===afterLabel){at=j+1;break;}
+  rows.splice(at,0,[label,val]);
+}
+/* 엔진 입력 조립 (스펙 4.1) */
+function toThicknessInput(order,specRows,design,ctx){
+  var notes=[],req={value:0,unit:''},specSrcs={request:[],paint:[]};
+  var v=specRowVal(specRows,'CUS_ROL_THK');
+  if(v){
+    if(v.op!=='=')notes.push({kind:'thk-request-invalid',detail:'고객요청압연두께 사양의 연산자가 = 가 아닙니다: '+v.op+' '+v.val,ref:'CUS_ROL_THK'});
+    else{var n=parseFloat(v.val);
+      if(isFinite(n)){req.value=n;specSrcs.request=v.srcs;}
+      else notes.push({kind:'thk-request-invalid',detail:'고객요청압연두께 값이 숫자가 아닙니다: '+v.val,ref:'CUS_ROL_THK'});}
+  }
+  var u=specRowVal(specRows,'THK_COR_UNT');
+  if(u&&u.op==='=')req.unit=codeStr(u.val).toUpperCase();
+  var coatMap=(ctx.thk&&ctx.thk.coatThk&&ctx.thk.coatThk.map)||{};
+  var gw=codeStr(order.GW_ASG_CD), gal=Number(coatMap[gw]);
+  if(!isFinite(gal)){notes.push({kind:'thk-input-warn',detail:'도금량코드 '+(gw||'(없음)')+'의 목표도금두께가 없어 0으로 계산합니다',ref:'GW_ASG_CD'});gal=0;}
+  var pf=0,pb=0,tt=null;
+  if(design&&design.color){
+    tt=specRowVal(specRows,'TOP_THK');
+    pf=parseFloat(tt&&tt.op==='='?tt.val:design.color.sum.thkT);if(!isFinite(pf))pf=0;
+    if(tt&&tt.op==='=')specSrcs.paint=tt.srcs;
+    pb=parseFloat(design.color.sum.thkB);if(!isFinite(pb))pb=0;
+  }
+  var mix=[];
+  for(var i=1;i<=10;i++){var w=order['ORD_MIX_WTH'+i];if(w!=null&&String(w).trim()!=='')mix.push(num(w));}
+  return {input:{
+    order:{PRD_NM_CD:codeStr(order.PRD_NM_CD),SPC_ORG_CD:specOrgCd(order),SPC_AVR:codeStr(order.SPC_AVR),
+      ORD_USG_CD:codeStr(order.ORD_USG_CD),FNL_CUS_CD:codeStr(order.FNL_CUS_CD),ORD_THK_TP:codeStr(order.ORD_THK_TP),
+      ORD_THK_MNG_CD:codeStr(order.ORD_THK_MNG_CD),GW_ASG_CD:gw,ORD_EXC_THK:num(order.ORD_EXC_THK),
+      ORD_EXC_WTH:num(order.ORD_EXC_WTH),ORD_SLIT_GRP_CNT:num(order.ORD_SLIT_GRP_CNT),ORD_MIX_WTH:mix,
+      MAT_CD:codeStr(order.MAT_CD),ORD_SPNL_TP:codeStr(order.ORD_SPNL_TP)},
+    request:req,layers:{galThkUm:gal,paintFrontUm:pf,paintBackUm:pb}},notes:notes,specSrcs:specSrcs};
+}
+/* 공통 섹션의 세 행을 주문 필드와 동기화 (스펙 4.3-2) */
+var COAT_CD_NM={};Object.keys(COAT_CD).forEach(function(k){var s=COAT_CD[k];COAT_CD_NM[s.split(' :')[0]]=s;});
+function syncCommonRows(design,order,ctx){
+  var tp=codeStr(order.ORD_THK_TP),mng=codeStr(order.ORD_THK_MNG_CD),gw=codeStr(order.GW_ASG_CD);
+  setKv(design.common,'주문두께구분',THK_TP_NM[tp]||tp);
+  setKv(design.common,'두께관리코드',mng?(mng+' : '+(ctx.mngCodes[mng]||'')):'');
+  setKv(design.common,'도금량코드',gw?(COAT_CD_NM[gw]||gw):'');
+}
+/* ⑥ 값 교체 (스펙 4.3-3) — design 에는 값만 넣는다 */
+function applyThicknessDesign(design,order,sm,ctx){
+  var built=toThicknessInput(order,sm.rows,design,ctx);
+  var result=PltcmThicknessEngine.design(built.input,ctx.thk);
+  var v=result.values, f3=function(x){return x==null?'':Number(x).toFixed(3);};
+  design.cgl.thk={path:result.path,CRM_THK:v.CRM_THK,PLTCM_THK_TRV:v.PLTCM_THK_TRV,PLTCM_SET_THK_TRV:v.PLTCM_SET_THK_TRV,
+                  PLTCM_THK_LLV:v.PLTCM_THK_LLV,PLTCM_THK_ULV:v.PLTCM_THK_ULV};
+  setKv(design.cgl.pltcm,'X-Ray Set두께값',result.ok?f3(v.PLTCM_SET_THK_TRV):'');
+  setKv(design.cgl.pltcm,'두께목표값',result.ok?f3(v.PLTCM_THK_TRV)+' ('+f3(v.PLTCM_THK_LLV)+' ~ '+f3(v.PLTCM_THK_ULV)+')':'');
+  insertKvAfter(design.cgl.pltcm,'두께목표값','두께하한',result.ok?f3(v.PLTCM_THK_LLV):'');
+  insertKvAfter(design.cgl.pltcm,'두께하한','두께상한',result.ok?f3(v.PLTCM_THK_ULV):'');
+  return {result:result,input:built.input,notes:built.notes,specSrcs:built.specSrcs};
+}
 /* 기준이 관장해야 마땅한 설계값만 「미커버」로 본다 — 전수 감시는 잡음 */
 var GOVERNED_PATHS=['common.도금량코드','common.조질도','common.주문두께구분',
   'common.두께관리코드','common.폭관리코드','common.포장방법','common.권취방법',
@@ -1257,6 +1329,7 @@ function mapSpecOverrides(rows){
     if(!r.srcs||!r.srcs.length)return;
     var p=SPEC_TO_DESIGN[r.code];
     if(p)mapped.push({code:r.code,ko:r.ko,path:p,val:r.val,base:r.base,srcs:r.srcs});
+    else if(SPEC_TO_ENGINE[r.code]){/* ⑥ 두께 엔진이 소비 — 미연결 아님 */}
     else unmapped.push({code:r.code,ko:r.ko,val:r.val,base:r.base,srcs:r.srcs});
   });
   return {mapped:mapped,unmapped:unmapped};
@@ -1313,6 +1386,20 @@ function detectAnomalies(ctx){
     out.push(anomaly('spec-unmapped','warn','사양 미연결',
       (u.ko||u.code)+' — 사양은 '+u.val+' 를 지시하지만 설계결과에 대응 항목이 없습니다.',u.code));
   });
+  if(ctx.thk){
+    var tr=ctx.thk.result;
+    if(tr.error)out.push(anomaly('thk-design-error','error','두께설계 실패',tr.error.code+' — '+tr.error.message+' ('+tr.error.stage+')',tr.error.code));
+    tr.warnings.forEach(function(w){out.push(anomaly('thk-design-warn','warn','두께설계 경고',w.code+' — '+w.message,w.code));});
+    ctx.thk.notes.forEach(function(n){
+      out.push(anomaly(n.kind,'warn',n.kind==='thk-request-invalid'?'고객요청 사양 오류':'두께 입력 경고',n.detail,n.ref));});
+  }
+  if(ctx.thkTp&&ctx.order){
+    var otp=codeStr(ctx.order.ORD_THK_TP);
+    if(!ctx.thkTp.found)out.push(anomaly('thk-tp-default','warn','두께구분 기준 없음',
+      '규격기관 '+(ctx.thkTp.org||'(없음)')+'의 두께관리기준이 없거나 미확정입니다 — 규격 기본값은 1(BMT)',null));
+    else if(ctx.thkTp.tp!==otp)out.push(anomaly('thk-tp-mismatch','warn','두께구분 불일치',
+      '주문 두께구분 '+(otp||'(없음)')+' · 규격 기준 '+ctx.thkTp.tp,null));
+  }
   return out;
 }
 
@@ -1341,6 +1428,7 @@ function runPipeline(ctx,order){
 
   /* 통과공정을 알아야 주공정 시트를 고를 수 있어 ⑥을 먼저 계산한다 */
   var design=genDetail(toDesign(order));
+  syncCommonRows(design,order,ctx);
   var routeNo=design.route.no;
   var mainKey=ROUTE_TO_SHEET[routeNo];
   var missingSheet=mainKey?null:(ROUTE_TO_LINE[routeNo]||routeNo);
@@ -1355,7 +1443,10 @@ function runPipeline(ctx,order){
 
   var sm=matchSpecs({specs:ctx.specs,dict:ctx.dict,base:ctx.base},toSpecMatch(order));
   stages.push(stage(5,'품질사양 매칭',sm.applied.length?'P':null,sm));
-  stages.push(stage(6,'설계값 산출','P',{design:design}));
+  var thk=applyThicknessDesign(design,order,sm,ctx);
+  var thkTp=thkTpFromSpec(order,ctx.thkRules);
+  stages.push(stage(6,'설계값 산출',thk.result.ok?'P':'F',
+    {design:design,thkCalc:thk.result,thkInput:thk.input,thkNotes:thk.notes,thkSpecSrcs:thk.specSrcs}));
 
   var blockedAt=-1;
   for(var i=0;i<stages.length;i++)if(stages[i].blocked){blockedAt=i;break;}
@@ -1372,9 +1463,11 @@ function runPipeline(ctx,order){
   });
 
   var anomalies=detectAnomalies({designValues:designValues,specMatch:sm,consistency:co,
-    feasibility:mine?[mine]:[],ruleMeta:ctx.ruleMeta,missingSheet:missingSheet});
+    feasibility:mine?[mine]:[],ruleMeta:ctx.ruleMeta,missingSheet:missingSheet,
+    thk:thk,thkTp:thkTp,order:order});
 
   return {stages:stages,design:design,specMatch:sm,anomalies:anomalies,
+          thkCalc:thk.result,thkInput:thk.input,thkSpecSrcs:thk.specSrcs,thkTp:thkTp,
           mainLine:ROUTE_TO_LINE[routeNo]||null,missingSheet:missingSheet,blockedAt:blockedAt};
 }
 
