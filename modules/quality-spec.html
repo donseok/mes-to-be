@@ -835,6 +835,25 @@ select.page-size{padding:3px 6px;font-size:12px;height:auto;width:auto}
    ============================================================ */
 const LS_KEY='qspec-mock-v4';
 const DRAFT_KEY='qspec-draft-v2';
+const DICT_IMPORT_KEY='qspec-dict-imported';
+const DICT_IMPORTS=['CUS_ROL_THK','THK_COR_UNT'];
+/* 저장된 사전에 없는 신규 항목만 한 번 합류. 합류 이력을 남겨 사용자가 지운 항목은 되살리지 않는다 (마스터코드 asIsImports 방식) */
+function mergeDictImports(st){
+  let done=[];
+  try{done=JSON.parse(localStorage.getItem(DICT_IMPORT_KEY))||[];}catch(e){done=[];}
+  if(!Array.isArray(done))done=[];
+  const pending=DICT_IMPORTS.filter(c=>!done.includes(c));
+  if(!pending.length)return;
+  pending.forEach(code=>{
+    if(st.dict.some(d=>d.code===code))return;
+    const seed=SEED_DICT.find(d=>d.code===code);
+    if(!seed)return;
+    const item={...seed};
+    if(st.dict.some(d=>d.id===item.id))item.id='d'+(st.dict.length+1)+'-'+Date.now();
+    st.dict.push(item);
+  });
+  try{localStorage.setItem(DICT_IMPORT_KEY,JSON.stringify(DICT_IMPORTS));}catch(e){}
+}
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -861,6 +880,8 @@ const SEED_DICT=[
  {ko:'후처리',      code:'POST_TRT', kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'20', desc:'보호필름·왁스코팅 등 후처리'},
  {ko:'포장방법',    code:'PACK_CD',  kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'3', desc:'포장 사양 코드 (P01 내수 · P03 수출)'},
  {ko:'시험항목',    code:'TEST_CD',  kind:'RESULT', unit:'', dtype:'VARCHAR2',dlen:'20', desc:'추가 시험·검사 (T-BEND, MEK 등)'},
+ {ko:'고객요청압연두께',code:'CUS_ROL_THK',kind:'RESULT', unit:'mm', dtype:'NUMBER',dlen:'5,3', desc:'고객이 요청한 압연두께 값. 두께보정단위(CRN/PCN/TRK)에 따라 해석. 0이면 미지정'},
+ {ko:'두께보정단위',    code:'THK_COR_UNT',kind:'RESULT', unit:'',   dtype:'CHAR',  dlen:'3',   desc:'고객요청압연두께의 해석 단위: CRN 기준두께에 가산 · PCN 기준두께 대비 % (칼라TCT는 도금·도막 차감 후 두께) · TRK 확정값'},
 ].map((d,i)=>({id:'d'+(i+1),active:true,...d}));
 
 /* ---------- seed: 고객사 ---------- */
@@ -1095,7 +1116,7 @@ function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}cat
 function loadState(){
   try{
     const raw=localStorage.getItem(LS_KEY);
-    if(raw){const st=JSON.parse(raw);if(st&&st.specs&&st.dict)return st;}
+    if(raw){const st=JSON.parse(raw);if(st&&st.specs&&st.dict){mergeDictImports(st);return st;}}
   }catch(e){}
   return buildSeed();
 }
