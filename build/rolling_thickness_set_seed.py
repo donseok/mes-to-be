@@ -25,9 +25,11 @@ path = lambda *p: os.path.join(ROOT, *p)
 
 XLSX_NAME = '압연두께Set치보정기준.xlsx'
 SEED_JSON = path('build', 'rolling_thickness_set_seed.json')
-MODULE = path('modules', 'rolling-thickness-set.html')
-MARK_S = '/*__RTS_SEED_START__*/'
-MARK_E = '/*__RTS_SEED_END__*/'
+# 주입 대상: (모듈 경로, 시작 마커, 종료 마커, 변수 선언 접두)
+TARGETS = [
+    (path('modules', 'rolling-thickness-set.html'), '/*__RTS_SEED_START__*/', '/*__RTS_SEED_END__*/', 'var SEED='),
+    (path('modules', 'simulation.html'), '/*__RTS_SEED_SIM_START__*/', '/*__RTS_SEED_SIM_END__*/', 'var SEED_RTS='),
+]
 
 # 조건 컬럼(순서 = 시트 열 순서). key, 라벨, 연산자 열(1-based), 숫자형 여부
 COND_DEFS = [
@@ -107,6 +109,7 @@ def parse(xlsx):
                 cond[key] = {'op': op, 'v1': norm_list(v1), 'v2': norm_list(v2)}
         adj_raw = s(ws.cell(r, COL_ADJ).value)
         rules.append({
+            'id': 'TS-' + str(len(rules) + 1).zfill(3),
             'no': int(no),
             'cond': cond,
             'adj': float(adj_raw.replace('+', '')),
@@ -123,6 +126,7 @@ def check(seed):
     assert len(rules) == 82, 'rule count %d != 82' % len(rules)
     assert [x['no'] for x in rules] == list(range(1, 83)), 'no. 연속 아님'
     assert all(x['unit'] == 'CRN' for x in rules), '단위 CRN 외 존재'
+    assert [x['id'] for x in rules] == ['TS-%03d' % i for i in range(1, 83)], 'id 규칙 TS-001..082 아님'
     for x in rules:
         for key, label, col, is_num in COND_DEFS:
             c = x['cond'][key]
@@ -143,21 +147,56 @@ def emit(seed):
     print('EMIT OK:', SEED_JSON)
 
 
+def _read_lf(p):
+    with open(p, encoding='utf-8', newline=None) as f:
+        return f.read()
+
+
+def _eol(p):
+    with open(p, 'rb') as f:
+        return '\r\n' if b'\r\n' in f.read() else '\n'
+
+
+def _body(seed, prefix):
+    return prefix + json.dumps(seed, ensure_ascii=False, separators=(',', ':')) + ';'
+
+
+def _splice(src, body, mark_s, mark_e, label):
+    if src.count(mark_s) != 1 or src.count(mark_e) != 1:
+        raise PipelineError('마커가 정확히 1쌍이어야 함: ' + label)
+    i = src.find(mark_s)
+    j = src.find(mark_e, i)
+    if j < 0:
+        raise PipelineError('종료 마커 위치 오류: ' + label)
+    return src[:i + len(mark_s)] + '\n' + body + '\n' + src[j:]
+
+
 def inject():
     seed = json.load(open(SEED_JSON, encoding='utf-8'))
-    src = open(MODULE, encoding='utf-8').read()
-    # 마커는 <script> 블록 안의 것만 대상으로 한다 (주석 등 다른 곳의 언급은 무시)
-    i = src.rfind(MARK_S)
-    j = src.find(MARK_E, i) if i >= 0 else -1
-    if i < 0 or j < 0 or src.count(MARK_E) != 1:
-        raise PipelineError('마커를 찾을 수 없음: ' + MODULE)
-    body = 'var SEED=' + json.dumps(seed, ensure_ascii=False, separators=(',', ':')) + ';'
-    out = src[:i + len(MARK_S)] + '\n' + body + '\n' + src[j:]
-    if out != src:
-        open(MODULE, 'w', encoding='utf-8', newline='').write(out)
-        print('INJECT OK: %d rules → %s' % (len(seed['rules']), MODULE))
-    else:
-        print('INJECT: 변경 없음')
+    for module, mark_s, mark_e, prefix in TARGETS:
+        src = _read_lf(module)
+        out = _splice(src, _body(seed, prefix), mark_s, mark_e, module)
+        if out != src:
+            with open(module, 'w', encoding='utf-8', newline=_eol(module)) as f:
+                f.write(out)
+            print('INJECT OK: %d rules → %s' % (len(seed['rules']), os.path.relpath(module, ROOT)))
+        else:
+            print('INJECT: 변경 없음 —', os.path.relpath(module, ROOT))
+
+
+def verify():
+    """xlsx 없이 두 모듈의 시드 사본이 JSON 과 같은지 검사한다."""
+    seed = json.load(open(SEED_JSON, encoding='utf-8'))
+    bad = 0
+    for module, mark_s, mark_e, prefix in TARGETS:
+        src = _read_lf(module)
+        if _splice(src, _body(seed, prefix), mark_s, mark_e, module) != src:
+            print('VERIFY DIFF:', os.path.relpath(module, ROOT), '— --inject 로 재주입', file=sys.stderr)
+            bad += 1
+        else:
+            print('VERIFY OK:', os.path.relpath(module, ROOT))
+    if bad:
+        raise PipelineError('시드 사본이 JSON 과 다름 (%d)' % bad)
 
 
 def main():
@@ -166,6 +205,7 @@ def main():
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--emit', action='store_true')
     ap.add_argument('--inject', action='store_true')
+    ap.add_argument('--verify', action='store_true')
     a = ap.parse_args()
     try:
         if a.check or a.emit:
@@ -176,7 +216,9 @@ def main():
                 emit(seed)
         if a.inject:
             inject()
-        if not (a.check or a.emit or a.inject):
+        if a.verify:
+            verify()
+        if not (a.check or a.emit or a.inject or a.verify):
             ap.print_help()
     except (PipelineError, AssertionError) as e:
         print(e, file=sys.stderr)

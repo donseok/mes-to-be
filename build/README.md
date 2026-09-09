@@ -31,6 +31,17 @@
 python3 build/build_single.py
 ```
 
+### 계산 엔진 주입
+
+PLTCM 두께 계산 엔진의 원본은 `assets/pltcm-thickness-engine.js` 하나다. 시뮬레이션 모듈 안의
+`/*__PLTCM_ENGINE_START__*/ … /*__PLTCM_ENGINE_END__*/` 사본은 `build/inject_engine.py`가 만들며 손으로 고치지 않는다.
+
+```bash
+node --test tests/pltcm-thickness-engine.test.js   # 엔진 테스트 (Node 20 이상. 디렉토리·글롭 인자는 쓰지 않는다)
+python3 build/inject_engine.py                      # 사본 갱신 (멱등)
+python3 build/inject_engine.py --check              # 사본이 원본과 같은지 검사
+```
+
 `build/template.html`에 CSS/JS를 인라인하고 `modules/` 아래 모든 모듈(품질사양·원자재강종·규격약호·압연두께Set보정·공정라우팅·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·품질보증서·검사증명서·Tag·마스터코드)을 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
 
@@ -66,9 +77,14 @@ python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 �
 있고 실명은 없어 마스킹 단계가 없다.
 
 ```bash
-python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 모듈 주입(멱등)
+python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 두 모듈 주입(멱등)
 python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없이 기존 JSON 재주입
+python3 build/rolling_thickness_set_seed.py --verify                  # xlsx 없이 두 사본이 JSON 과 같은지 검사
 ```
+
+시드는 압연두께Set보정관리(`/*__RTS_SEED_START__*/ var SEED=`)와 시뮬레이션(`/*__RTS_SEED_SIM_START__*/ var SEED_RTS=`)
+두 곳에 같은 내용으로 들어간다. 룰 `id`(`TS-001`~)는 JSON에 기록되며 두 모듈이 같은 ID를 쓴다.
+xlsx를 재적재하면 두 모듈이 함께 갱신되므로 압연두께Set보정관리의 `LS_KEY` 버전을 올리고 시뮬레이션 회귀 케이스의 핀을 재계산한다.
 
 ### 고객사 실명 마스킹 (공개 저장소 배포)
 
