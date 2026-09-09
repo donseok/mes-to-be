@@ -2,7 +2,7 @@
 title: "PLTCM 압연 SET 두께 계산 엔진 설계"
 subtitle: "시뮬레이션 ⑥ 설계값 산출을 실제 계산으로 바꾸기 (1단계 스펙)"
 date: "2026-09-09"
-status: draft (검토 반영 1차)
+status: draft (검토 반영 2차 — 5렌즈 병렬 검토 36건 + 적대 검증 확정 5건 반영)
 ---
 
 # 0. 목적과 결정 사항
@@ -55,8 +55,8 @@ status: draft (검토 반영 1차)
 |---|---|
 | `assets/pltcm-thickness-engine.js` | 계산 엔진. DOM·localStorage 의존 없음. 브라우저 전역 `PltcmThicknessEngine`과 CommonJS `module.exports` 둘 다 노출 |
 | `build/inject_engine.py` | 엔진 파일을 모듈의 마커 구간 `/*__PLTCM_ENGINE_START__*/ … /*__PLTCM_ENGINE_END__*/`에 복사. `--check`로 멱등성 검사 |
-| `build/rolling_thickness_set_seed.py` | 대상을 목록으로 바꿔 압연두께Set보정관리 모듈과 시뮬레이션 모듈(`/*__RTS_SEED_START__*/ var SEED_RTS=…`) 두 곳에 같은 시드를 주입. `--check`가 두 사본과 JSON의 일치를 검사 |
-| `modules/simulation.html` | 엔진 마커 구간, RTS 시드 마커 구간, 어댑터, 임시 시드, ⑥ 근거 밴드, 이상징후 연동 |
+| `build/rolling_thickness_set_seed.py` | (1) 시드 JSON의 룰마다 `id:'TS-'+pad3(순서)`를 직접 써 넣는다 (ID의 원천을 JSON으로 통일). (2) 주입 대상을 목록 `[(모듈, 마커, 변수명)]`으로 바꿔 압연두께Set보정관리(`/*__RTS_SEED_START__*/ var SEED=`)와 시뮬레이션(`/*__RTS_SEED_SIM_START__*/ var SEED_RTS=`) 두 곳에 같은 시드를 주입. 마커 이름을 다르게 두어 `index.html`에 같은 마커가 두 번 나오지 않게 한다. (3) 새 플래그 `--verify`가 xlsx 없이 두 사본과 JSON의 일치를 검사한다 (`--check`는 xlsx를 요구하므로 그대로 둔다) |
+| `modules/simulation.html` | 엔진 마커 구간, C10B2060 시드 사본 마커 구간, 어댑터, 임시 시드, ⑥ 근거 밴드, 이상징후 연동 |
 | `modules/quality-spec.html` | 코드 사전 항목 2개 추가와 한 번 합류 로직 |
 | `modules/rolling-thickness-set.html` | 간편판정·범례·안내 문구 정정 |
 | `tests/pltcm-thickness-engine.test.js` | `node:test` 골든 테스트 |
@@ -77,11 +77,12 @@ status: draft (검토 반영 1차)
 
 ## 1.2 주입 규칙
 
-- 엔진의 유일한 원본은 `assets/pltcm-thickness-engine.js`다. 모듈 안의 사본은 손으로 고치지 않는다.
+- 엔진의 유일한 원본은 `assets/pltcm-thickness-engine.js`, C10B2060 시드의 유일한 원본은 `build/rolling_thickness_set_seed.json`이다. 모듈 안의 엔진 사본과 시드 사본은 손으로 고치지 않는다.
+- 압연두께Set보정관리의 `repo.seed()`는 `id: s.id || 'TS-'+pad3(seq)`로 바꿔 JSON의 ID를 그대로 쓴다. 라이브(`rts-mock-v1`)와 폴백(`SEED_RTS`)의 룰 ID가 같은 값으로 고정된다.
 - `python3 build/inject_engine.py`는 대상 모듈 목록(초기값: `simulation.html`)의 마커 구간을 원본으로 치환한다. 마커가 없으면 오류로 중단한다.
 - `python3 build/inject_engine.py --check`는 사본과 원본이 다르면 exit 1.
 - **줄끝 처리.** 이 저장소는 Windows에서 `core.autocrlf=true`로 체크아웃된다. 원본과 모듈을 모두 `newline=None`(유니버설)로 읽어 LF 기준으로 비교·치환하고, 쓸 때는 모듈 파일이 원래 쓰던 줄끝을 유지한다. 시드 이중 주입에도 같은 규칙을 적용한다.
-- 작업 순서: 엔진 수정 → `node --test "tests/**/*.test.js"` → `inject_engine.py` → (룰 변경 시) `rolling_thickness_set_seed.py --inject` → `build_single.py` → 브라우저 확인.
+- 작업 순서: 엔진 수정 → `node --test tests/pltcm-thickness-engine.test.js` → `inject_engine.py` → (룰 변경 시) `rolling_thickness_set_seed.py --inject`(두 모듈 동시 갱신) → `build_single.py` → 브라우저 확인.
 
 ## 1.3 데이터 흐름
 
@@ -100,7 +101,7 @@ loadCriteria() ─→ ctx.thk (기준 3종 + 도금두께 map) ┘              
 
 | 기준 | 라이브 출처 (localStorage 키) | 폴백 |
 |---|---|---|
-| C10B2060 보정 룰 | `rts-mock-v1` (압연두께Set보정관리) `rules` | `SEED_RTS` (시드 스크립트가 주입한 사본). 압연두께Set보정관리의 `repo.seed()`와 같은 규칙으로 정규화: `id:'TS-'+pad3(순서+1)`, `unit` 기본 `CRN`, `status` 기본 `Y`, 누락 조건 키는 `NOT_CHECK` |
+| C10B2060 보정 룰 | `rts-mock-v1` (압연두께Set보정관리) `rules` | `SEED_RTS` (시드 스크립트가 주입한 사본). JSON에 `id`가 들어 있으므로 정규화는 `unit` 기본 `CRN`, `status` 기본 `Y`, 누락 조건 키 `NOT_CHECK`뿐이다 |
 | 규격코드→BMT/TCT | `spec-code-mock-v1` (규격약호관리) `thkRules` | 내장 6건 (KS·JIS→BMT, ASTM·EN→TCT, AS→BMT, BIS 미확정) |
 | 고객요청압연두께·단위 | `qspec-mock-v4` ⑤ 매칭 결과 | 매칭 없음 → 값 0, 단위 공백 |
 | SP 보정율 (C10B2070) | 다음 스펙 모듈 (4.7 계약) | 임시 시드: 룰 0건 (조회 0건 → 0% + 경고) |
@@ -147,7 +148,7 @@ input = {
 - **코드 항목**(`PRD_NM_CD`, `SPC_ORG_CD`, `SPC_AVR`, `ORD_USG_CD`, `FNL_CUS_CD`, `ORD_THK_TP`, `ORD_THK_MNG_CD`, `GW_ASG_CD`, `MAT_CD`, `ORD_SPNL_TP`)은 `String(x).trim()`으로 정규화해 **문자열로 비교**한다. `null`·`undefined`는 `''`다.
 - **숫자 항목**(`ORD_EXC_THK`, `ORD_EXC_WTH`, `ORD_SLIT_GRP_CNT`, `ORD_MIX_WTH[]`, `request.value`, `layers.*`)은 `parseFloat`로 정규화한다.
 - `ORD_EXC_THK`가 유한한 양수가 아니면 `E_INPUT` 오류다.
-- `request.value`가 유한수가 아니면(NaN·null·`''`) **0으로 보고** `W_REQUEST_INVALID` 경고를 남긴다. 0은 미지정이다 (AS-IS와 동일). `request.unit`은 `String(x).trim().toUpperCase()`.
+- `request.value`는 `parseFloat` 뒤 `Number.isFinite`가 아니면 **0으로 본다.** 원래 값이 `null`·`undefined`·`''`(미지정)이면 경고 없이 0이고, 그 외의 비숫자(`'≥ 0.5'`, `'미지정'`)였으면 `W_REQUEST_INVALID` 경고를 남긴다. 3.2의 경로 판정은 정규화된 값을 쓴다. 0은 미지정이다 (AS-IS와 동일). `request.unit`은 `String(x).trim().toUpperCase()`.
 - `layers.*`가 유한수가 아니면 0이다.
 - `layers`는 AS-IS에서 앞 단계 설계값(`GAL_THK_TRV`, 도막두께)이므로 엔진이 조회하지 않고 입력으로 받는다.
 
@@ -245,7 +246,8 @@ result = {
 ```
 
 - 값은 모두 number다. 화면은 `toFixed(3)`으로 표시한다.
-- `error.stage`는 `steps[].name`, `error.stepNo`는 `steps[].no`와 같은 체계다. 3장의 "단계 N" 제목은 문서용 번호다.
+- `applied.setRule`·`candidates[]`·`spRule`·`tolRule`은 룰 객체 그대로가 아니라 **투영**(`{id, no, adj, unit}` / `{id, no, rate}` / `{id, no, llv, ulv}`)이다. 라이브 룰의 `createdAt` 같은 부가 필드가 결과에 섞여 결정성을 깨지 않게 하기 위한 것이다.
+- `error.stage`는 `steps[].name`, `error.stepNo`는 `steps[].no`와 같은 체계다. 3장의 "단계 N" 제목은 문서용 번호다. 계산에 들어가기 전의 검증 오류(`E_CRITERIA`, `E_INPUT`)는 `stage:'입력 검증'`, `stepNo:0`이며 `steps`는 빈 배열이다.
 - 실패해도 그때까지의 `steps`·`values`(계산된 것만)·`warnings`를 채운다. 실패 지점 이후의 값은 `null`이다. 예: `KK80`이면 `CRM_THK`·`PLTCM_THK_TRV`·`PLTCM_SET_THK_TRV`는 값, `LLV`·`ULV`는 `null`.
 - 경로별 `applied`: `CUSTOMER`는 `setRule null`. `SPECIAL_57`은 `setRule`·`spRule` `null`, `spRate 0`.
 - `steps`의 순서: ① 단위 변환 → ② 적용폭 → ③ 경로 선택 → ④ 기준 조회(C10B2060) → ⑤ 압연목표 → ⑥ SP 조회·적용 → ⑦ 절삭 → ⑧ SET 눈금 → ⑨ 공차. 경로에 따라 건너뛴 단계는 `note`에 "생략"을 적고 남긴다.
@@ -266,11 +268,15 @@ result = {
 
 기호: `t` 주문두께, `g` 목표도금두께(mm), `pf`·`pb` 전·후면 도막(mm), `c` C10B2060 보정값, `r` 고객요청 값, `sp` SP율(%).
 
-## 3.1 단계 0. 전처리
+## 3.1 단계 0. 입력 검증과 전처리
 
+검증은 계산 단계(`steps`) 전에 이 순서로 한다.
+1. `criteria`가 없거나 기준표 3종 중 하나라도 `rules`가 배열이 아니면 `E_CRITERIA`로 종료.
+2. `ORD_EXC_THK`가 유한한 양수가 아니면 `E_INPUT`으로 종료.
+
+전처리(여기부터 `steps`에 기록):
 1. `g = galThkUm / 1000`, `pf = paintFrontUm / 1000`, `pb = paintBackUm / 1000`. 라미나두께는 0 (AS-IS 초기값).
 2. 적용폭: `ORD_SLIT_GRP_CNT > 0`이면 `ORD_MIX_WTH` 합계, 아니면 `ORD_EXC_WTH`. 합계가 0이면 **`applyWidth = 0`으로 그대로 진행**(AS-IS 재현, 주문폭 폴백 없음)하고 `W_SLIT_WIDTH_ZERO` 경고.
-3. `ORD_EXC_THK`가 유한한 양수가 아니면 `E_INPUT`으로 종료.
 
 ## 3.2 단계 1. 경로 선택
 
@@ -337,7 +343,7 @@ result = {
 
 **절삭 `truncate3`**: `String(x)`를 만들어 소수점 뒤 3자리까지만 남긴다. 소수점이 없으면 그대로다. 문자열에 `e`가 있으면(지수 표기) `x.toFixed(12)`로 다시 만들어 절삭하고 `W_EXP_NOTATION` 경고를 남긴다. 결과는 `Number`로 돌려준다. **음수**는 부호를 떼고 절삭한 뒤 부호를 되돌리며 `W_NEGATIVE` 경고를 남긴다 (AS-IS `thk_dot`의 음수 동작은 검증 항목).
 
-**눈금 `snapSet`**: 절삭된 값의 절댓값을 정수 µm `u = Math.round(|x3| × 1000)`로 바꾸고 `d = u mod 10`(세 번째 자리)을 본다.
+**눈금 `snapSet`**: 절삭된 값의 절댓값을 정수 µm `u = Math.round(|x3| × 1000)`로 바꾸고 `d = u mod 10`(세 번째 자리)을 본다. 절댓값을 쓰므로 `d`는 항상 0~9다.
 
 | `d` | 처리 |
 |---|---|
@@ -394,7 +400,7 @@ result = {
 | `ORD_THK_TP` | 케이스 주문 필드 | 4.2 기본값 규칙 |
 | `request.value` / `unit` | ⑤ `specRows` 중 `srcs.length > 0`이고 `code === 'CUS_ROL_THK'` / `'THK_COR_UNT'` | `op`가 `'='`인 행만 채택. 값은 `parseFloat`, NaN이면 0과 이상징후 `thk-request-invalid`(경고). `op`가 `'='`가 아니면 채택하지 않고 같은 이상징후. 없으면 0 / `''` |
 | `layers.galThkUm` | `ctx.thk.coatThk.map[GW_ASG_CD]` | 없으면 0과 이상징후 `thk-input-warn`(경고) |
-| `layers.paintFrontUm` | ⑤ `specRows` 중 `code === 'TOP_THK'`이고 `op '='`인 행의 값, 없으면 `design.color.sum.thkT` | `parseFloat`, NaN이면 0. 칼라 품명이 아니면 0 |
+| `layers.paintFrontUm` | ⑤ `specRows` 중 `srcs.length > 0`이고 `code === 'TOP_THK'`이고 `op '='`인 행의 값, 없으면 `design.color.sum.thkT` | `parseFloat`, NaN이면 0. 칼라 품명이 아니면 0. `srcs`가 빈 기본행(표준 도막 18)은 고객 지시가 아니므로 채택하지 않는다 |
 | `layers.paintBackUm` | `design.color.sum.thkB` | `parseFloat`, NaN이면 0. 후면 도막 사양 코드는 없음 (8장) |
 | `ORD_MIX_WTH` | 주문 `ORD_MIX_WTH1..10` | 없으면 빈 배열 |
 | 숫자 항목 | `ORD_EXC_THK`, `ORD_EXC_WTH`, `ORD_SLIT_GRP_CNT` | `num()` |
@@ -427,7 +433,7 @@ result = {
    - 실패 시 네 값은 `''`로 둔다.
 4. ⑥ 판정: `result.ok ? 'P' : 'F'`.
 5. 이상징후: 오류는 `anomaly('thk-design-error','error','두께설계 실패', code + ' — ' + message, code)`. 경고는 각각 `anomaly('thk-design-warn','warn','두께설계 경고', message, code)`. 어댑터 경고는 `thk-request-invalid`·`thk-input-warn`, 두께구분 판정은 `thk-tp-mismatch`·`thk-tp-default`(4.2).
-6. **사양 코드의 엔진 연결.** `SPEC_TO_ENGINE = { CUS_ROL_THK:'request.value', THK_COR_UNT:'request.unit', TOP_THK:'layers.paintFrontUm' }`를 두고, `mapSpecOverrides`는 이 코드들을 `unmapped`에서 제외한다. 그렇지 않으면 ⑥이 소비하는 값이 매 실행 '사양 미연결' 경고를 만든다. (`TOP_THK`는 기존 `SPEC_TO_DESIGN` 항목도 유지한다.)
+6. **사양 코드의 엔진 연결.** `SPEC_TO_ENGINE = { CUS_ROL_THK:'request.value', THK_COR_UNT:'request.unit', TOP_THK:'layers.paintFrontUm' }`를 둔다. 값은 엔진 입력 경로이며 설계 결과 경로가 아니다. `mapSpecOverrides`는 이 코드들을 `mapped`에도 `unmapped`에도 넣지 않는다. 그렇지 않으면 ⑥이 소비하는 값이 매 실행 '사양 미연결' 경고를 만든다. (`TOP_THK`는 기존 `SPEC_TO_DESIGN` 항목도 유지한다.) 근거 패널의 '사양' 층은 `run.thkInput.request.value !== 0`이거나 도막이 사양에서 왔을 때 표시하며, 출처 `specNo`는 ⑤ `rows[].srcs`에서 읽는다.
 
 `GOVERNED_PATHS`에는 PLTCM 경로를 추가하지 않는다. SET은 사양이 관장하는 값이 아니라 기준 계산값이다.
 
@@ -493,6 +499,7 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 
 - `orderFromSeed`는 모든 주문에 `ORD_SLIT_GRP_CNT:'6'`을 넣지만 `ORD_MIX_WTH1..10`이 없어 그대로 두면 전 케이스가 적용폭 0·경고가 된다. `ORD_SLIT_GRP_CNT`는 ③ 주문단중 판정의 분할 수로도 쓰이므로 바꾸지 않고, **`ORD_MIX_WTH1..6`을 주문폭을 6등분한 값(소수 1자리, 합계가 `ORD_EXC_WTH`가 되도록 마지막 값으로 보정)으로 채운다.** 적용폭은 주문폭과 같아진다.
 - `ORD_THK_TP`는 4.2대로 `defaultThkTp`로 채운다.
+- 두 항목 모두 새 시드와 `newCase`에만 적용된다. 이미 저장된 케이스(`sim-mock-v1`)는 4.2와 같은 정책으로 마이그레이션하지 않으며, 그런 케이스는 적용폭 0과 `W_SLIT_WIDTH_ZERO` 경고가 남을 수 있다. 사용자가 주문 폼에서 폭을 채우면 해소된다.
 
 ## 4.9 알려진 코드 불일치
 
@@ -503,7 +510,7 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 
 ## 5.1 엔진 단위 테스트 `tests/pltcm-thickness-engine.test.js`
 
-실행: `node --test "tests/**/*.test.js"` (Node 20 이상. Node 22에서 디렉토리 인자는 지원되지 않는다). 외부 의존성 없음. 기준 3종은 테스트 안에서 직접 만든다.
+실행: `node --test tests/pltcm-thickness-engine.test.js` (Node 20 이상). 파일을 명시하는 이유는 디렉토리 인자가 Node 22에서, 글롭 인자가 Node 20에서 실패하기 때문이다. 외부 의존성 없음. 기준 3종은 테스트 안에서 직접 만든다.
 
 **비교 규칙.** 절삭·SET·공차 값(`PLTCM_*`)은 정확 비교. 절삭 전 중간값(`CRM_THK`, 출측 계산값, `steps[].output`)은 1e-12 허용 근사 비교. `warnings`는 코드 집합의 동등 비교. 별도 표기가 없으면 SP 룰은 0건, 공차 룰은 `cond:{}` ±0.015 한 건이다.
 
@@ -524,7 +531,7 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 | | 단위 `'ABC'` · 요청 0.01 · BMT 0.500 | CRM 0.500 |
 | 해설서 4.2 | `snapSet` 0.540~0.549, 0.998 | 대응표대로, 1.000 |
 | 해설서 4.3 | 출측 계산값 0.2029 | 출측 0.202, SET 0.200 (반올림이면 실패) |
-| 부록 A.1 | 18개 조합 전부 (CRN 6조합은 KK94 없음) | 표의 값·`KK94`·`W_EMPTY_BRANCH`·`sp 0` |
+| 부록 A.1 | 18개 조합 전부 (CRN 6조합은 KK94 없음) | 표의 값·`KK94`·`W_EMPTY_BRANCH`·`sp 0`. KK94 4조합은 `error.stage '압연목표'`, `setRule`은 조회된 1건, `CRM_THK` 이하 전부 `null`, `steps`는 ①~⑤ |
 | | 빈 분기 4조합(PCN·2·5, PCN·1·6, TRK·2·5, TRK·1·6) | CRM 0, 출측 0, SET 0, LLV −0.015 / ULV 0.015, 경고 ⊇ {W_EMPTY_BRANCH, W_ZERO_SET} |
 | 부록 A.2 | STANDARD 경로 + 고객 단위 TRK + SP 룰 0.8 | SP 생략, `spRate 0` |
 | | 칼라TCT · 요청 0 · 고객 단위 TRK | CRM 0, SET 0, 경고 ⊇ {W_ZERO_SET} |
@@ -533,13 +540,17 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 | 경고 | 두께구분 `'4'` · 요청 0 · CRN c | BMT 행 `t + c`, {W_THK_TP_INVALID} |
 | | 단위 `'XYZ'` · BMT · 관리코드 D · adj 0.47 | CRM 0.47 (TRK 계열 `c`), `spRate 0`, {W_UNIT_UNKNOWN}. 단위 `''`도 같음 |
 | | 그룹수 2 · `ORD_MIX_WTH []` | `applyWidth 0`, {W_SLIT_WIDTH_ZERO} |
-| | request.value `NaN` / `''` · 단위 CRN · TCT | STANDARD 경로, {W_REQUEST_INVALID} |
+| | request.value `'≥ 0.5'` · 단위 CRN · TCT | STANDARD 경로, {W_REQUEST_INVALID} |
+| | request.value `''` / `null` · TCT | STANDARD 경로, 경고 없음 |
+| 공차 경계 | TCT · 고객 TRK 0.205 · 공차 −0.010/+0.015 | SET 0.205, LLV 0.194 / ULV 0.219 (반올림이면 0.195 / 0.220으로 실패) |
+| | TCT · 고객 TRK 0.210 · 공차 −0.010/+0.015 | SET 0.210, LLV 0.199 / ULV 0.224 (반올림이면 0.200 / 0.225로 실패) |
 | | `truncate3(1e-7)` | 0, 지수 표기 플래그 |
 | 음수 | `truncate3(−0.4549)` | −0.454. `snapSet(−0.454)` = −0.455. `truncate3(1)` = 1 |
 | 오류 | C10B2060 0건 / 2건 | `KK82` / `KK83`(candidates 2건), `CRM null` 이하 전부 `null` |
 | | 공차 0건 / 2건 | `KK80` / `KK81`, CRM·출측·SET은 값, LLV·ULV `null` |
-| | 주문두께 0 / −0.5 / `'abc'` | `E_INPUT` |
-| | `design(undefined, undefined)`, `design({}, {})`, `criteria.setCorrection.rules` 미배열 | throw 없이 `ok:false`, `E_INPUT` 또는 `E_CRITERIA` |
+| | 주문두께 0 / −0.5 / `'abc'` (기준은 정상) | `E_INPUT`, `stage '입력 검증'`, `steps []`, `values` 전부 `null` |
+| | `design(undefined, undefined)`, `design({}, {})`, `criteria.setCorrection.rules` 미배열 | throw 없이 `ok:false`, `E_CRITERIA` (기준 검사가 입력 검사보다 먼저) |
+| | 품명 `'5'` · 공차 룰 0건 | `KK80`, SET 0.503 · 출측 0 · `CRM null` 유지, LLV·ULV `null` |
 | 정규화 | `ORD_EXC_THK '0.5'`(문자열) | 0.5로 계산. `unit 'crn'` → CRN 처리. `ORD_THK_TP 1`(number) → `'1'` |
 | 적용폭 | 그룹수 2 · 폭 [600, 500] | 1100. 그룹수 0이면 주문폭 |
 | 매처 | 연산자 18종 × 문자·숫자 | 압연두께Set보정관리 `evalText`·`evalNum`과 같은 표 |
@@ -553,20 +564,29 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 
 ## 5.2 시뮬레이션 회귀
 
-- **케이스 (a) STANDARD 1건 매칭.** 비칼라 주문을 쓴다. 후보는 `D260831021`(GI, KS, 두께 0.44, 관리코드 D → 기본값 두께구분 '1'). 실측으로는 룰 no.69(prod IN G,L,V,W · thkKind IN 1,2 · thkMng D)가 1건 맞을 것으로 보이며 **구현 시 실제 82건으로 확정해 스펙과 케이스에 룰 번호·보정치를 적는다.** 핀: `cgl.pltcm.X-Ray Set두께값`, `cgl.pltcm.두께목표값`, `cgl.pltcm.두께하한`, `cgl.pltcm.두께상한`.
-- **케이스 (b) KK82.** 예: 두께 0.25(no.69 하한 0.27 미만) 또는 규격기관 BIS. ⑥ F와 `thk-design-error` 이상징후를 기대.
-- **케이스 (c) CUSTOMER 칼라.** `D260831014`(CCGI, 110197)에 사양 `고객요청압연두께 = 0.01, 두께보정단위 = CRN`을 붙여 CUSTOMER 경로·`setRule null`·사양 근거 층을 검증. 고객사 110197 룰(no.27: 두께구분 1 · 관리코드 Q)을 검증하려면 주문값을 관리코드 Q로 둔 별도 케이스가 필요하며, 이는 선택 사항이다.
+아래 룰 번호·보정치는 시드 82건을 압연두께Set보정관리의 연산자 의미로 전수 매칭해 확인한 값이다(스펙 검토 시 검증자 3명과 저자가 독립 재현). 구현 시 실제 실행으로 다시 확인해 핀을 고정한다. SP·공차는 임시 시드(0% · ±0.015)다.
+
+| 케이스 | 주문 | 기대 |
+|---|---|---|
+| (a) STANDARD 1건 | `D260831021` (GI · KS · 0.44 × 1225 · 관리코드 D · 두께구분 기본값 '1') | 룰 **no.69** 1건 (`prod IN G,L,V,W · thkKind IN 1,2 · thkMng D · 0.27 ≤ t`), adj −0.02 CRN → `CRM 0.42`(BMT·D → `t + c`), 출측 0.420, SET 0.420, 하한 **0.404** / 상한 0.435 (`0.42 − 0.015 = 0.40499999999999997`를 3.7의 절삭 정책으로 자른 값. 반올림이면 0.405). 핀: `cgl.pltcm.X-Ray Set두께값`, `두께목표값`, `두께하한`, `두께상한` |
+| (b) KK82 | (a)와 같은 주문에서 두께 0.26 (no.69 하한 0.27 미만) | ⑥ F, `thk-design-error` 이상징후(KK82), 네 값 빈칸. 관리코드 Q로 바꿔도 KK82. 규격기관 변경은 KK82를 만들지 못한다(no.69는 규격기관 NOT_CHECK) |
+| (c) CUSTOMER 칼라 | `D260831014` (CCGI · 110197 · 0.45 × 1490)에 사양 `고객요청압연두께 = 0.01, 두께보정단위 = CRN` | CUSTOMER 경로, `setRule null`, `CRM = 0.45 + 0.01`, 근거 패널에 '사양' 층(specNo). 두께구분 기본값은 KS → '1' |
+| (d) KK83 | `D260831014`에 주문값 관리코드 `Q`, 용도 `C11004` (사양 없음) | 룰 **no.14 + no.27** 2건 → `KK83`, `applied.setRule.candidates` 2건, ⑥ F |
+| (e) 고객사 룰 | `D260831014`에 주문값 관리코드 `Q` (용도는 시드 그대로 G0493P, 사양 없음) | 룰 **no.27** 1건 (고객사 110197 · 두께구분 1 · 관리코드 Q · 0.4 ≤ t ≤ 0.501), adj −0.04 CRN → `CRM ≈0.41`(double 0.41000000000000003), 출측 0.410, SET 0.410. 두께구분이 규격 기본값 '1'과 같으므로 `thk-tp-mismatch` 없음 |
+
+- 비칼라 시드 주문 17건은 기본 입력으로 전부 no.69 1건에 맞는다. 시드 82건은 잘 분할돼 있어 두께·관리코드만으로는 KK83이 나지 않으며, (d)처럼 용도 조건이 겹치는 조합이 필요하다.
 - 기존 케이스 3건의 골든을 갱신한다. 갱신 범위에는 `common.주문두께구분`·`두께관리코드`·`도금량코드`(4.3-2)와 `cgl.thk.*`, `cgl.pltcm.두께하한/상한`이 포함된다.
+- 폴백(내장 시드)과 라이브(`rts-mock-v1`)의 룰 ID가 같으므로(1.2), 기준 출처가 바뀌어도 룰 데이터가 같으면 골든 diff는 0이어야 한다. 5.3 수동 검증에 "폴백에서 골든 채택 → 압연두께Set보정관리 방문(라이브 생성) → 재실행 시 diff 0"을 넣는다.
 
 ## 5.3 빌드·수동 검증
 
-- `python3 build/inject_engine.py --check`와 `python3 build/rolling_thickness_set_seed.py --check` 통과.
-- `python3 build/build_single.py` 후 `index.html`에 `__PLTCM_ENGINE_START__`가 정확히 1회, `__RTS_SEED_START__`가 정확히 2회.
-- 브라우저: ⑥ 근거 밴드(임시 시드 표시 포함), 오류 케이스 F 표시와 이상징후, 품질사양 사전 항목 2개와 사양 문장 인식, 규격 불일치 경고, 압연두께Set보정관리 문구 8곳.
+- `python3 build/inject_engine.py --check`와 `python3 build/rolling_thickness_set_seed.py --verify` 통과 (둘 다 xlsx 불필요).
+- `python3 build/build_single.py` 후 `index.html`에 `__PLTCM_ENGINE_START__`·`__RTS_SEED_START__`·`__RTS_SEED_SIM_START__`가 각각 정확히 1회.
+- 브라우저: ⑥ 근거 밴드(임시 시드 표시 포함), 오류 케이스 F 표시와 이상징후, 품질사양 사전 항목 2개와 사양 문장 인식, 규격 불일치 경고, 압연두께Set보정관리 문구 8곳, 폴백→라이브 전환 시 골든 diff 0.
 
 # 6. 빌드와 문서
 
-- `build/README.md`에 엔진 파일·주입 스크립트·시드 이중 주입·테스트 명령(Node 20+)·작업 순서를 추가한다.
+- `build/README.md`에 엔진 파일·주입 스크립트·시드 이중 주입(`--inject`가 두 모듈을 함께 갱신, `--verify`)·테스트 명령 `node --test tests/pltcm-thickness-engine.test.js`(Node 20+)·작업 순서를 추가한다. 압연두께Set 파이프라인 절에는 "xlsx 재적재 시 시뮬레이션 사본도 함께 갱신되며, `LS_KEY`를 올린 뒤 5.2 핀을 재계산한다"를 적는다.
 - `.gitignore`는 변경하지 않는다. `tests/`는 커밋한다.
 - 커밋 단위: (1) 엔진+테스트, (2) 주입 스크립트·시드 이중 주입+시뮬레이션 연동, (3) 품질사양·압연두께Set·README·재빌드.
 
@@ -604,6 +624,7 @@ var SEED_TOL_RULES = [ { id:'TOL-TMP-001', no:1, status:'Y', cond:{}, llv:-0.015
 | 10 | 도막두께의 AS-IS 출처 컬럼. 후면 도막의 사양 코드 없음 | 칼라 섹션 값 사용 |
 | 11 | C10B2070·C10B2190의 실제 조회 조건 열 | `DEFAULT_DEFS` 잠정안 |
 | 12 | 기준 유효기간(시작·종료일시) 적용 | `status='Y'`만 사용 |
+| 13 | 칼라 품명(3·4) 주문의 AS-IS `ORD_THK_TP` 분포 (1/2 vs 3). 시드 룰은 칼라 품명에도 두께구분 1·2를 요구한다 | 규격약호 기준으로 '1'/'2', '3'은 주문이 명시할 때만 (4.2) |
 
 # 부록 A. 골든 케이스 상세값
 
