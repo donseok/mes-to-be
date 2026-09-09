@@ -4,12 +4,14 @@
 RuleData xlsx의 IN 연산자 조건을 '=' 단건 조건으로 분해하는 유틸.
 
 업무기준 RuleData 시트(4행 조건명 / 5행 연산자·비교값1·비교값2 / 6행부터 데이터 / 'END!' 이후 각주)에서
-연산자가 IN 인 조건을 비교값 1개당 1행으로 쪼갠다. 한 행에 IN 조건이 여러 개면 모든 조합(카티션 곱)을 만든다.
+비교값이 2개 이상인 IN 조건을 비교값 1개당 1행의 '=' 조건으로 쪼갠다. 값이 1개뿐인 IN 은 기본적으로 IN 그대로 둔다
+(--split-single 을 주면 '=' 로 바꾼다). 한 행에 쪼갤 IN 조건이 여러 개면 모든 조합(카티션 곱)을 만든다.
 헤더(1~5행)·각주·병합셀·열 너비·지브라 서식·행 높이는 원본 그대로 유지하고, 'no.' 열은 1부터 다시 매긴다.
 
 사용:
   python3 build/split_in_to_eq.py --xlsx sources/설계KEY.xlsx --out sources/설계KEY_IN_to_EQ.xlsx
   python3 build/split_in_to_eq.py --xlsx <입력> --out <출력> --exclude 제품형태,주문용도코드   # 제외 항목 재지정
+  python3 build/split_in_to_eq.py --xlsx <입력> --out <출력> --split-single                  # 단일값 IN 도 '=' 로
 
 기본 제외 항목(IN 그대로 유지): 제품형태, 주문용도코드, 고객사코드, 고객사양서번호, 색상코드
 원본 xlsx 는 사내 기준정보이므로 저장소에 커밋하지 않는다(`.gitignore: sources/`).
@@ -39,7 +41,7 @@ def parse_in_values(raw):
     return list(dict.fromkeys(p for p in parts if p))
 
 
-def split_workbook(src, dst, exclude, sheet=None):
+def split_workbook(src, dst, exclude, sheet=None, split_single=False):
     wb = openpyxl.load_workbook(src)
     ws = wb[sheet] if sheet else wb.active
     ncol = ws.max_column
@@ -65,7 +67,8 @@ def split_workbook(src, dst, exclude, sheet=None):
             for r in (FIRST_DATA_ROW, FIRST_DATA_ROW + 1)}
 
     stats = {"source_rows": len(records), "rows_expanded": 0, "in_cells_converted": 0,
-             "in_single_value": 0, "in_multi_value": 0, "per_column": {}, "warnings": []}
+             "in_single_value_kept": 0, "in_single_value_converted": 0, "in_multi_value": 0,
+             "per_column": {}, "warnings": []}
     out_rows = []
     for k, (vals, height) in enumerate(records):
         src_row = data_rows[k]
@@ -79,11 +82,14 @@ def split_workbook(src, dst, exclude, sheet=None):
             if not values:
                 stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: IN 비교값이 비어 있어 그대로 둠")
                 continue
+            if len(values) == 1 and not split_single:
+                stats["in_single_value_kept"] += 1      # 단일값 IN 은 원본 그대로 유지
+                continue
             if vals[i + 2] not in (None, ""):
                 stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: IN 에 비교값2={vals[i + 2]!r} 가 있어 비움")
             options.append([(i, v) for v in values])
             stats["in_cells_converted"] += 1
-            stats["in_single_value" if len(values) == 1 else "in_multi_value"] += 1
+            stats["in_single_value_converted" if len(values) == 1 else "in_multi_value"] += 1
             name = ws.cell(NAME_ROW, c).value
             stats["per_column"][name] = stats["per_column"].get(name, 0) + 1
         if not options:
@@ -131,9 +137,11 @@ def main():
     ap.add_argument("--exclude", default=",".join(DEFAULT_EXCLUDE),
                     help="IN 을 그대로 둘 조건명(쉼표 구분). 기본: " + ",".join(DEFAULT_EXCLUDE))
     ap.add_argument("--sheet", default=None, help="시트명(기본: 활성 시트)")
+    ap.add_argument("--split-single", action="store_true",
+                    help="값이 1개뿐인 IN 도 '=' 로 바꾼다(기본: IN 그대로 유지)")
     args = ap.parse_args()
     exclude = [x.strip() for x in args.exclude.split(",") if x.strip()]
-    stats = split_workbook(args.xlsx, args.out, exclude, args.sheet)
+    stats = split_workbook(args.xlsx, args.out, exclude, args.sheet, args.split_single)
     print(json.dumps(stats, ensure_ascii=False, indent=1))
     print(f"저장: {args.out}")
 
