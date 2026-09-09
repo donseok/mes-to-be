@@ -844,6 +844,7 @@ function mergeDictImports(st){
   if(!Array.isArray(done))done=[];
   const pending=DICT_IMPORTS.filter(c=>!done.includes(c));
   if(!pending.length)return;
+  let added=false;
   pending.forEach(code=>{
     if(st.dict.some(d=>d.code===code))return;
     const seed=SEED_DICT.find(d=>d.code===code);
@@ -851,7 +852,11 @@ function mergeDictImports(st){
     const item={...seed};
     if(st.dict.some(d=>d.id===item.id))item.id='d'+(st.dict.length+1)+'-'+Date.now();
     st.dict.push(item);
+    added=true;
   });
+  if(added){
+    try{localStorage.setItem(LS_KEY,JSON.stringify(st));}catch(e){return;}
+  }
   try{localStorage.setItem(DICT_IMPORT_KEY,JSON.stringify(DICT_IMPORTS));}catch(e){}
 }
 const $=(s,el=document)=>el.querySelector(s);
