@@ -88,14 +88,14 @@
       viewId: 'color-submaterial-view',
       title: '칼라부재료관리',
       crumbs: ['품질관리', '품질설계', '기준정보관리'],
-      openLink: true
+      openLink: false
     },
     'color-bom': {
       hash: '#/quality-design/master-data-management/color-bom',
       viewId: 'color-bom-view',
       title: '칼라BOM관리',
       crumbs: ['품질관리', '품질설계', '기준정보관리'],
-      openLink: true
+      openLink: false
     },
     'quality-judgment': {
       hash: '#/quality-judgment',
