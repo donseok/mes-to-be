@@ -70,6 +70,17 @@ python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서�
 python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없이 기존 JSON 재주입
 ```
 
+## RuleData IN 조건 분해 유틸 (`build/split_in_to_eq.py`)
+
+업무기준 RuleData xlsx(예: 설계KEY C10B1040)에서 연산자 `IN` 조건을 비교값 1개당 1행의 `=` 조건으로 쪼갠다.
+한 행에 IN 조건이 여러 개면 모든 조합(카티션 곱)을 생성하고, 헤더·각주·서식·행 높이는 원본대로 유지하며 `no.`는 1부터 다시 매긴다.
+`--exclude`(기본: 제품형태·주문용도코드·고객사코드·고객사양서번호·색상코드)에 적은 조건은 IN 그대로 둔다.
+입·출력 xlsx는 사내 기준정보이므로 `sources/`(gitignore)에 두고 커밋하지 않는다.
+
+```bash
+python3 build/split_in_to_eq.py --xlsx sources/설계KEY.xlsx --out sources/설계KEY_IN_to_EQ.xlsx
+```
+
 ### 고객사 실명 마스킹 (공개 저장소 배포)
 
 이 저장소는 공개이므로 시드에 고객사 실명을 남기지 않는다. 원본 xlsx를 커밋하지 않는 것과
