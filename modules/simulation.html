@@ -677,7 +677,67 @@ function circled(n){return '①②③④⑤⑥'.charAt(n-1);}
    기준 데이터 — 라이브(다른 모듈 localStorage) 우선, 내장 시드 폴백
    ============================================================ */
 var CRIT_KEYS={consistency:'oc-state-v1',feasibility:'pfeas-bd-range-v2',
-               weight:'owe-mock-v1',spec:'qspec-mock-v4'};
+               weight:'owe-mock-v1',spec:'qspec-mock-v4',
+               rts:'rts-mock-v1',specCode:'spec-code-mock-v1',masterCode:'mes-master-codes-v2',
+               sp:'sp-correction-mock-v1',tol:'pltcm-tolerance-mock-v1',coat:'coating-code-mock-v1'};
+/* ---- PLTCM 두께 기준 임시 시드 (스펙 4.7) — 다음 스펙의 모듈이 생기면 라이브로 교체 ---- */
+var SEED_SP_RULES=[];                                              /* 조회 0건 → 0% + W_NO_SP_RULE */
+var SEED_COAT_THK={E:12,A10:12,Z12:17,A15:12,M12:12};             /* 도금량코드 → 목표도금두께 µm (COAT_RANGE 이관) */
+var SEED_TOL_RULES=[{id:'TOL-TMP-001',no:1,status:'Y',cond:{},llv:-0.015,ulv:0.015,note:'임시 전건 공차'}];
+/* 규격약호관리 폴백 (spec-code.html 시드와 동일) */
+var SEED_THK_RULES=[{id:'TK-001',no:1,specOp:'=',spec:'KS',thkStd:'BMT',status:'Y'},{id:'TK-002',no:2,specOp:'=',spec:'JIS',thkStd:'BMT',status:'Y'},
+  {id:'TK-003',no:3,specOp:'=',spec:'ASTM',thkStd:'TCT',status:'Y'},{id:'TK-004',no:4,specOp:'=',spec:'EN',thkStd:'TCT',status:'Y'},
+  {id:'TK-005',no:5,specOp:'=',spec:'AS',thkStd:'BMT',status:'Y'},{id:'TK-006',no:6,specOp:'=',spec:'BIS',thkStd:'',status:'F'}];
+/* 두께관리코드 디코드 폴백 (마스터코드 ORD_THK_MNG_CD 와 동일) */
+var SEED_MNG_CODES={'1':'규격일반:(+/-)TOL','2':'규격일반:(+/-)HALF TOL','3':'규격일반:(+)ONLY','4':'규격일반:(-)ONLY','5':'특별관리(TCT → BMT관리)','6':'특별관리(BMT → TCT관리)','A':'규격일반:(+)보정10','B':'규격일반:(-)보정10','C':'규격일반:(+)보정20','D':'규격일반:(-)보정20','E':'규격일반:(+)보정30','F':'규격일반:(-)보정30','G':'규격일반:(+)보정40','H':'규격일반:(-)보정40','J':'규격일반:(+)보정50','K':'규격일반:(-)보정50','Q':'특별관리'};
+var ORG_ALIAS={JS:'JIS',AM:'ASTM'};   /* C10B2060 규격기관(2자) → 규격약호관리 규격코드 */
+function codeStr(v){return v==null?'':String(v).trim();}
+function specOrgCd(o){return codeStr(o&&o.SPC_AVR).slice(0,2).toUpperCase();}
+function normRtsRule(r,i){
+  var keys=['prod','org','spec','use','cust','thkKind','thkMng','coat','thk','wid'],cond={};
+  keys.forEach(function(k){var c=(r.cond||{})[k];
+    cond[k]=c?{op:c.op||'NOT_CHECK',v1:c.v1==null?'':c.v1,v2:c.v2==null?'':c.v2}:{op:'NOT_CHECK',v1:'',v2:''};});
+  return {id:r.id||('TS-'+('00'+(i+1)).slice(-3)),no:r.no,status:r.status||'Y',cond:cond,adj:+r.adj,unit:r.unit||'CRN'};
+}
+function buildThkCriteria(rts,spc,tol,coat){
+  var liveRts=!!(rts&&rts.rules&&rts.rules.length), liveSp=!!(spc&&Array.isArray(spc.rules)),
+      liveTol=!!(tol&&Array.isArray(tol.rules)), liveCoat=!!(coat&&Array.isArray(coat.rows));
+  var coatMap={};
+  if(liveCoat)coat.rows.forEach(function(r){if(codeStr(r.status||'Y')==='Y'&&codeStr(r.code))coatMap[codeStr(r.code)]=Number(r.thkUm);});
+  else coatMap=SEED_COAT_THK;
+  return {
+    setCorrection:{live:liveRts,defs:null,rules:(liveRts?rts.rules:SEED_RTS.rules).map(normRtsRule)},
+    spCorrection: {live:liveSp, defs:null,rules:liveSp?spc.rules:SEED_SP_RULES},
+    thkTolerance: {live:liveTol,defs:null,rules:liveTol?tol.rules:SEED_TOL_RULES},
+    coatThk:      {live:liveCoat,map:coatMap}
+  };
+}
+function masterCodeMap(mc,id){
+  if(!Array.isArray(mc))return null;
+  var rec=mc.filter(function(r){return r&&String(r.id).toUpperCase()===id;})[0];
+  if(!rec||!Array.isArray(rec.codes))return null;
+  var m={};rec.codes.forEach(function(c){m[codeStr(c.code)]=c.decode||'';});return m;
+}
+/* 주문두께구분 기본값 (스펙 4.2): 규격약호관리 두께관리기준을 엔진 매처로 판정. 칼라 품명도 같은 규칙 */
+function thkTpFromSpec(order,thkRules){
+  var org=specOrgCd(order), alias=ORG_ALIAS[org]||org;
+  var table={defs:[{key:'spec',num:false,src:'order.SPC_ORG_CD'}],
+    rules:(thkRules||[]).map(function(r){return {id:r.id,no:r.no,status:r.status,thkStd:r.thkStd,
+      cond:{spec:{op:r.specOp||'=',v1:r.spec,v2:''}}};})};
+  var hits=PltcmThicknessEngine.matchRules(table,{order:{SPC_ORG_CD:alias},request:{},layers:{}},{});
+  if(!hits.length)return {tp:'1',found:false,org:org};
+  var std=codeStr(hits[0].thkStd).toUpperCase();
+  if(std==='BMT')return {tp:'1',found:true,org:org};
+  if(std==='TCT')return {tp:'2',found:true,org:org};
+  return {tp:'1',found:false,org:org};
+}
+function defaultThkTp(order,thkRules){return thkTpFromSpec(order,thkRules).tp;}
+/* 주문폭을 n 등분 (소수 1자리, 합계 보정) — 시드 주문의 ORD_MIX_WTH 채움용 */
+function splitWidths(total,n){
+  var each=Math.floor((total/n)*10)/10,out=[],acc=0;
+  for(var i=0;i<n-1;i++){out.push(each);acc=+(acc+each).toFixed(1);}
+  out.push(+(total-acc).toFixed(1));return out;
+}
 function readLS(k){try{var r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
 
 /* 내장 시드에서 생산가부 셀 초기값 만들기 */
@@ -688,6 +748,8 @@ var CRIT=null;
 function loadCriteria(){
   var oc=readLS(CRIT_KEYS.consistency), pf=readLS(CRIT_KEYS.feasibility),
       ow=readLS(CRIT_KEYS.weight), qs=readLS(CRIT_KEYS.spec);
+  var rts=readLS(CRIT_KEYS.rts), sc=readLS(CRIT_KEYS.specCode), mc=readLS(CRIT_KEYS.masterCode),
+      spc=readLS(CRIT_KEYS.sp), tol=readLS(CRIT_KEYS.tol), coat=readLS(CRIT_KEYS.coat);
   var live={consistency:!!(oc&&oc.rules&&oc.rules.length),
             feasibility:!!(pf&&pf.cells),
             weight:!!(ow&&ow.min!=null),
@@ -711,6 +773,10 @@ function loadCriteria(){
     base:   SEED_BASE,
     live:live, mode:(n===4?'live':(n===0?'fallback':'mixed')), ruleTotal:138
   };
+  CRIT.thk=buildThkCriteria(rts,spc,tol,coat);
+  CRIT.thkRulesLive=!!(sc&&Array.isArray(sc.thkRules)&&sc.thkRules.length);
+  CRIT.thkRules=CRIT.thkRulesLive?sc.thkRules:SEED_THK_RULES;
+  CRIT.mngCodes=masterCodeMap(mc,'ORD_THK_MNG_CD')||SEED_MNG_CODES;
   return CRIT;
 }
 function renderSrcBadge(){
@@ -723,6 +789,9 @@ function renderSrcBadge(){
     var miss=[];var nm={consistency:'정합성',feasibility:'생산가부',weight:'주문단중',spec:'품질사양'};
     for(var k in CRIT.live)if(!CRIT.live[k])miss.push(nm[k]);
     d.textContent='내장 시드로 대체된 기준: '+miss.join(' · ')+' · 룰 '+CRIT.rules.length+'건';}
+  var th=CRIT.thk;
+  d.textContent+=' · 두께기준: C10B2060 '+(th.setCorrection.live?'라이브':'내장 시드')+' · 규격약호 '+(CRIT.thkRulesLive?'라이브':'내장')+
+    ' · SP/공차/도금두께 '+((th.spCorrection.live&&th.thkTolerance.live&&th.coatThk.live)?'라이브':'임시 시드');
 }
 function fieldLabel(key){
   for(var i=0;i<CRIT.fields.length;i++)if(CRIT.fields[i].key===key)return CRIT.fields[i].label||key;
@@ -1128,6 +1197,7 @@ function genDetail(o){
    정본 주문 모델 → 엔진별 어댑터
    ============================================================ */
 var CORE_FIELDS=['PRD_NM_CD','PRD_SHP','SPC_AVR','MAT_CD','ORD_EXC_THK','ORD_EXC_WTH',
+  'ORD_THK_TP','ORD_THK_MNG_CD','GW_ASG_CD',
   'FNL_CUS_CD','ORD_USG_CD','ORD_EDG_ASG_TP','ORD_LN_WGT','ORD_SLIT_GRP_CNT',
   'ORD_PAK_UNT_WGT_ULV','ORD_PAK_UNT_WGT_LLV','ORD_PTT_FLM_CD','ORD_SLV_KND_TP'];
 /* 정합성 룰 사전(66필드)에 없는 것만. SPC_AVR·ORD_LN_WGT 는 사전에 있으므로 제외하면
@@ -1137,7 +1207,10 @@ var NUM_FIELDS=['ORD_EXC_THK','ORD_EXC_WTH','ORD_LN_WGT','ORD_SLIT_GRP_CNT',
   'ORD_PAK_UNT_WGT_ULV','ORD_PAK_UNT_WGT_LLV'];
 var FALLBACK_LABEL={MAT_CD:'재질코드',SPC_AVR:'규격약호',ORD_LN_WGT:'주문행번중량',
   ORD_SLIT_GRP_CNT:'주문Slit조수',ORD_USG_CD:'주문용도코드',ORD_EDG_ASG_TP:'주문Edge지정구분',
-  ORD_REQ_NO:'주문요청번호',ORD_REQ_LN:'주문요청행번'};
+  ORD_REQ_NO:'주문요청번호',ORD_REQ_LN:'주문요청행번',
+  ORD_THK_TP:'주문두께구분',ORD_THK_MNG_CD:'두께관리코드',GW_ASG_CD:'도금량코드',ORD_SPNL_TP:'Spangle구분',
+  ORD_MIX_WTH1:'슬리팅폭1',ORD_MIX_WTH2:'슬리팅폭2',ORD_MIX_WTH3:'슬리팅폭3',
+  ORD_MIX_WTH4:'슬리팅폭4',ORD_MIX_WTH5:'슬리팅폭5',ORD_MIX_WTH6:'슬리팅폭6'};
 
 function orderKey(o){return String(o.ORD_REQ_NO||'')+'-'+String(o.ORD_REQ_LN||'');}
 function toConsistency(o){
@@ -1450,6 +1523,7 @@ var ui={stage:6,provPath:null,openSec:{common:true},q:''};
 function orderFromSeed(so){
   var isExp=/^E/.test(so.no);
   var cus=String(so.buyer).split(' :')[0];
+  var mix=splitWidths(so.wid,6);
   return {
     ORD_REQ_NO:so.no, ORD_REQ_LN:so.ln,
     PRD_NM_CD:so.prd, PRD_SHP:'C', SPC_AVR:so.spec, MAT_CD:so.mat,
@@ -1458,6 +1532,8 @@ function orderFromSeed(so){
     ORD_USG_CD:String(so.use||'').split(' :')[0],
     ORD_EDG_ASG_TP:so.edge,
     ORD_LN_WGT:'24.0', ORD_SLIT_GRP_CNT:'6',
+    ORD_MIX_WTH1:String(mix[0]), ORD_MIX_WTH2:String(mix[1]), ORD_MIX_WTH3:String(mix[2]),
+    ORD_MIX_WTH4:String(mix[3]), ORD_MIX_WTH5:String(mix[4]), ORD_MIX_WTH6:String(mix[5]),
     ORD_PAK_UNT_WGT_ULV:'8000', ORD_PAK_UNT_WGT_LLV:'5000',
     ORD_PTT_FLM_CD:'', ORD_SLV_KND_TP:'P',
     /* 아래는 정합성 룰이 NOT NULL 을 요구하는 항목들 — 영업이 OMS 에서 채워 넣는 값 */
@@ -1465,7 +1541,7 @@ function orderFromSeed(so){
     CUS_CD:cus, ACT_CUS_CD:cus,
     SPC_YR:/^A/.test(so.spec)?'2020':'2008',
     ORD_SZ:so.thk.toFixed(2)+'X'+so.wid.toFixed(0)+'XCOIL',
-    ORD_THK_TP:'1', WGT_DCS_MTH_TP:'NA', ORD_WGT_UNT:'MT',
+    ORD_THK_TP:defaultThkTp({SPC_AVR:so.spec,PRD_NM_CD:so.prd},(CRIT&&CRIT.thkRules)||SEED_THK_RULES), WGT_DCS_MTH_TP:'NA', ORD_WGT_UNT:'MT',
     ORD_PAK_MTH:isExp?'ARSE00':'ARSX00',
     ORD_THK_MNG_CD:'D', ORD_WTH_MNG_CD:'A',
     ORD_RGS_PRS_ID:'sales01', ORD_TEM_CD:'T01',
