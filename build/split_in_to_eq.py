@@ -5,13 +5,15 @@ RuleData xlsx의 IN 연산자 조건을 '=' 단건 조건으로 분해하는 유
 
 업무기준 RuleData 시트(4행 조건명 / 5행 연산자·비교값1·비교값2 / 6행부터 데이터 / 'END!' 이후 각주)에서
 비교값이 2개 이상인 IN 조건을 비교값 1개당 1행의 '=' 조건으로 쪼갠다. 값이 1개뿐인 IN 은 기본적으로 IN 그대로 둔다
-(--split-single 을 주면 '=' 로 바꾼다). 한 행에 쪼갤 IN 조건이 여러 개면 모든 조합(카티션 곱)을 만든다.
+(--split-single 을 주면 '=' 로 바꾼다). 연산자가 '=' 인데 비교값1에 쉼표로 여러 값이 들어간 셀(입력 오류로 보이는 IN 성격의
+데이터)도 기본적으로 같은 방식으로 쪼갠다(--keep-eq-list 로 끔). 한 행에 쪼갤 조건이 여러 개면 모든 조합(카티션 곱)을 만든다.
 헤더(1~5행)·각주·병합셀·열 너비·지브라 서식·행 높이는 원본 그대로 유지하고, 'no.' 열은 1부터 다시 매긴다.
 
 사용:
   python3 build/split_in_to_eq.py --xlsx sources/설계KEY.xlsx --out sources/설계KEY_IN_to_EQ.xlsx
   python3 build/split_in_to_eq.py --xlsx <입력> --out <출력> --exclude 제품형태,주문용도코드   # 제외 항목 재지정
   python3 build/split_in_to_eq.py --xlsx <입력> --out <출력> --split-single                  # 단일값 IN 도 '=' 로
+  python3 build/split_in_to_eq.py --xlsx <입력> --out <출력> --map-xlsx <대응표.xlsx>          # 원본 no.↔신규 no. 대응표
 
 기본 제외 항목(IN 그대로 유지): 제품형태, 주문용도코드, 고객사코드, 고객사양서번호, 색상코드
 원본 xlsx 는 사내 기준정보이므로 저장소에 커밋하지 않는다(`.gitignore: sources/`).
@@ -41,7 +43,7 @@ def parse_in_values(raw):
     return list(dict.fromkeys(p for p in parts if p))
 
 
-def split_workbook(src, dst, exclude, sheet=None, split_single=False):
+def split_workbook(src, dst, exclude, sheet=None, split_single=False, split_eq_list=True):
     wb = openpyxl.load_workbook(src)
     ws = wb[sheet] if sheet else wb.active
     ncol = ws.max_column
@@ -68,39 +70,46 @@ def split_workbook(src, dst, exclude, sheet=None, split_single=False):
 
     stats = {"source_rows": len(records), "rows_expanded": 0, "in_cells_converted": 0,
              "in_single_value_kept": 0, "in_single_value_converted": 0, "in_multi_value": 0,
-             "per_column": {}, "warnings": []}
+             "eq_list_cells_split": 0, "per_column": {}, "warnings": []}
     out_rows = []
     for k, (vals, height) in enumerate(records):
         src_row = data_rows[k]
         options = []
         for c in split_cols:
             i = c - 1
-            op = vals[i]
-            if op is None or str(op).strip().upper() != "IN":
-                continue
-            values = parse_in_values(vals[i + 1]) if vals[i + 1] not in (None, "") else []
-            if not values:
-                stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: IN 비교값이 비어 있어 그대로 둠")
-                continue
-            if len(values) == 1 and not split_single:
-                stats["in_single_value_kept"] += 1      # 단일값 IN 은 원본 그대로 유지
+            op = str(vals[i]).strip().upper() if vals[i] is not None else ""
+            name = ws.cell(NAME_ROW, c).value
+            if op == "IN":
+                values = parse_in_values(vals[i + 1]) if vals[i + 1] not in (None, "") else []
+                if not values:
+                    stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: IN 비교값이 비어 있어 그대로 둠")
+                    continue
+                if len(values) == 1 and not split_single:
+                    stats["in_single_value_kept"] += 1      # 단일값 IN 은 원본 그대로 유지
+                    continue
+                stats["in_cells_converted"] += 1
+                stats["in_single_value_converted" if len(values) == 1 else "in_multi_value"] += 1
+            elif op == "=" and split_eq_list and vals[i + 1] is not None and "," in str(vals[i + 1]):
+                # '=' 인데 쉼표로 여러 값이 들어간 셀 — IN 과 같은 의미로 보고 값별로 쪼갠다
+                values = parse_in_values(vals[i + 1])
+                if len(values) < 2:
+                    continue
+                stats["eq_list_cells_split"] += 1
+            else:
                 continue
             if vals[i + 2] not in (None, ""):
-                stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: IN 에 비교값2={vals[i + 2]!r} 가 있어 비움")
+                stats["warnings"].append(f"{src_row}행 {get_column_letter(c)}열: {op} 에 비교값2={vals[i + 2]!r} 가 있어 비움")
             options.append([(i, v) for v in values])
-            stats["in_cells_converted"] += 1
-            stats["in_single_value_converted" if len(values) == 1 else "in_multi_value"] += 1
-            name = ws.cell(NAME_ROW, c).value
             stats["per_column"][name] = stats["per_column"].get(name, 0) + 1
         if not options:
-            out_rows.append((vals, height))
+            out_rows.append((vals, height, src_row))
             continue
         stats["rows_expanded"] += 1
         for combo in product(*options):
             nv = list(vals)
             for i, v in combo:
                 nv[i], nv[i + 1], nv[i + 2] = "=", v, None
-            out_rows.append((nv, height))
+            out_rows.append((nv, height, src_row))
     stats["output_rows"] = len(out_rows)
 
     ws.delete_rows(FIRST_DATA_ROW, ws.max_row - FIRST_DATA_ROW + 1)
@@ -108,7 +117,9 @@ def split_workbook(src, dst, exclude, sheet=None, split_single=False):
         del ws.row_dimensions[r]
 
     r = FIRST_DATA_ROW
-    for n, (vals, height) in enumerate(out_rows, 1):
+    src_map = []  # (출력 행번호, 원본 행번호)
+    for n, (vals, height, src_row) in enumerate(out_rows, 1):
+        src_map.append((r, src_row))
         vals[0] = str(n)  # no. 재부여(텍스트)
         sty = tmpl[r % 2]
         for c in range(1, ncol + 1):
@@ -127,7 +138,44 @@ def split_workbook(src, dst, exclude, sheet=None, split_single=False):
             ws.row_dimensions[r].height = height
         r += 1
     wb.save(dst)
-    return stats
+    return stats, src_map
+
+
+def write_map_xlsx(src_map, path):
+    """원본 no. → 신규 no. 범위 대응표(별도 파일). no. = 행번호 - 5 (6행부터 데이터)."""
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    agg = {}
+    for out_r, src_r in src_map:
+        o, n = src_r - FIRST_DATA_ROW + 1, out_r - FIRST_DATA_ROW + 1
+        lo, hi = agg.get(o, (n, n))
+        agg[o] = (min(lo, n), max(hi, n))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "원본no_신규no_대응"
+    thin = Side(style="thin", color="FFBFBFBF")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    ws.append(["원본 no.", "신규 no. 시작", "신규 no. 끝", "분해 건수"])
+    for c in range(1, 5):
+        cell = ws.cell(1, c)
+        cell.font = Font(name="Arial", size=9, bold=True)
+        cell.fill = PatternFill("solid", fgColor="FFD8E9FF")
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = border
+    for o in sorted(agg):
+        lo, hi = agg[o]
+        ws.append([o, lo, hi, hi - lo + 1])
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+        for cell in row:
+            cell.font = Font(name="Arial", size=9)
+            cell.border = border
+            cell.number_format = "#,##0"
+    for col, width in zip("ABCD", (10, 14, 14, 10)):
+        ws.column_dimensions[col].width = width
+    ws.freeze_panes = "A2"
+    note = ws.cell(ws.max_row + 2, 1)
+    note.value = "※ 원본 파일의 no.가 분해 후 파일에서 어느 no. 범위로 바뀌었는지의 대응표입니다. 분해 건수 1 = 쪼갠 조건 없음."
+    note.font = Font(name="Arial", size=9, color="FF3B3B3B")
+    wb.save(path)
 
 
 def main():
@@ -139,11 +187,23 @@ def main():
     ap.add_argument("--sheet", default=None, help="시트명(기본: 활성 시트)")
     ap.add_argument("--split-single", action="store_true",
                     help="값이 1개뿐인 IN 도 '=' 로 바꾼다(기본: IN 그대로 유지)")
+    ap.add_argument("--keep-eq-list", action="store_true",
+                    help="'=' 인데 비교값1 에 쉼표로 여러 값이 있는 셀을 쪼개지 않고 그대로 둔다(기본: IN 처럼 쪼갬)")
+    ap.add_argument("--map-xlsx", default=None, help="원본 no.↔신규 no. 대응표 xlsx 출력 경로(선택)")
+    ap.add_argument("--map-json", default=None, help="[출력 행번호, 원본 행번호] 목록 JSON 출력 경로(선택, 검증용)")
     args = ap.parse_args()
     exclude = [x.strip() for x in args.exclude.split(",") if x.strip()]
-    stats = split_workbook(args.xlsx, args.out, exclude, args.sheet, args.split_single)
+    stats, src_map = split_workbook(args.xlsx, args.out, exclude, args.sheet, args.split_single,
+                                    split_eq_list=not args.keep_eq_list)
     print(json.dumps(stats, ensure_ascii=False, indent=1))
     print(f"저장: {args.out}")
+    if args.map_xlsx:
+        write_map_xlsx(src_map, args.map_xlsx)
+        print(f"대응표 저장: {args.map_xlsx}")
+    if args.map_json:
+        with open(args.map_json, "w", encoding="utf-8") as f:
+            json.dump(src_map, f)
+        print(f"대응 JSON 저장: {args.map_json}")
 
 
 if __name__ == "__main__":
