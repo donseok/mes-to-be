@@ -48,6 +48,13 @@
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: true
     },
+    'line-width-shrinkage': {
+      hash: '#/quality-design/module-management/line-width-shrinkage',
+      viewId: 'line-width-shrinkage-view',
+      title: '라인별폭수축량',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: false
+    },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
