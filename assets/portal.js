@@ -51,14 +51,14 @@
     'line-width-shrinkage': {
       hash: '#/quality-design/module-management/line-width-shrinkage',
       viewId: 'line-width-shrinkage-view',
-      title: '라인별폭수축량',
+      title: '폭수축량관리',
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: false
     },
     'line-width-margin': {
       hash: '#/quality-design/module-management/line-width-margin',
       viewId: 'line-width-margin-view',
-      title: '라인별폭마진량',
+      title: '폭마진량관리',
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: false
     },
