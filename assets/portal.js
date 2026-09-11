@@ -55,6 +55,13 @@
       crumbs: ['품질관리', '품질설계', '모듈관리'],
       openLink: false
     },
+    'line-width-margin': {
+      hash: '#/quality-design/module-management/line-width-margin',
+      viewId: 'line-width-margin-view',
+      title: '라인별폭마진량',
+      crumbs: ['품질관리', '품질설계', '모듈관리'],
+      openLink: false
+    },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',
       viewId: 'order-unit-weight-error-view',
