@@ -115,7 +115,7 @@
     const lengths = (opts && opts.lengths) || coilLengths(model, size);
     const len = lengths[scene.id] != null ? lengths[scene.id] : sz.maxLen;
     const surf = surfaceTones(surfaceOf(scene));
-    const uid = 'sh-' + scene.id + '-' + size;
+    const uid = 'sh-' + String(scene.id).replace(/[^a-z0-9-]/gi, '') + '-' + size;
     const x0 = sz.x0, x1 = x0 + len, cy = sz.cy;
     const title = `${scene.title} 코일, 두께 ${fmtMm(scene.geometry.thk_mm)} mm, 폭 ${fmtMm(scene.geometry.wid_mm)} mm`;
     let s = `<svg class="shape-coil shape-coil-${size}" viewBox="0 0 ${sz.w} ${sz.h}" role="img" aria-labelledby="${uid}-t ${uid}-d">` +

@@ -226,7 +226,7 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
 .shape-txt{fill:var(--ink)}
 .shape-txt-dim{fill:var(--ink-3)}
 .shape-txt-acc{fill:var(--accent)}
-.shape-txt-onink{fill:#fff;font-weight:700}
+.shape-txt-onink{fill:var(--accent-on);font-weight:700}
 .shape-layer:hover{stroke:var(--accent);stroke-width:1}
 .shape-layers{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px;font-size:11px}
 .shape-layers li{display:flex;align-items:center;gap:6px}
@@ -244,10 +244,10 @@ table.band{border-collapse:collapse;font-size:12px;width:100%;min-width:640px}
 .shape-v-b{font-size:12.5px}
 .shape-n{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-weight:600}
 .shape-missing{color:var(--ink-3)}
-.shape-badge{display:inline-block;border:1px solid var(--accent);color:var(--accent-soft-ink);background:var(--accent-soft);border-radius:6px;padding:0 6px;font-size:10.5px;margin-left:6px;vertical-align:middle;cursor:pointer;font:inherit;font-size:10.5px}
+.shape-badge{display:inline-block;border:1px solid var(--accent);color:var(--accent-soft-ink);background:var(--accent-soft);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:middle;cursor:pointer;font:inherit;font-size:10.5px}
 .shape-badge:hover{background:var(--accent);color:var(--accent-on)}
 .shape-badge.pending{border-color:var(--edit-bd);color:var(--result-soft-ink);background:var(--result-soft)}
-.shape-badge.pending:hover{background:var(--result);color:#fff}
+.shape-badge.pending:hover{background:var(--result);color:var(--accent-on)}
 .shape-v-f{color:var(--ink-3);font-size:11px;margin-top:2px}
 .shape-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);margin-top:10px}
 .shape-legend i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
@@ -634,7 +634,7 @@ function bandTable(groups,rows,opts={}){
       layers: [layer('substrate', 'substrate', 'core', mmToUm(rawThk), '핫코일 ' + (head.mat2 || ''))],
       values: [
         val('rmtl_cd', '원자재 코드', lines0[1], null, null, ev('constant', { route: ROUTES.rawMaterialGrade })),
-        val('rmtl_thk', '원자재 두께', rawThk, 'mm', '주문두께 × 4 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
+        val('rmtl_thk', '원자재 두께', rawThk, 'mm', '주문두께 × 4, 0.1 mm 반올림 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
         val('rmtl_wid', '원자재 폭', rawWid, 'mm', '주문폭 + 3 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
         val('rmtl_pref', '원자재 선호도', lines0[2], null, null, ev('constant')),
       ],
@@ -672,7 +672,7 @@ function bandTable(groups,rows,opts={}){
       geometry: { thk_mm: orderThk, wid_mm: widTarget, id_mm: null, weight_t: null },
       layers: coatedLayers,
       values: [
-        val('coated_thk', '도금 후 두께', orderThk, 'mm', '주문두께 (TCT 가정)', ev('formula', { note: isBmt ? 'BMT 주문 · 도금 별도' : null })),
+        val('coated_thk', '도금 후 두께', orderThk, 'mm', isBmt ? '주문두께 (BMT 주문 · 도금두께 별도)' : '주문두께 (TCT · 도금 포함)', ev('formula')),
         val('coat_cd', '도금량코드', findRow(common, '도금량코드'), null, null, ev('constant')),
         val('coat_range', '도금 부착량 (하한 ~ 상한)', coat.min == null || coat.max == null ? null : coat.min + ' ~ ' + coat.max, 'g/㎡', null, ev('constant')),
         val('coat_target', '도금목표 부착량', coat.target, 'g/㎡', null, ev('constant')),
@@ -734,7 +734,7 @@ function bandTable(groups,rows,opts={}){
         val('size', '주문 Actual Size', findRow(common, '주문 Actual Size'), null, null, ev('constant')),
         val('thk_range', '제품 두께 범위 (설계기준)', base0[2] == null || base0[2] === '' ? null : base0[2] + ' ~ ' + base0[3], 'mm', null, ev('constant')),
         val('wid_range', '제품 폭 범위', post.wMin == null ? null : post.wMin + ' ~ ' + post.wMax, 'mm', null, ev('constant')),
-        val('tol', '보증 공차 (두께 하/상 · 폭 하/상)', tols2.length ? tols2[1] + ' / ' + tols2[2] + ' · ' + tols2[3] + ' / ' + tols2[4] : null, 'mm', null, ev('constant')),
+        val('tol', '보증 공차 (두께 하/상 · 폭 하/상)', tols2.length >= 5 ? tols2[1] + ' / ' + tols2[2] + ' · ' + tols2[3] + ' / ' + tols2[4] : null, 'mm', null, ev('constant')),
         val('coil_id', '주문내경', coilId, 'mm', null, ev('constant')),
         val('winding', '권취방법', findRow(common, '권취방법'), null, null, ev('constant')),
         val('pack', '포장방법', findRow(common, '포장방법'), null, null, ev('constant')),
@@ -884,7 +884,7 @@ function bandTable(groups,rows,opts={}){
     const lengths = (opts && opts.lengths) || coilLengths(model, size);
     const len = lengths[scene.id] != null ? lengths[scene.id] : sz.maxLen;
     const surf = surfaceTones(surfaceOf(scene));
-    const uid = 'sh-' + scene.id + '-' + size;
+    const uid = 'sh-' + String(scene.id).replace(/[^a-z0-9-]/gi, '') + '-' + size;
     const x0 = sz.x0, x1 = x0 + len, cy = sz.cy;
     const title = `${scene.title} 코일, 두께 ${fmtMm(scene.geometry.thk_mm)} mm, 폭 ${fmtMm(scene.geometry.wid_mm)} mm`;
     let s = `<svg class="shape-coil shape-coil-${size}" viewBox="0 0 ${sz.w} ${sz.h}" role="img" aria-labelledby="${uid}-t ${uid}-d">` +
@@ -1044,7 +1044,7 @@ function bandTable(groups,rows,opts={}){
       const badge = e.target.closest && e.target.closest('[data-route]');
       if (badge && el.contains(badge)) { e.preventDefault(); if (opts.onNavigate) opts.onNavigate(badge.dataset.route); return; }
       const tab = e.target.closest && e.target.closest('[data-scene]');
-      if (tab && el.contains(tab)) select(tab.dataset.scene, false);
+      if (tab && el.contains(tab)) select(tab.dataset.scene, true);
     }
     function onDblClick(e) {
       const tab = e.target.closest && e.target.closest('[data-scene]');
@@ -1084,7 +1084,7 @@ function bandTable(groups,rows,opts={}){
 /*__SHAPE_JS_END__*/
 
 /* ---------- 설계 형상 (MesShape) ---------- */
-let shapeModel=null, shapeWidget=null;
+let shapeModel=null, shapeWidget=null, shapeLastKey=null;
 function jumpTo(hash){
   try{ if(window.self!==window.top){window.top.location.hash=hash;return;} }catch(e){}
   toast('포털에서 열면 해당 화면으로 이동합니다: '+hash);
@@ -1200,6 +1200,7 @@ function renderDetail(){
   const o=findOrder(ui.sel);
   if(!o){$('#rp-empty').hidden=false;$('#rp-body').hidden=true;return;}
   const d=detailOf(o);
+  const shapePrevSel=(shapeWidget&&shapeLastKey===ui.sel)?shapeWidget.getSelected():null;
   if(shapeWidget){shapeWidget.destroy();shapeWidget=null;}
   shapeModel=MesShape.buildShapeModel(d,o);
   const [lb,cls]=ST[o.st];
@@ -1249,7 +1250,8 @@ function renderDetail(){
     }).join('')}
     <p class="subtle-note">※ 목업 화면입니다 — 값은 AS-IS 화면(D260831014-010) 및 파생 예시 데이터이며, 저장·확정 동작은 시연용입니다.</p>`;
   const host=$('[data-shape-host]');
-  if(host&&shapeModel)shapeWidget=MesShape.mount(host,shapeModel,{onNavigate:jumpTo});
+  if(host&&shapeModel)shapeWidget=MesShape.mount(host,shapeModel,{onNavigate:jumpTo,initial:shapePrevSel});
+  shapeLastKey=ui.sel;
 }
 
 /* ---------- 선택 ---------- */

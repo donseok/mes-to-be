@@ -27,7 +27,7 @@
       const badge = e.target.closest && e.target.closest('[data-route]');
       if (badge && el.contains(badge)) { e.preventDefault(); if (opts.onNavigate) opts.onNavigate(badge.dataset.route); return; }
       const tab = e.target.closest && e.target.closest('[data-scene]');
-      if (tab && el.contains(tab)) select(tab.dataset.scene, false);
+      if (tab && el.contains(tab)) select(tab.dataset.scene, true);
     }
     function onDblClick(e) {
       const tab = e.target.closest && e.target.closest('[data-scene]');

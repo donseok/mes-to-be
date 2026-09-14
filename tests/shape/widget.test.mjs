@@ -42,6 +42,22 @@ test('mount: 최소 DOM 흉내로 렌더·선택·destroy', () => {
   assert.deepEqual(Object.keys(listeners), []);
 });
 
+test('mount: 탭 클릭으로 선택해도 해당 탭에 포커스를 유지한다', () => {
+  const listeners = {};
+  let focused = false;
+  const el = {
+    innerHTML: '', contains: () => true,
+    addEventListener: (t, fn) => { listeners[t] = fn; },
+    removeEventListener: t => { delete listeners[t]; },
+    querySelector: () => ({ focus() { focused = true; } }),
+  };
+  const w = M.mount(el, G, {});
+  const tab = { dataset: { scene: 'coated' }, closest: sel => sel === '[data-scene]' ? tab : null };
+  listeners.click({ target: tab, preventDefault() {} });
+  assert.equal(w.getSelected(), 'coated');
+  assert.equal(focused, true, '클릭으로 선택한 탭에 focus() 가 호출되어야 함');
+});
+
 test('shape.css: 띠 기하·변화량 줄(.shape-sc-g, .shape-sc-d)은 줄바꿈을 허용해 셀 안에서 잘리지 않는다', () => {
   const css = fs.readFileSync(path.join(ROOT, 'assets', 'shape', 'shape.css'), 'utf8');
   for (const sel of ['.shape-sc-g', '.shape-sc-d']) {

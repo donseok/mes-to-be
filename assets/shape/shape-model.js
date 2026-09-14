@@ -98,7 +98,7 @@
       layers: [layer('substrate', 'substrate', 'core', mmToUm(rawThk), '핫코일 ' + (head.mat2 || ''))],
       values: [
         val('rmtl_cd', '원자재 코드', lines0[1], null, null, ev('constant', { route: ROUTES.rawMaterialGrade })),
-        val('rmtl_thk', '원자재 두께', rawThk, 'mm', '주문두께 × 4 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
+        val('rmtl_thk', '원자재 두께', rawThk, 'mm', '주문두께 × 4, 0.1 mm 반올림 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
         val('rmtl_wid', '원자재 폭', rawWid, 'mm', '주문폭 + 3 (목업 고정식)', ev('formula', { note: '기준 미연결 · 정식 엔진 연결 후' })),
         val('rmtl_pref', '원자재 선호도', lines0[2], null, null, ev('constant')),
       ],
@@ -136,7 +136,7 @@
       geometry: { thk_mm: orderThk, wid_mm: widTarget, id_mm: null, weight_t: null },
       layers: coatedLayers,
       values: [
-        val('coated_thk', '도금 후 두께', orderThk, 'mm', '주문두께 (TCT 가정)', ev('formula', { note: isBmt ? 'BMT 주문 · 도금 별도' : null })),
+        val('coated_thk', '도금 후 두께', orderThk, 'mm', isBmt ? '주문두께 (BMT 주문 · 도금두께 별도)' : '주문두께 (TCT · 도금 포함)', ev('formula')),
         val('coat_cd', '도금량코드', findRow(common, '도금량코드'), null, null, ev('constant')),
         val('coat_range', '도금 부착량 (하한 ~ 상한)', coat.min == null || coat.max == null ? null : coat.min + ' ~ ' + coat.max, 'g/㎡', null, ev('constant')),
         val('coat_target', '도금목표 부착량', coat.target, 'g/㎡', null, ev('constant')),
@@ -198,7 +198,7 @@
         val('size', '주문 Actual Size', findRow(common, '주문 Actual Size'), null, null, ev('constant')),
         val('thk_range', '제품 두께 범위 (설계기준)', base0[2] == null || base0[2] === '' ? null : base0[2] + ' ~ ' + base0[3], 'mm', null, ev('constant')),
         val('wid_range', '제품 폭 범위', post.wMin == null ? null : post.wMin + ' ~ ' + post.wMax, 'mm', null, ev('constant')),
-        val('tol', '보증 공차 (두께 하/상 · 폭 하/상)', tols2.length ? tols2[1] + ' / ' + tols2[2] + ' · ' + tols2[3] + ' / ' + tols2[4] : null, 'mm', null, ev('constant')),
+        val('tol', '보증 공차 (두께 하/상 · 폭 하/상)', tols2.length >= 5 ? tols2[1] + ' / ' + tols2[2] + ' · ' + tols2[3] + ' / ' + tols2[4] : null, 'mm', null, ev('constant')),
         val('coil_id', '주문내경', coilId, 'mm', null, ev('constant')),
         val('winding', '권취방법', findRow(common, '권취방법'), null, null, ev('constant')),
         val('pack', '포장방법', findRow(common, '포장방법'), null, null, ev('constant')),

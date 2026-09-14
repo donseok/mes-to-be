@@ -24,7 +24,7 @@
 .shape-txt{fill:var(--ink)}
 .shape-txt-dim{fill:var(--ink-3)}
 .shape-txt-acc{fill:var(--accent)}
-.shape-txt-onink{fill:#fff;font-weight:700}
+.shape-txt-onink{fill:var(--accent-on);font-weight:700}
 .shape-layer:hover{stroke:var(--accent);stroke-width:1}
 .shape-layers{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px;font-size:11px}
 .shape-layers li{display:flex;align-items:center;gap:6px}
@@ -42,10 +42,10 @@
 .shape-v-b{font-size:12.5px}
 .shape-n{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-weight:600}
 .shape-missing{color:var(--ink-3)}
-.shape-badge{display:inline-block;border:1px solid var(--accent);color:var(--accent-soft-ink);background:var(--accent-soft);border-radius:6px;padding:0 6px;font-size:10.5px;margin-left:6px;vertical-align:middle;cursor:pointer;font:inherit;font-size:10.5px}
+.shape-badge{display:inline-block;border:1px solid var(--accent);color:var(--accent-soft-ink);background:var(--accent-soft);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:middle;cursor:pointer;font:inherit;font-size:10.5px}
 .shape-badge:hover{background:var(--accent);color:var(--accent-on)}
 .shape-badge.pending{border-color:var(--edit-bd);color:var(--result-soft-ink);background:var(--result-soft)}
-.shape-badge.pending:hover{background:var(--result);color:#fff}
+.shape-badge.pending:hover{background:var(--result);color:var(--accent-on)}
 .shape-v-f{color:var(--ink-3);font-size:11px;margin-top:2px}
 .shape-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);margin-top:10px}
 .shape-legend i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}

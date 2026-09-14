@@ -104,6 +104,24 @@ test('값과 근거: 압연 Set 은 formula + 압연두께Set 라우트, 폭수�
   assert.equal(valOf(by(G, 'product'), 'thk_range').value, '0.432 ~ 0.582');
   assert.equal(valOf(by(G, 'product'), 'wid_range').value, '1225 ~ 1255');
   assert.equal(valOf(by(C, 'painted'), 'paint_way').evidence.route, M.ROUTES.colorBom);
+  assert.match(valOf(by(G, 'raw'), 'rmtl_thk').formula, /주문두께 × 4, 0\.1 mm 반올림 \(목업 고정식\)/);
+});
+
+test('도금 후 두께 각주: BMT 주문은 "BMT 주문 · 도금두께 별도", TCT 주문은 "TCT · 도금 포함" — 원천은 항상 주문두께', () => {
+  const bmt = valOf(by(G, 'coated'), 'coated_thk');
+  assert.equal(bmt.value, G.scenes.find(s => s.id === 'coated').geometry.thk_mm);
+  assert.equal(bmt.formula, '주문두께 (BMT 주문 · 도금두께 별도)');
+  assert.equal(bmt.evidence.note, null);
+
+  const f = loadFixture('G');
+  const d = JSON.parse(JSON.stringify(f.design));
+  const row = d.common.find(r => r[0] === '주문두께구분');
+  row[1] = '2 : TCT';
+  const tctModel = M.buildShapeModel(d, f.order);
+  const tct = valOf(by(tctModel, 'coated'), 'coated_thk');
+  assert.equal(tct.value, tctModel.scenes.find(s => s.id === 'coated').geometry.thk_mm);
+  assert.equal(tct.formula, '주문두께 (TCT · 도금 포함)');
+  assert.equal(tct.evidence.note, null);
 });
 
 test('빈 값은 missing, 목업 v1 은 formula/constant/missing 만 만든다', () => {

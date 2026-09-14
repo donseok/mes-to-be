@@ -100,7 +100,7 @@ python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없
 
 0. (룰 데이터를 바꿀 때만) 원본 xlsx 2종 확보 → `python3 build/clean_rules.py --check --emit --inject`
 1. 소스 수정 (모듈 화면·기능은 `modules/*.html`)
-1-1. (설계 형상 렌더러를 고쳤을 때만) `node --test tests/shape/*.test.mjs` → `python3 build/inject_shape.py`
+1-1. (설계 형상 렌더러를 고쳤을 때만) `node --test tests/shape/*.test.mjs` → `python3 build/inject_shape.py`. 설계결과 산식(genDetail/refDetail)을 고쳤으면 `node tests/shape/fixtures/gen.mjs` 로 픽스처 재생성
 2. `python3 build/build_single.py` 로 `index.html` 재생성
 3. 브라우저에서 `index.html` 열어 확인
 4. `git add -A && git commit` → `git push` (푸시는 GitHub 토큰 필요)

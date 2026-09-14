@@ -75,7 +75,7 @@ Change  { key, from, to, delta, unit }                  // 직전 장면 대비 
 |---|---|---|---|
 | ① raw 원자재 | thk = `d.cgl.lines[0][3]` (두께목표), wid = `d.cgl.lines[0][6]` (폭목표) | substrate(핫코일, `d.head.mat2`) | `rmtl_cd` 원자재코드 `lines[0][1]` · constant · route 원자재강종 / `rmtl_thk` 두께 · "주문두께 × 4 (목업 고정식)" · formula / `rmtl_wid` 폭 · "주문폭 + 3" · formula / `rmtl_pref` 선호도 `lines[0][2]` · constant |
 | ② rolled 압연 | thk = pltcm 'X-Ray Set두께값', wid = pltcm 'Side Trimming Set값(주공정)' | substrate(냉연) | `set_thk` · "주문두께 − 0.020 (목업 고정식 · 기준 룰은 정식 엔진 연결 후)" · formula · route 압연두께Set / `thk_target` 두께목표값(문자열 그대로, 예 "0.43 (0.415 ~ 0.445)") · constant / `trim_wid` · "주문폭 + 6" · formula · route 폭마진량(준비 중) / `wid_shrink` 폭수축값 · constant · route 폭수축량(준비 중) / `wid_target` 폭목표값(주공정) · "주문폭 + 3" · formula / `wr_type` 5Stand WRType, `id_ring` 내경링 · constant |
-| ③ coated 도금 | thk = `o.thk` (주문두께, TCT 가정 주석), wid = pltcm '폭목표값(주공정)' | substrate + 도금 top/bottom (`thk_um` = `d.cgl.coat.thk`, 양면 각각) | `coat_cd` 도금량코드(common) · constant / `coat_range` 부착량 하/상 `coat.min`·`coat.max` g/㎡ · constant / `coat_target` 도금목표 `coat.target` g/㎡ · constant / `coat_thk` 도금두께 `coat.thk` µm · constant / `spangle`·`lv`·`skin` · constant / `line` 라인 `d.cgl.ops[0][0]` · constant · route 공정라우팅 |
+| ③ coated 도금 | thk = `o.thk` (원천은 주문두께 그대로, BMT/TCT 각주만 다름), wid = pltcm '폭목표값(주공정)' | substrate + 도금 top/bottom (`thk_um` = `d.cgl.coat.thk`, 양면 각각) | `coat_cd` 도금량코드(common) · constant / `coat_range` 부착량 하/상 `coat.min`·`coat.max` g/㎡ · constant / `coat_target` 도금목표 `coat.target` g/㎡ · constant / `coat_thk` 도금두께 `coat.thk` µm · constant / `spangle`·`lv`·`skin` · constant / `line` 라인 `d.cgl.ops[0][0]` · constant · route 공정라우팅 |
 | ④ painted 칼라 (칼라만) | thk = `d.color.sum.szT`, wid = `d.color.sum.szW` | ③ + primer(Top1 도막), topcoat(Top2~Top4 중 값 있는 것), backcoat(Back1) — `d.color.matrix` 도막두께 행(인덱스 4), 열 [구분, Top4, Top3, Top2, Top1, Back1, …] | `paint_way` 도장방식 `sum.way` / `paint_top` Top 도막 합 `sum.thkT` µm / `paint_back` Back 도막 `sum.thkB` µm / `color_top`·`color_back` 색상코드 `sum.cT`·`sum.cB` / `resin_top`·`resin_back` / 모두 constant · route 칼라BOM(준비 중) |
 | ⑤ product 제품 | thk = 칼라면 `sum.szT` 아니면 `o.thk`, wid = `o.wid`, id = common '주문내경/종류' 첫 숫자, weight_t = common '포장단중(하/상)' 첫 숫자 ÷ 1000 | 직전 장면과 동일 | `size` 주문 Actual Size(common) / `thk_range` 제품 두께 범위 `d.tol.base[0][2..3]` / `wid_range` 제품 폭 범위 `d.post.wMin`·`wMax` / `tol` 보증사양 공차 `d.tol.tols[2]` / `coil_id` 내경 / `winding` 권취방법(common) / `pack` 포장방법(common) / 모두 constant |
 
@@ -84,7 +84,7 @@ Change  { key, from, to, delta, unit }                  // 직전 장면 대비 
 
 가정(목업 값의 의미가 불명확한 곳, 값 옆 각주로 표시):
 - `coat.thk`는 "도금목표 두께"로 표시되어 있으나 면당인지 양면 합인지 불명확하다. **면당 µm로 취급**하고 각주 "목업값"을 붙인다.
-- ③의 두께를 주문두께로 두는 것은 TCT(도금 포함 두께) 가정이다. 주문두께구분이 BMT면 각주로 "BMT 주문 · 도금 별도"를 붙이되 값은 바꾸지 않는다.
+- ③의 두께는 항상 주문두께 그대로다(원천 값은 바꾸지 않는다). 표시 문구만 주문두께구분에 따라 갈린다 — BMT면 "주문두께 (BMT 주문 · 도금두께 별도)", TCT면 "주문두께 (TCT · 도금 포함)".
 - X-Ray Set은 목업이 소수 2자리(`toFixed(2)`)로 저장한다. 원값 그대로 표시한다(정밀도 교정은 엔진 몫).
 
 ## 3. 렌더링 규칙
@@ -92,12 +92,12 @@ Change  { key, from, to, delta, unit }                  // 직전 장면 대비 
 ### 3.1 구성
 
 - **섹션 헤더 요약줄**: `productType · 원자재 t×w → Set t×w → 도금코드 → 도장방식 → 제품 t×w`. 장면이 없으면 해당 항목 생략.
-- **장면 띠**: 장면당 칸 하나. 제목("① 원자재" + 작은 공정명), 작은 코일 SVG, 기하 한 줄(monospace, accent 색), 변화량 한 줄(monospace, `--st-fail` 색). 칸 사이 화살표.
+- **장면 띠**: 장면당 칸 하나. 제목("① 원자재" + 작은 공정명), 작은 코일 SVG, 기하 줄(monospace, accent 색), 변화량 줄(monospace, `--st-fail` 색, 좁은 칸에서는 줄바꿈 허용). 칸 사이 화살표.
 - **선택 장면 상세**: 왼쪽 큰 코일(폭 치수선 + 보조 치수 + 단면 확대 원 + 층 라벨), 오른쪽 값 목록(라벨 / 값·단위 / 변화량 / 배지 / 산식 각주) + 층 범례.
 
 ### 3.2 코일 SVG
 
-- 몸통 길이는 장면 중 최대 `wid_mm`를 기준으로 비례. 두 장면의 폭이 달라도 차이가 6px 미만이면 6px로 벌린다.
+- 몸통 길이는 장면 폭의 최소~최대 사이 선형 보간(폭이 다른 장면끼리 최소 6px 차이).
 - 몸통 색은 겉층 종류를 따른다. 핫코일 갈색, 냉연 회색, zinc/az/am 청회색, 도장 금색 계열. 색상코드의 실제 색은 표현하지 않는다.
 - 왼쪽 끝면에 동심 타원 4개(감긴 띠), 중앙에 내경 구멍. 내경 값이 있으면 구멍 옆에 표시.
 - 단면 확대 원: 층 사각형을 위에서 아래로 쌓는다. 두께는 로그 눈금으로 과장하되 소지는 원 높이의 40~55%, 도금·도막은 최소 4px 최대 12px. 각 층 라벨은 원값(µm/mm).
