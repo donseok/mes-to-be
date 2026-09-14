@@ -8,3 +8,6 @@ sources/
 
 # 브레인스토밍 목업 서버 산출물 (로컬 전용)
 .superpowers/
+
+# Vercel CLI 프로젝트 링크 (로컬 전용)
+.vercel

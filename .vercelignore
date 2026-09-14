@@ -1,0 +1,10 @@
+# 배포에 필요한 것은 index.html(단일 파일 포털)과 modules/·assets/ 뿐이다.
+docs/
+sources/
+.superpowers/
+.claude/
+.git/
+build/
+tests/
+design/
+*.md
