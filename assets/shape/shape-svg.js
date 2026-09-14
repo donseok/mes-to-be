@@ -3,13 +3,25 @@
   'use strict';
 
   const COLORS = { hot: '#6B4A3A', substrate: '#5A6470', coating: '#9FB7C3', primer: '#E0B95E', topcoat: '#C9A24B', backcoat: '#B8B0A0' };
-  // 코일 몸통 그라디언트(밝음→중간→어두움)와 끝면 색(면·감긴 띠 선·구멍)
-  const SURFACE = {
-    hot:       { body: ['#9C7A66', '#6B4A3A', '#3E2B22'], face: ['#C9B3A3', '#7A5A4A', '#3E2B22'] },
-    substrate: { body: ['#D9D3C4', '#8C8A82', '#5A5A55'], face: ['#E8E3D6', '#8C8A82', '#5A5A55'] },
-    coating:   { body: ['#E6ECEF', '#9FB7C3', '#5E7A88'], face: ['#EEF2F4', '#9FB7C3', '#5E7A88'] },
-    paint:     { body: ['#E3C77A', '#C9A24B', '#8A6A2A'], face: ['#F3E6C2', '#C9A24B', '#8A6A2A'] },
-  };
+
+  // hex 색을 흰색(amount>0) 또는 검은색(amount<0)쪽으로 amount 비율만큼 섞는다. amount ∈ [-1, 1].
+  function tint(hex, amount) {
+    const n = hex.replace('#', '');
+    const mix = c => {
+      const v = amount >= 0 ? c + (255 - c) * amount : c + c * amount;
+      return Math.max(0, Math.min(255, Math.round(v)));
+    };
+    const toHex = v => v.toString(16).padStart(2, '0').toUpperCase();
+    return '#' + [0, 2, 4].map(i => toHex(mix(parseInt(n.slice(i, i + 2), 16)))).join('');
+  }
+  // 코일 몸통 그라디언트(밝음→중간→어두움)와 끝면 색(면·감긴 띠 선·구멍)을 층 색 6개 상수에서 파생.
+  function surfaceTones(kind) {
+    const base = kind === 'hot' ? COLORS.hot : kind === 'coating' ? COLORS.coating : kind === 'paint' ? COLORS.topcoat : COLORS.substrate;
+    return {
+      body: [tint(base, 0.45), base, tint(base, -0.35)],
+      face: [tint(base, 0.7), tint(base, 0.15), tint(base, -0.35)],
+    };
+  }
   const SIZES = {
     sm: { w: 110, h: 64,  x0: 14, cy: 32, rx: 9,  ry: 22, minLen: 52, maxLen: 76 },
     lg: { w: 320, h: 210, x0: 34, cy: 98, rx: 20, ry: 48, minLen: 96, maxLen: 136 },
@@ -102,7 +114,7 @@
     const sz = SIZES[size];
     const lengths = (opts && opts.lengths) || coilLengths(model, size);
     const len = lengths[scene.id] != null ? lengths[scene.id] : sz.maxLen;
-    const surf = SURFACE[surfaceOf(scene)];
+    const surf = surfaceTones(surfaceOf(scene));
     const uid = 'sh-' + scene.id + '-' + size;
     const x0 = sz.x0, x1 = x0 + len, cy = sz.cy;
     const title = `${scene.title} 코일, 두께 ${fmtMm(scene.geometry.thk_mm)} mm, 폭 ${fmtMm(scene.geometry.wid_mm)} mm`;
@@ -139,7 +151,7 @@
   }
 
   g.MesShape = Object.assign(g.MesShape || {}, {
-    COLORS, escapeHtml, fmtMm, fmtUm, fmtDelta, coilLengths, layerHeights, renderCoil,
-    _svg: { surfaceOf, layerColor, layerThkText, layerDesc, SIZES, CUT },
+    COLORS, escapeHtml, fmtMm, fmtUm, fmtDelta, coilLengths, layerHeights, renderCoil, tint,
+    _svg: { surfaceOf, layerColor, layerThkText, layerDesc, surfaceTones, SIZES, CUT },
   });
 })(globalThis);

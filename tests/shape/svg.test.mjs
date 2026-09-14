@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadFixture, loadShape } from './helpers.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadFixture, loadShape, ROOT } from './helpers.mjs';
 
 const M = await loadShape();
 const G = M.buildShapeModel(loadFixture('G').design, loadFixture('G').order);
@@ -76,4 +78,24 @@ test('renderCoil: 라벨에 HTML 이 들어가도 이스케이프', () => {
   const svg = M.renderCoil(s, G, { size: 'sm' });
   assert.ok(!svg.includes('<b>x</b>'));
   assert.ok(svg.includes('&lt;b&gt;x&lt;/b&gt;'));
+});
+
+test('tint: 흰색/검은색 극단, 0은 원색 유지, 부호에 따라 밝기 변화', () => {
+  assert.equal(M.tint('#000000', 1), '#FFFFFF');
+  assert.equal(M.tint('#FFFFFF', -1), '#000000');
+  assert.equal(M.tint('#9FB7C3', 0), '#9FB7C3');
+  const base = [0x9F, 0xB7, 0xC3];
+  const lighter = M.tint('#9FB7C3', 0.45).slice(1).match(/../g).map(h => parseInt(h, 16));
+  const darker = M.tint('#9FB7C3', -0.35).slice(1).match(/../g).map(h => parseInt(h, 16));
+  base.forEach((c, i) => {
+    assert.ok(lighter[i] >= c, `lighter channel ${i}: ${lighter[i]} >= ${c}`);
+    assert.ok(darker[i] <= c, `darker channel ${i}: ${darker[i]} <= ${c}`);
+  });
+});
+
+test('shape-svg.js 에는 COLORS 6개 외 리터럴 hex 색이 없다', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'assets', 'shape', 'shape-svg.js'), 'utf8');
+  const found = new Set((src.match(/#[0-9A-Fa-f]{6}/g) || []).map(h => h.toUpperCase()));
+  const allowed = new Set(Object.values(M.COLORS).map(h => h.toUpperCase()));
+  assert.deepEqual(found, allowed);
 });
