@@ -14,6 +14,8 @@
 | `modules/process-routing.html` | 공정라우팅관리 모듈 (조건 8항목(제품군·재질코드·엠보스무늬·Spangle구분·도금량코드·표면처리코드·두께범위·폭범위) → 결과(냉연도금공정) 룰 관리 — 문자/숫자범위 연산자(NOT_CHECK·BETWEEN1~4 등), 등록·수정·삭제·간편판정·변경 이력·코드 범례. 시드는 공정라우팅모듈.xlsx 룰 2건) |
 | `modules/rolling-thickness-set.html` | 압연두께Set보정관리 모듈 (AS-IS 업무기준 C10B2060 룰 82건 — 조건 10종(품명·규격기관·규격약호·주문용도·고객사·주문두께구분·두께관리코드·도금량코드·두께/폭범위) → 두께보정치·단위. 목록·등록·수정·삭제, 간편판정(Set 두께 계산), 변경 이력, 코드 범례. 시드는 `build/rolling_thickness_set_seed.py`가 `/*__RTS_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-design.html` | 품질설계 모듈 (좌: 의뢰현황 목록 · 우: 설계결과 — 구 탭 9종을 펼치기/접기 섹션으로 통합) |
+| `assets/shape/shape-model.js` · `shape-svg.js` · `shape-widget.js` · `shape.css` | 설계 형상 렌더러 (설계결과 → 장면 모델 → 코일 SVG·값 목록 → DOM). 전역 `MesShape`. `build/inject_shape.py`가 `quality-design.html` 마커 구간(`/*__SHAPE_CSS_START__*/`, `/*__SHAPE_JS_START__*/`)에 주입. 테스트 `node --test tests/shape/*.test.mjs`. 설계: `design/specs/2026-09-14-design-shape-visualization.md` |
+| `build/inject_shape.py` | 위 4파일을 `modules/quality-design.html`에 주입(멱등). `--check`는 최신 여부만 확인 |
 | `modules/order-weight-error.html` | 주문단중에러관리 모듈 (주문단중 × 분할 수 매트릭스 — Min/Max 허용범위 하이라이트·셀 수정·수정 이력) |
 | `modules/production-feasibility.html` | 생산가부관리 모듈 (B.D 생산범위(2CGL GI) 탭 — 참조 엑셀 시트 재현: 재질별 폭 × 두께 가부 매트릭스·가부 간편조회·셀 상태 수정·수정 이력) |
 | `modules/simulation.html` | 품질설계 시뮬레이션 모듈 (주문 1건을 ①입력검증 ②주문정합성 ③주문단중 ④생산가부 ⑤품질사양매칭 ⑥설계값산출 6단계에 태워 기준 반영을 추적 — 좌: 검증 케이스·주문 입력·변경 이력, 중: 파이프라인 단계 상세·기대값 대조, 우: 근거 추적 3층·이상징후. 기준 데이터는 다른 모듈의 localStorage를 먼저 읽고 없으면 내장 축약 시드 사용) |
@@ -98,6 +100,7 @@ python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없
 
 0. (룰 데이터를 바꿀 때만) 원본 xlsx 2종 확보 → `python3 build/clean_rules.py --check --emit --inject`
 1. 소스 수정 (모듈 화면·기능은 `modules/*.html`)
+1-1. (설계 형상 렌더러를 고쳤을 때만) `node --test tests/shape/*.test.mjs` → `python3 build/inject_shape.py`
 2. `python3 build/build_single.py` 로 `index.html` 재생성
 3. 브라우저에서 `index.html` 열어 확인
 4. `git add -A && git commit` → `git push` (푸시는 GitHub 토큰 필요)
