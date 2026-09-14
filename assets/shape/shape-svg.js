@@ -150,8 +150,95 @@
     return s + '</svg>';
   }
 
+  function circled(scene, model) {
+    const i = model.scenes.findIndex(s => s.id === scene.id);
+    return (g.MesShape.CIRCLED && g.MesShape.CIRCLED[i]) || String(i + 1);
+  }
+  function geoLine(s) {
+    return (s.id === 'rolled' ? 'Set ' : '') + fmtMm(s.geometry.thk_mm) + ' × ' + fmtMm(s.geometry.wid_mm);
+  }
+  function changeLine(s) {
+    return s.changes.map(c =>
+      c.key === 'thk_mm' ? '두께 ' + fmtDelta(c.delta, 'mm')
+      : c.key === 'wid_mm' ? '폭 ' + fmtDelta(c.delta, 'mm')
+      : '층 ' + fmtDelta(c.delta, null)).join(' · ');
+  }
+
+  function renderStrip(model, selId) {
+    const lengths = coilLengths(model, 'sm');
+    const cells = model.scenes.map(s => {
+      const sel = s.id === selId;
+      const sub = s.process ? `<small>${escapeHtml(s.process.code + ' ' + s.process.name)}</small>` : '';
+      return `<div class="shape-sc${sel ? ' on' : ''}" role="tab" aria-selected="${sel}" tabindex="${sel ? 0 : -1}" data-scene="${escapeHtml(s.id)}" id="shape-tab-${escapeHtml(s.id)}">` +
+        `<div class="shape-sc-t">${circled(s, model)} ${escapeHtml(s.title)}${sub}</div>` +
+        renderCoil(s, model, { size: 'sm', lengths }) +
+        `<div class="shape-sc-g">${escapeHtml(geoLine(s))}</div>` +
+        `<div class="shape-sc-d">${escapeHtml(changeLine(s)) || '&nbsp;'}</div></div>`;
+    });
+    return `<div class="shape-strip" role="tablist" aria-label="설계 장면">${cells.join('<div class="shape-arr" aria-hidden="true">→</div>')}</div>`;
+  }
+
+  function renderLayerList(scene) {
+    return `<ul class="shape-layers">` + scene.layers.map(l =>
+      `<li><i style="background:${layerColor(l, scene)}"></i><span>${escapeHtml(l.label)}</span><b>${escapeHtml(layerThkText(l))}</b></li>`).join('') + `</ul>`;
+  }
+
+  function renderValue(v) {
+    const e = v.evidence || {};
+    const pending = !!(e.route && (g.MesShape.PENDING_ROUTES || []).includes(e.route));
+    const name = (g.MesShape.ROUTE_NAMES || {})[e.route] || e.route;
+    const badge = e.route
+      ? `<button type="button" class="shape-badge${pending ? ' pending' : ''}" data-route="${escapeHtml(e.route)}">${escapeHtml(name)}${pending ? ' (준비 중)' : ''} →</button>` : '';
+    const value = v.value == null
+      ? `<span class="shape-missing">설계값 없음</span>`
+      : `<span class="shape-n">${escapeHtml(typeof v.value === 'number' ? (v.unit === 'mm' ? fmtMm(v.value) : String(v.value)) : v.value)}</span>${v.unit ? ' ' + escapeHtml(v.unit) : ''}`;
+    const foot = [v.formula, e.note].filter(Boolean).join(' · ');
+    return `<div class="shape-v" tabindex="0" data-key="${escapeHtml(v.key)}"><div class="shape-v-k">${escapeHtml(v.label)}</div>` +
+      `<div class="shape-v-b">${value}${badge}${foot ? `<div class="shape-v-f">${escapeHtml(foot)}</div>` : ''}</div></div>`;
+  }
+
+  function renderDetail(scene, model) {
+    const ch = scene.changes
+      .filter(c => c.key !== 'layers')
+      .map(c => (c.key === 'thk_mm' ? '두께 ' : '폭 ') + fmtMm(c.from) + ' → ' + fmtMm(c.to)).join(' · ');
+    const head = circled(scene, model) + ' ' + scene.title + (scene.process ? ' · ' + scene.process.code + ' ' + scene.process.name : '');
+    return `<div class="shape-det"><div class="shape-fig">${renderCoil(scene, model, { size: 'lg' })}${renderLayerList(scene)}</div>` +
+      `<div class="shape-vals"><div class="shape-det-h"><b>${escapeHtml(head)}</b>` +
+      (ch ? `<span class="shape-delta">${escapeHtml(ch)}</span>` : '') +
+      `<span class="shape-note">이 장면에서 정해진 값 · 산식과 근거 기준</span></div>` +
+      scene.values.map(renderValue).join('') + `</div></div>`;
+  }
+
+  function renderSummary(model) {
+    const by = id => model.scenes.find(s => s.id === id);
+    const parts = [];
+    const raw = by('raw'), rolled = by('rolled'), coated = by('coated'), painted = by('painted'), product = by('product');
+    if (raw) parts.push('원자재 ' + fmtMm(raw.geometry.thk_mm) + '×' + fmtMm(raw.geometry.wid_mm));
+    if (rolled) parts.push('Set ' + fmtMm(rolled.geometry.thk_mm) + '×' + fmtMm(rolled.geometry.wid_mm));
+    if (coated) { const c = coated.values.find(v => v.key === 'coat_cd'); if (c && c.value != null) parts.push(String(c.value).split(' : ')[0]); }
+    if (painted) { const p = painted.values.find(v => v.key === 'paint_way'); if (p && p.value != null) parts.push(String(p.value).split(' : ').pop()); }
+    if (product) parts.push('제품 ' + fmtMm(product.geometry.thk_mm) + '×' + fmtMm(product.geometry.wid_mm));
+    return model.productType + ' · ' + parts.join(' → ');
+  }
+
+  function legend() {
+    return [['hot', '핫코일'], ['substrate', '소지(냉연)'], ['coating', '도금'], ['primer', '프라이머'], ['topcoat', 'Top 코트'], ['backcoat', 'Back 코트']]
+      .map(([k, n]) => `<span><i style="background:${COLORS[k]}"></i>${n}</span>`).join('');
+  }
+
+  function renderSection(model, selId, opts) {
+    const expanded = !!(opts && opts.expanded);
+    const sel = model.scenes.find(s => s.id === selId) || model.scenes[0];
+    const warn = (model.warnings || []).map(w => `<span class="shape-warn">${escapeHtml(w)}</span>`).join('');
+    return `<div class="shape-root${expanded ? ' expanded' : ''}">` +
+      (warn ? `<div class="shape-warns">${warn}</div>` : '') +
+      renderStrip(model, sel.id) + renderDetail(sel, model) +
+      `<div class="shape-legend">${legend()}</div></div>`;
+  }
+
   g.MesShape = Object.assign(g.MesShape || {}, {
     COLORS, escapeHtml, fmtMm, fmtUm, fmtDelta, coilLengths, layerHeights, renderCoil, tint,
+    renderStrip, renderDetail, renderLayerList, renderSummary, renderSection,
     _svg: { surfaceOf, layerColor, layerThkText, layerDesc, surfaceTones, SIZES, CUT },
   });
 })(globalThis);

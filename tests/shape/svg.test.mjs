@@ -99,3 +99,50 @@ test('shape-svg.js 에는 COLORS 6개 외 리터럴 hex 색이 없다', () => {
   const allowed = new Set(Object.values(M.COLORS).map(h => h.toUpperCase()));
   assert.deepEqual(found, allowed);
 });
+
+// ---- Task 5: 조립 ----
+test('renderStrip: 장면 수만큼 tab, 선택 칸만 aria-selected/tabindex 0, 변화량 표시', () => {
+  const html = M.renderStrip(G, 'rolled');
+  assert.equal((html.match(/role="tab"/g) || []).length, 4);
+  assert.equal((html.match(/aria-selected="true"/g) || []).length, 1);
+  assert.match(html, /id="shape-tab-rolled"[^>]*aria-selected="true"|aria-selected="true"[^>]*id="shape-tab-rolled"/);
+  assert.match(html, /tabindex="0"/);
+  assert.equal((html.match(/tabindex="-1"/g) || []).length, 3);
+  assert.match(html, /① 원자재/);
+  assert.match(html, /② 압연<small>1P PLTCM<\/small>/);
+  assert.match(html, /Set 0\.420 × 1,231/);
+  assert.match(html, /두께 −1\.380 · 폭 \+3/);
+  assert.match(html, /층 \+2/);
+  assert.match(html, /role="tablist"/);
+  assert.equal(M.renderStrip(C, 'painted').match(/role="tab"/g).length, 5);
+});
+
+test('renderDetail: 값 행·배지·준비 중·산식 각주·설계값 없음', () => {
+  const html = M.renderDetail(by(G, 'rolled'), G);
+  assert.match(html, /data-key="set_thk"/);
+  assert.match(html, /class="shape-n">0\.420<\/span> mm/);
+  assert.match(html, /class="shape-badge" data-route="#\/quality-design\/module-management\/rolling-thickness-set">압연두께Set 관리 →/);
+  assert.match(html, /class="shape-badge pending" data-route="#\/quality-design\/module-management\/line-width-shrinkage">폭수축량 관리 \(준비 중\) →/);
+  assert.match(html, /shape-v-f">주문두께 − 0\.020/);
+  assert.match(html, /두께 1\.800 → 0\.420 · 폭 1,228 → 1,231/);
+  assert.match(html, /shape-layers/);
+  const d = JSON.parse(JSON.stringify(by(G, 'rolled')));
+  d.values[0] = { key: 'x', label: 'X', value: null, unit: null, formula: null, evidence: { kind: 'missing', ref: null, route: null, note: '설계값 없음' } };
+  assert.match(M.renderDetail(d, G), /shape-missing">설계값 없음/);
+});
+
+test('renderSummary: 품명 · 원자재 → Set → 도금코드 → (도장) → 제품', () => {
+  assert.equal(M.renderSummary(G), 'GI · 원자재 1.800×1,228 → Set 0.420×1,231 → Z12 → 제품 0.440×1,225');
+  assert.match(M.renderSummary(C), /^CCGI · 원자재 .* → Set .* → E → TOP = 2 COAT \/ BACK = 1 COAT → 제품 0\.472×1,490$/);
+});
+
+test('renderSection: 경고 배지, expanded 클래스, 범례 6개', () => {
+  const f = loadFixture('G');
+  const m = M.buildShapeModel(f.design, Object.assign({}, f.order, { prd: 'X' }));
+  const html = M.renderSection(m, 'rolled', { expanded: true });
+  assert.match(html, /class="shape-root expanded"/);
+  assert.match(html, /shape-warn">층 정의 없음 · 품명 X/);
+  assert.equal((html.match(/class="shape-legend"/g) || []).length, 1);
+  assert.equal((M.renderSection(G, 'nope').match(/aria-selected="true"/g) || []).length, 1, '없는 id 면 첫 장면 선택');
+  assert.ok(!M.renderSection(G, 'rolled').includes('shape-root expanded'));
+});
