@@ -146,3 +146,29 @@ test('renderSection: 경고 배지, expanded 클래스, 범례 6개', () => {
   assert.equal((M.renderSection(G, 'nope').match(/aria-selected="true"/g) || []).length, 1, '없는 id 면 첫 장면 선택');
   assert.ok(!M.renderSection(G, 'rolled').includes('shape-root expanded'));
 });
+
+test('renderSummary: 평문 계약 — 이스케이프하지 않는다', () => {
+  const m = JSON.parse(JSON.stringify(G));
+  m.productType = 'A&B';
+  assert.ok(M.renderSummary(m).startsWith('A&B · '));
+});
+
+test('renderStrip/renderDetail: 동적 텍스트(장면 제목·공정명·값 라벨·산식) 이스케이프', () => {
+  const model = JSON.parse(JSON.stringify(G));
+  model.scenes[1].title = '<b>t</b>';
+  model.scenes[1].values[0].label = '<i>l</i>';
+  model.scenes[1].values[0].formula = 'x & "y"';
+  model.scenes[1].process.name = '<u>p</u>';
+  const strip = M.renderStrip(model, 'rolled');
+  const detail = M.renderDetail(model.scenes[1], model);
+  [strip, detail].forEach(html => {
+    assert.ok(!html.includes('<b>t</b>'));
+    assert.ok(!html.includes('<i>l</i>'));
+    assert.ok(!html.includes('<u>p</u>'));
+    assert.ok(!html.includes('& "y"'));
+  });
+  assert.ok(strip.includes('&lt;b&gt;t&lt;/b&gt;'));
+  assert.ok(strip.includes('&lt;u&gt;p&lt;/u&gt;'));
+  assert.ok(detail.includes('&lt;i&gt;l&lt;/i&gt;'));
+  assert.ok(detail.includes('&amp; &quot;y&quot;'));
+});

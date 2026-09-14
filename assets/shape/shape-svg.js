@@ -209,6 +209,9 @@
       scene.values.map(renderValue).join('') + `</div></div>`;
   }
 
+  /** 섹션 헤더 요약줄. **평문(text)을 돌려준다 — 이스케이프하지 않는다.**
+   *  호출자가 textContent 로 넣거나 삽입 전에 escapeHtml 로 이스케이프해야 한다
+   *  (quality-design.html 의 SECS 헤더는 esc(s.sum(d)) 로 삽입). innerHTML 에 직접 넣지 말 것. */
   function renderSummary(model) {
     const by = id => model.scenes.find(s => s.id === id);
     const parts = [];
