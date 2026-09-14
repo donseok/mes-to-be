@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadFixture, loadShape } from './helpers.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadFixture, loadShape, ROOT } from './helpers.mjs';
 
 const M = await loadShape();
 const G = M.buildShapeModel(loadFixture('G').design, loadFixture('G').order);
@@ -38,4 +40,11 @@ test('mount: 최소 DOM 흉내로 렌더·선택·destroy', () => {
   w.destroy();
   assert.equal(el.innerHTML, '');
   assert.deepEqual(Object.keys(listeners), []);
+});
+
+test('shape.css: 띠 변화량 줄(.shape-sc-d)은 줄바꿈을 허용해 셀 안에서 잘리지 않는다', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'assets', 'shape', 'shape.css'), 'utf8');
+  const m = css.match(/\.shape-sc-d\{([^}]*)\}/);
+  assert.ok(m, '.shape-sc-d 규칙을 찾을 수 없음');
+  assert.doesNotMatch(m[1], /white-space:nowrap/, '.shape-sc-d 는 white-space:nowrap 이면 안 됨(셀 안에서 잘림)');
 });

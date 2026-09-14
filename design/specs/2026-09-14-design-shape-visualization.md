@@ -170,8 +170,14 @@ build/inject_shape.py 마커 주입 (멱등)
 
 ## 8. 산출물 체크리스트
 
-- [ ] `assets/shape/{shape-model.js, shape-svg.js, shape-widget.js, shape.css}`
-- [ ] `tests/shape/{model.test.mjs, svg.test.mjs, fixtures/}`
-- [ ] `build/inject_shape.py` + `modules/quality-design.html` 마커·`shape` 섹션
-- [ ] `build/README.md` 갱신, `index.html` 재빌드
-- [ ] 브라우저 수동 확인 19건
+- [x] `assets/shape/{shape-model.js, shape-svg.js, shape-widget.js, shape.css}`
+- [x] `tests/shape/{model.test.mjs, svg.test.mjs, fixtures/}`
+- [x] `build/inject_shape.py` + `modules/quality-design.html` 마커·`shape` 섹션
+- [x] `build/README.md` 갱신, `index.html` 재빌드
+- [x] 브라우저 수동 확인 19건
+
+### 검증 기록 (2026-09-14)
+
+- 의뢰 19건 순회(HEAD b9ea706, 단독 페이지 기준 패널 폭 604px): 색상 품명 2건(D260831014-010, D260831032-010)은 띠 5칸(④ 칼라 칸 금색, 층 목록 6개), 나머지 17건은 띠 4칸. ② 압연이 시작 선택. 경고 배지 0, "설계값 없음" 0, 값 행 7개, 큰 코일 정상 표시, 콘솔 오류 0. 두께 1.600 두 건은 요약줄·띠·상세 모두 `6.400×1,099 → Set 1.580 → 제품 1.600`처럼 소수 3자리로 표시. 폭 소수 1217.6(E260814004)은 `1,221 → 1,224 → 1,218`로 정수 반올림 표시. 720px 미만 컨테이너 쿼리에서 `.shape-det`·`.shape-v`가 1열로 전환 확인. 포털(`index.html`)에서도 iframe 섹션 표시, 배지 클릭 시 상위 포털 라우팅, 준비 중 배지는 placeholder 화면으로 이동, 콘솔 오류 0. 클릭·방향키(포커스 이동 포함)·Enter·더블클릭 확대/축소·배지 토스트 등 상호작용 전부 정상.
+- 결함 (a) 수정: 띠 칸의 변화량 줄(`.shape-sc-d`, 예 "두께 +0.020 · 폭 −3 · 층 +2")이 `white-space:nowrap`이라 좁은 패널(604px)에서 건당 1~2칸이 잘리고, 넓은 패널(~1040px, 포털)에서는 같은 nowrap 때문에 칸의 최소 폭이 커져 5번째(⑤ 제품) 칸이 다음 줄로 밀려 전체 폭으로 늘어나고 ③/④ 변화량 줄이 "층"에서 잘렸다. `.shape-sc-d`를 `white-space:normal`(+`overflow-wrap:break-word`, 압축된 `line-height`)로 바꿔 2줄로 자연스럽게 줄바꿈되게 하고, 5칸이 여유 있게 들어가도록 `.shape-sc`의 `flex-basis`/`min-width`를 120px→108px로 소폭 줄였다. §3.1(기하 한 줄·변화량 한 줄)과 §3.4(720px 미만 2줄 감김)의 계약은 그대로 유지된다. 재현 테스트를 `tests/shape/widget.test.mjs`에 추가(CSS 텍스트를 읽어 `.shape-sc-d` 규칙에 `white-space:nowrap`이 없는지 확인) → 수정 전 실패, 수정 후 41/41 통과 확인.
+- 이월 사소 결함(수정하지 않음): (b) 폭수축값이 `fmtMm`의 100 미만 3자리 규칙 때문에 "3.000 mm"로 표시됨(포맷 규칙 자체는 사양대로 동작). (c) 섹션 헤더 요약줄이 모듈 기존 `.sum` 스타일에 의해 말줄임표로 잘림(섹션 공통 스타일, 이 렌더러 범위 밖).
