@@ -32,6 +32,35 @@
 
   const TEST_METHODS = { yp: 'KS B 0802', ts: 'KS B 0802', el: 'KS B 0802', coat: 'KS D 0201' };
 
+  // ── 필드 편집 등급 ───────────────────────────────────────────────────────
+  // 보증서의 값은 "누가 고칠 수 있는가"가 아니라 "어떤 절차로 고칠 수 있는가"로 나눈다.
+  //   locked  : 원천 시스템 값. 이 화면에서는 어떤 절차로도 못 고친다 (정정은 원천에서)
+  //   correct : 정정 절차(사유 필수 → 현재 버전 회수 → 다음 버전 재발행 → 이력)로만 고친다 — 시험값
+  //   approve : 고칠 수 있으나 승인이 필요하다 (다음 단계)
+  //   free    : 발행 시 담당자가 자유 입력한다 (다음 단계)
+  // 등록되지 않은 필드는 locked 로 본다 — 실수로 열리는 쪽보다 실수로 잠기는 쪽이 안전하다.
+  const FIELDS = {
+    'cert.no':      { edit: 'locked',  label: '보증서번호', src: '발행 시스템' },
+    'order':        { edit: 'locked',  label: '주문번호',   src: '주문' },
+    'coils[].no':   { edit: 'locked',  label: '코일번호',   src: '생산실적' },
+    'coils[].heat': { edit: 'locked',  label: '용강번호',   src: '생산실적' },
+    'coils[].thk':  { edit: 'locked',  label: '두께',       src: '생산실적', unit: 'mm' },
+    'coils[].wid':  { edit: 'locked',  label: '폭',         src: '생산실적', unit: 'mm' },
+    'coils[].wgt':  { edit: 'locked',  label: '중량',       src: '계량',     unit: 'kg' },
+    'coils[].yp':   { edit: 'correct', label: '항복강도',   sym: 'YP',  unit: 'MPa' },
+    'coils[].ts':   { edit: 'correct', label: '인장강도',   sym: 'TS',  unit: 'MPa' },
+    'coils[].el':   { edit: 'correct', label: '연신율',     sym: 'EL',  unit: '%' },
+    'coils[].coat': { edit: 'correct', label: '도금부착량', sym: 'C/W', unit: 'g/㎡' },
+    'remark':       { edit: 'free',    label: '비고', max: 200 },
+    'customer.displayName': { edit: 'approve', label: '수요가 표기명' },
+  };
+  // coils[].<k> 중 correct 등급 — 정정 화면의 열 순서이기도 하다
+  const TEST_FIELDS = ['yp', 'ts', 'el', 'coat'];
+
+  function fieldGrade(path) {
+    return (FIELDS[path] || {}).edit || 'locked';
+  }
+
   // ── 작은 유틸 ────────────────────────────────────────────────────────────
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -127,6 +156,11 @@
     return out;
   }
 
+  // 코일 1건의 합격 판정. 정정 뒤에도 같은 식으로 다시 판정한다.
+  function judge(c, spec, coat) {
+    return c.yp >= spec.yp && c.ts >= spec.ts && (spec.el == null || c.el == null || c.el >= spec.el) && c.coat >= coat.min;
+  }
+
   // ── 문서 모델 ────────────────────────────────────────────────────────────
   // row: 발행 목록 1행. opts.coilCount 를 주면 코일 수를 바꾼다(페이지 분할 확인용 목업 조작).
   // 코일 수를 바꾸면 코일당 평균 중량을 유지한 채 총중량을 다시 계산한다.
@@ -141,10 +175,13 @@
     const prd = parsePrd(row.prd);
     const spec = specFor(prd.spec);
     const coat = coatFor(prd.code);
-    const rnd = rng(row.no + '|' + row.ver);
+    // 시드는 보증서번호만. 버전이 바뀌어도(정정 재발행) 같은 코일 목록에서 출발해야
+    // 정정 내역이 그 위에 겹쳐진다. 발행일도 최초 발행일을 써서 코일번호가 흔들리지 않게 한다.
+    const rnd = rng(row.no);
+    const baseDate = row.firstIssued || row.date;
 
-    const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(row.date))
-      ? String(row.date).slice(2).replace(/-/g, '')
+    const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(baseDate))
+      ? String(baseDate).slice(2).replace(/-/g, '')
       : String(row.no).replace(/\D/g, '').slice(0, 4) + '01';
     const startSeq = 1 + Math.floor(rnd() * 40);
     const weights = splitWeight(total, n, rnd);
@@ -168,7 +205,31 @@
         ts: ts,
         el: el,
         coat: cw,
-        pass: yp >= spec.yp && ts >= spec.ts && (el == null || el >= spec.el) && cw >= coat.min,
+        pass: true,
+      });
+      coils[i].pass = judge(coils[i], spec, coat);
+    }
+
+    // 정정 오버레이 — row.corrections 는 [{ coil, field, from, to, reason, by, at, fromVer, toVer }].
+    // 시간순이므로 같은 코일·항목이 여러 번 정정됐으면 마지막 값이 남는다. 정정된 칸에는
+    // corrected 표시를 남겨 출력물에서 ※ 로 드러낸다.
+    const corrections = Array.isArray(row.corrections) ? row.corrections : [];
+    if (corrections.length) {
+      const byCoil = {};
+      corrections.forEach(function (c) {
+        if (TEST_FIELDS.indexOf(c.field) < 0) return; // correct 등급이 아닌 항목은 무시
+        (byCoil[c.coil] = byCoil[c.coil] || {})[c.field] = c;
+      });
+      coils.forEach(function (c) {
+        const cs = byCoil[c.no];
+        if (!cs) return;
+        c.corrected = {};
+        TEST_FIELDS.forEach(function (k) {
+          if (!cs[k]) return;
+          c.corrected[k] = { from: cs[k].from, to: cs[k].to };
+          c[k] = cs[k].to;
+        });
+        c.pass = judge(c, spec, coat);
       });
     }
 
@@ -189,8 +250,11 @@
       coilCount: n,
       totalWgt: total,
       issued: issued,
+      firstIssued: row.firstIssued && row.firstIssued !== issued ? String(row.firstIssued) : null,
+      supersedes: row.supersedes || null,
       issuer: row.by,
       coils: coils,
+      corrections: corrections,
       criteria: [
         { name: '항복강도', sym: 'YP', unit: 'MPa', limit: spec.yp + ' 이상', method: TEST_METHODS.yp },
         { name: '인장강도', sym: 'TS', unit: 'MPa', limit: spec.ts + ' 이상', method: TEST_METHODS.ts },
@@ -203,6 +267,88 @@
     doc.fingerprint = hash32(JSON.stringify([doc.docId, doc.totalWgt, coils.map(function (c) { return [c.no, c.yp, c.ts, c.el, c.coat]; })]))
       .toString(16).padStart(8, '0').toUpperCase();
     return doc;
+  }
+
+  // ── 시험값 정정 ──────────────────────────────────────────────────────────
+  // items: [{ coil, field, to }]. 현재 값과 같은 항목은 '변경 없음'으로 걸러낸다(오류가 아니다).
+  // 반환: { ok, changed: [{coil, field, from, to}], errors: [{coil, field, to, reason}] }
+  //
+  // 규격 미달 값은 여기서 막는다. 불합격 코일은 보증서에 실을 수 없으므로, 그런 경우는
+  // 값을 고치는 문제가 아니라 코일을 빼고 재발행하는 별도 절차다.
+  function validateCorrections(doc, items) {
+    const changed = [];
+    const errors = [];
+    const pending = {}; // coil → { field: to } 교차 검증용
+    (items || []).forEach(function (it) {
+      const path = 'coils[].' + it.field;
+      const coil = doc.coils.find(function (c) { return c.no === it.coil; });
+      if (!coil) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: '코일 ' + it.coil + ' 이(가) 이 보증서에 없습니다' }); return; }
+      const grade = fieldGrade(path);
+      if (grade !== 'correct') {
+        const f = FIELDS[path] || {};
+        errors.push({ coil: it.coil, field: it.field, to: it.to,
+          reason: (f.label || it.field) + ' 은(는) ' + (grade === 'locked' ? (f.src ? f.src + ' 값이라 ' : '') + '이 화면에서 정정할 수 없습니다' : '정정 절차 대상이 아닙니다') });
+        return;
+      }
+      const f = FIELDS[path];
+      const v = num(it.to);
+      if (v == null) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: f.sym + ' 값이 숫자가 아닙니다' }); return; }
+      if (it.field === 'el' && doc.spec.el == null) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: '강종 ' + doc.spec.grade + ' 은 연신율 규정이 없어 보증 항목이 아닙니다' }); return; }
+      if (v === coil[it.field]) return; // 변경 없음
+      const min = it.field === 'coat' ? doc.coat.min : doc.spec[it.field];
+      if (v < min) { errors.push({ coil: it.coil, field: it.field, to: v, reason: f.sym + ' ' + v + ' < 기준 ' + min + ' — 규격 미달 값은 보증서에 실을 수 없습니다 (코일 제외 후 재발행은 별도 절차)' }); return; }
+      (pending[it.coil] = pending[it.coil] || {})[it.field] = v;
+      changed.push({ coil: it.coil, field: it.field, from: coil[it.field], to: v });
+    });
+    // 교차 검증: 인장강도는 항복강도보다 작을 수 없다
+    Object.keys(pending).forEach(function (no) {
+      const coil = doc.coils.find(function (c) { return c.no === no; });
+      const yp = pending[no].yp != null ? pending[no].yp : coil.yp;
+      const ts = pending[no].ts != null ? pending[no].ts : coil.ts;
+      if (ts < yp) {
+        const field = pending[no].ts != null ? 'ts' : 'yp';
+        errors.push({ coil: no, field: field, to: pending[no][field], reason: 'TS ' + ts + ' < YP ' + yp + ' — 인장강도는 항복강도보다 작을 수 없습니다' });
+      }
+    });
+    return { ok: errors.length === 0 && changed.length > 0, changed: changed, errors: errors };
+  }
+
+  // 정정 적용 — 순수 함수. 저장은 호출자가 한다.
+  // 현재 버전은 회수되고(supersededBy), 다음 버전이 재발행된다(supersedes, corrections 누적).
+  // req: { items, reason, by, at }  →  { recalled, reissued, history }
+  function applyCorrection(row, req) {
+    if (!/^(발행|재발행)$/.test(String(row.st))) throw new Error('발행·재발행 상태만 정정할 수 있습니다 (현재: ' + row.st + ')');
+    const reason = String(req && req.reason || '').trim();
+    if (!reason) throw new Error('정정 사유는 필수입니다');
+    const doc = buildCertDoc(row);
+    const v = validateCorrections(doc, req.items);
+    if (!v.ok) throw new Error(v.errors.length ? v.errors[0].reason : '변경된 값이 없습니다');
+
+    const at = req.at || new Date().toISOString().slice(0, 16);
+    const date = String(at).slice(0, 10);
+    const by = req.by || '품질관리자';
+    const nextVer = 'v' + ((num(row.ver) || 1) + 1);
+    const entries = v.changed.map(function (c) {
+      return { coil: c.coil, field: c.field, from: c.from, to: c.to, reason: reason, by: by, at: at, fromVer: row.ver, toVer: nextVer };
+    });
+    const reissued = Object.assign({}, row, {
+      id: row.no + '-' + nextVer,
+      ver: nextVer,
+      st: '재발행',
+      date: date,
+      by: by,
+      firstIssued: row.firstIssued || row.date,
+      supersedes: row.ver,
+      supersededBy: null,
+      corrections: (row.corrections || []).concat(entries),
+    });
+    const recalled = Object.assign({}, row, {
+      st: '회수',
+      supersededBy: nextVer,
+      recallReason: '시험값 정정 → ' + nextVer + ' 재발행',
+    });
+    const history = { at: at, by: by, no: row.no, fromVer: row.ver, toVer: nextVer, reason: reason, items: v.changed };
+    return { recalled: recalled, reissued: reissued, history: history };
   }
 
   // ── 페이지 분할 ──────────────────────────────────────────────────────────
@@ -258,7 +404,8 @@
 
   g.MesReport = Object.assign(g.MesReport || {}, {
     buildCertDoc, paginate, specFor, coatFor, parseSize, parsePrd,
+    validateCorrections, applyCorrection, fieldGrade, judge,
     esc, num, comma, splitWeight, rng, hash32,
-    SPECS, COATS, WATERMARKS,
+    SPECS, COATS, WATERMARKS, FIELDS, TEST_FIELDS,
   });
 })(globalThis);

@@ -83,6 +83,13 @@
 .rp-tbl .sub{font-size:7pt;color:var(--rp-ink-3)}
 .rp-pass{font-weight:800}
 .rp-fail{font-weight:800;text-decoration:underline}
+.rp-tbl td.wrap{white-space:normal;line-height:1.3}
+/* 정정된 값 — 굵게 + ※. 배경색에 의존하지 않아 흑백 인쇄에서도 구분된다 */
+.rp-corr{font-weight:800}
+.rp-corr sup{font-size:5.6pt;line-height:0;margin-left:.3mm}
+/* 정정 재발행 안내 — 1장 정보 블록 아래 */
+.rp-notice{flex:0 0 auto;border:.6pt solid var(--rp-line);border-left:2.4pt solid #B03A32;padding:2.2mm 3.5mm;margin-bottom:4mm;font-size:8.2pt;line-height:1.5}
+.rp-notice b{font-weight:800}
 
 /* 판정문·서명 — 마지막 장에만 */
 .rp-decl{flex:0 0 auto;border:.8pt solid var(--rp-line);padding:3mm 4mm;margin-bottom:4mm;font-size:8.6pt;line-height:1.55}
@@ -101,7 +108,9 @@
 /* 워터마크 */
 .rp-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0}
 .rp-wm span{font-size:72pt;font-weight:800;letter-spacing:.18em;color:rgba(176,58,50,.13);transform:rotate(-24deg);white-space:nowrap}
-.rp-sheet > *{position:relative;z-index:1}
+/* 본문 3덩어리만 워터마크 위로 올린다. 절대배치 요소(.rp-wm .rp-mock)를 건드리면 안 된다 */
+.rp-head,.rp-body,.rp-foot{position:relative;z-index:1}
+.rp-nb{white-space:nowrap}
 
 /* 목업 표시 — 실제 발행본과 헷갈리지 않게 모든 장에 남긴다 */
 .rp-mock{position:absolute;right:var(--rp-pad-x);top:calc(var(--rp-pad-y) / 2);font-size:6.6pt;letter-spacing:.14em;font-weight:800;color:#B03A32;z-index:2}

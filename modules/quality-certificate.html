@@ -89,6 +89,30 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
 .form .f-field .inp{min-width:0;width:100%}
 .form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 18px 18px}
 .note{font-size:12px;color:var(--ink-3);padding:0 2px}
+/* 시험값 정정 모달 */
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:920px;max-width:94vw;max-height:90vh;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);z-index:50;display:none;flex-direction:column;overflow:hidden}
+.modal.on{display:flex}
+.m-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.callout{border:1px solid var(--border);border-left:3px solid var(--result);background:var(--result-soft);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--result-soft-ink);line-height:1.55}
+.callout.ok{border-left-color:var(--hold);background:var(--hold-bg);color:var(--hold)}
+.callout.no{border-left-color:var(--danger);background:var(--danger-bg);color:var(--danger)}
+.callout b{font-weight:800}
+.corr-tbl th.lock,.corr-tbl td.lock{color:var(--ink-3);background:var(--surface-2)}
+.corr-tbl th .lk{display:inline-block;margin-left:4px;font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-3);border:1px solid var(--border-strong);border-radius:5px;padding:0 4px;vertical-align:middle}
+.corr-tbl th .min{display:block;font-size:10.5px;color:var(--accent);font-weight:700;margin-top:1px}
+.corr-tbl td{vertical-align:top}
+.corr-tbl input{width:80px;height:30px;padding:0 8px;border:1px solid var(--border-strong);border-radius:8px;font:inherit;font-size:12.5px;text-align:right;font-family:'JetBrains Mono',monospace;background:var(--surface)}
+.corr-tbl input:focus{border-color:var(--accent);outline:none}
+.corr-tbl input.chg{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.corr-tbl input.bad{border-color:var(--danger);background:var(--danger-bg)}
+.corr-tbl .cur{display:block;font-size:10.5px;color:var(--ink-3);text-align:right;margin-top:2px;font-family:'JetBrains Mono',monospace}
+.corr-tbl .err{display:block;font-size:10.5px;color:var(--danger);margin-top:3px;max-width:190px;white-space:normal;line-height:1.35}
+.corr-sum{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2)}
+.corr-sum b{color:var(--ink)}
+.corr-sum .bad{color:var(--danger);font-weight:700}
+.hist-items{display:flex;flex-wrap:wrap;gap:4px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn[disabled]:hover{background:var(--surface)}
 /* drawer */
 .scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
 .scrim.on{display:block}
@@ -206,6 +230,13 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 .rp-tbl .sub{font-size:7pt;color:var(--rp-ink-3)}
 .rp-pass{font-weight:800}
 .rp-fail{font-weight:800;text-decoration:underline}
+.rp-tbl td.wrap{white-space:normal;line-height:1.3}
+/* 정정된 값 — 굵게 + ※. 배경색에 의존하지 않아 흑백 인쇄에서도 구분된다 */
+.rp-corr{font-weight:800}
+.rp-corr sup{font-size:5.6pt;line-height:0;margin-left:.3mm}
+/* 정정 재발행 안내 — 1장 정보 블록 아래 */
+.rp-notice{flex:0 0 auto;border:.6pt solid var(--rp-line);border-left:2.4pt solid #B03A32;padding:2.2mm 3.5mm;margin-bottom:4mm;font-size:8.2pt;line-height:1.5}
+.rp-notice b{font-weight:800}
 
 /* 판정문·서명 — 마지막 장에만 */
 .rp-decl{flex:0 0 auto;border:.8pt solid var(--rp-line);padding:3mm 4mm;margin-bottom:4mm;font-size:8.6pt;line-height:1.55}
@@ -224,7 +255,9 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 /* 워터마크 */
 .rp-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0}
 .rp-wm span{font-size:72pt;font-weight:800;letter-spacing:.18em;color:rgba(176,58,50,.13);transform:rotate(-24deg);white-space:nowrap}
-.rp-sheet > *{position:relative;z-index:1}
+/* 본문 3덩어리만 워터마크 위로 올린다. 절대배치 요소(.rp-wm .rp-mock)를 건드리면 안 된다 */
+.rp-head,.rp-body,.rp-foot{position:relative;z-index:1}
+.rp-nb{white-space:nowrap}
 
 /* 목업 표시 — 실제 발행본과 헷갈리지 않게 모든 장에 남긴다 */
 .rp-mock{position:absolute;right:var(--rp-pad-x);top:calc(var(--rp-pad-y) / 2);font-size:6.6pt;letter-spacing:.14em;font-weight:800;color:#B03A32;z-index:2}
@@ -254,9 +287,10 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
   <span class="mock">MOCK-UP</span>
 </header>
 <nav class="tabs" role="tablist">
-  <button class="tab on" role="tab" data-tab="list" aria-selected="true">발행 목록 <span class="cnt">9</span></button>
+  <button class="tab on" role="tab" data-tab="list" aria-selected="true">발행 목록 <span class="cnt" id="cnt-list">9</span></button>
   <button class="tab" role="tab" data-tab="reg" aria-selected="false">발행 요청</button>
   <button class="tab" role="tab" data-tab="hist" aria-selected="false">양식 관리</button>
+  <button class="tab" role="tab" data-tab="corr" aria-selected="false">정정 이력 <span class="cnt" id="cnt-corr">0</span></button>
 </nav>
 <main>
 <section class="sc on" id="sc-list">
@@ -284,8 +318,17 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 <section class="sc" id="sc-hist">
   <div class="card"><div class="empty"><div class="big">양식 관리</div>보증서 양식(KS 표준·수요가 지정 양식)의 항목 구성과 서명·직인 설정을 관리합니다. 목업 시드에는 양식 2종만 정의되어 있습니다.</div></div>
 </section>
+<section class="sc" id="sc-corr">
+  <div class="meta"><span id="corr-meta"></span><span class="f-spacer"></span><button class="btn btn-sm" data-action="reset-seed">시드로 초기화</button></div>
+  <div class="card grid" id="corr-grid"></div>
+</section>
 </main>
 <div class="scrim" id="scrim"></div>
+<div class="modal" id="corr" role="dialog" aria-modal="true" aria-labelledby="corr-title" aria-hidden="true">
+  <div class="d-head"><h3 id="corr-title">시험값 정정</h3><button class="d-close" id="corr-close" aria-label="닫기">✕</button></div>
+  <div class="m-body" id="corr-body"></div>
+  <div class="d-foot"><span class="corr-sum" id="corr-sum"></span><span class="f-spacer"></span><button class="btn" id="corr-cancel">취소</button><button class="btn btn-pri" id="corr-submit" disabled>정정 재발행</button></div>
+</div>
 <aside class="drawer" id="drawer" aria-hidden="true">
   <div class="d-head"><h3 id="d-title">상세</h3><button class="d-close" id="d-close" aria-label="닫기">✕</button></div>
   <div class="d-body" id="d-body"></div>
@@ -329,6 +372,35 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
   const WATERMARKS = { 초안: 'DRAFT', 재발행: 'REISSUE', 회수: 'VOID' };
 
   const TEST_METHODS = { yp: 'KS B 0802', ts: 'KS B 0802', el: 'KS B 0802', coat: 'KS D 0201' };
+
+  // ── 필드 편집 등급 ───────────────────────────────────────────────────────
+  // 보증서의 값은 "누가 고칠 수 있는가"가 아니라 "어떤 절차로 고칠 수 있는가"로 나눈다.
+  //   locked  : 원천 시스템 값. 이 화면에서는 어떤 절차로도 못 고친다 (정정은 원천에서)
+  //   correct : 정정 절차(사유 필수 → 현재 버전 회수 → 다음 버전 재발행 → 이력)로만 고친다 — 시험값
+  //   approve : 고칠 수 있으나 승인이 필요하다 (다음 단계)
+  //   free    : 발행 시 담당자가 자유 입력한다 (다음 단계)
+  // 등록되지 않은 필드는 locked 로 본다 — 실수로 열리는 쪽보다 실수로 잠기는 쪽이 안전하다.
+  const FIELDS = {
+    'cert.no':      { edit: 'locked',  label: '보증서번호', src: '발행 시스템' },
+    'order':        { edit: 'locked',  label: '주문번호',   src: '주문' },
+    'coils[].no':   { edit: 'locked',  label: '코일번호',   src: '생산실적' },
+    'coils[].heat': { edit: 'locked',  label: '용강번호',   src: '생산실적' },
+    'coils[].thk':  { edit: 'locked',  label: '두께',       src: '생산실적', unit: 'mm' },
+    'coils[].wid':  { edit: 'locked',  label: '폭',         src: '생산실적', unit: 'mm' },
+    'coils[].wgt':  { edit: 'locked',  label: '중량',       src: '계량',     unit: 'kg' },
+    'coils[].yp':   { edit: 'correct', label: '항복강도',   sym: 'YP',  unit: 'MPa' },
+    'coils[].ts':   { edit: 'correct', label: '인장강도',   sym: 'TS',  unit: 'MPa' },
+    'coils[].el':   { edit: 'correct', label: '연신율',     sym: 'EL',  unit: '%' },
+    'coils[].coat': { edit: 'correct', label: '도금부착량', sym: 'C/W', unit: 'g/㎡' },
+    'remark':       { edit: 'free',    label: '비고', max: 200 },
+    'customer.displayName': { edit: 'approve', label: '수요가 표기명' },
+  };
+  // coils[].<k> 중 correct 등급 — 정정 화면의 열 순서이기도 하다
+  const TEST_FIELDS = ['yp', 'ts', 'el', 'coat'];
+
+  function fieldGrade(path) {
+    return (FIELDS[path] || {}).edit || 'locked';
+  }
 
   // ── 작은 유틸 ────────────────────────────────────────────────────────────
   function esc(s) {
@@ -425,6 +497,11 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     return out;
   }
 
+  // 코일 1건의 합격 판정. 정정 뒤에도 같은 식으로 다시 판정한다.
+  function judge(c, spec, coat) {
+    return c.yp >= spec.yp && c.ts >= spec.ts && (spec.el == null || c.el == null || c.el >= spec.el) && c.coat >= coat.min;
+  }
+
   // ── 문서 모델 ────────────────────────────────────────────────────────────
   // row: 발행 목록 1행. opts.coilCount 를 주면 코일 수를 바꾼다(페이지 분할 확인용 목업 조작).
   // 코일 수를 바꾸면 코일당 평균 중량을 유지한 채 총중량을 다시 계산한다.
@@ -439,10 +516,13 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     const prd = parsePrd(row.prd);
     const spec = specFor(prd.spec);
     const coat = coatFor(prd.code);
-    const rnd = rng(row.no + '|' + row.ver);
+    // 시드는 보증서번호만. 버전이 바뀌어도(정정 재발행) 같은 코일 목록에서 출발해야
+    // 정정 내역이 그 위에 겹쳐진다. 발행일도 최초 발행일을 써서 코일번호가 흔들리지 않게 한다.
+    const rnd = rng(row.no);
+    const baseDate = row.firstIssued || row.date;
 
-    const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(row.date))
-      ? String(row.date).slice(2).replace(/-/g, '')
+    const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(baseDate))
+      ? String(baseDate).slice(2).replace(/-/g, '')
       : String(row.no).replace(/\D/g, '').slice(0, 4) + '01';
     const startSeq = 1 + Math.floor(rnd() * 40);
     const weights = splitWeight(total, n, rnd);
@@ -466,7 +546,31 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
         ts: ts,
         el: el,
         coat: cw,
-        pass: yp >= spec.yp && ts >= spec.ts && (el == null || el >= spec.el) && cw >= coat.min,
+        pass: true,
+      });
+      coils[i].pass = judge(coils[i], spec, coat);
+    }
+
+    // 정정 오버레이 — row.corrections 는 [{ coil, field, from, to, reason, by, at, fromVer, toVer }].
+    // 시간순이므로 같은 코일·항목이 여러 번 정정됐으면 마지막 값이 남는다. 정정된 칸에는
+    // corrected 표시를 남겨 출력물에서 ※ 로 드러낸다.
+    const corrections = Array.isArray(row.corrections) ? row.corrections : [];
+    if (corrections.length) {
+      const byCoil = {};
+      corrections.forEach(function (c) {
+        if (TEST_FIELDS.indexOf(c.field) < 0) return; // correct 등급이 아닌 항목은 무시
+        (byCoil[c.coil] = byCoil[c.coil] || {})[c.field] = c;
+      });
+      coils.forEach(function (c) {
+        const cs = byCoil[c.no];
+        if (!cs) return;
+        c.corrected = {};
+        TEST_FIELDS.forEach(function (k) {
+          if (!cs[k]) return;
+          c.corrected[k] = { from: cs[k].from, to: cs[k].to };
+          c[k] = cs[k].to;
+        });
+        c.pass = judge(c, spec, coat);
       });
     }
 
@@ -487,8 +591,11 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
       coilCount: n,
       totalWgt: total,
       issued: issued,
+      firstIssued: row.firstIssued && row.firstIssued !== issued ? String(row.firstIssued) : null,
+      supersedes: row.supersedes || null,
       issuer: row.by,
       coils: coils,
+      corrections: corrections,
       criteria: [
         { name: '항복강도', sym: 'YP', unit: 'MPa', limit: spec.yp + ' 이상', method: TEST_METHODS.yp },
         { name: '인장강도', sym: 'TS', unit: 'MPa', limit: spec.ts + ' 이상', method: TEST_METHODS.ts },
@@ -501,6 +608,88 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     doc.fingerprint = hash32(JSON.stringify([doc.docId, doc.totalWgt, coils.map(function (c) { return [c.no, c.yp, c.ts, c.el, c.coat]; })]))
       .toString(16).padStart(8, '0').toUpperCase();
     return doc;
+  }
+
+  // ── 시험값 정정 ──────────────────────────────────────────────────────────
+  // items: [{ coil, field, to }]. 현재 값과 같은 항목은 '변경 없음'으로 걸러낸다(오류가 아니다).
+  // 반환: { ok, changed: [{coil, field, from, to}], errors: [{coil, field, to, reason}] }
+  //
+  // 규격 미달 값은 여기서 막는다. 불합격 코일은 보증서에 실을 수 없으므로, 그런 경우는
+  // 값을 고치는 문제가 아니라 코일을 빼고 재발행하는 별도 절차다.
+  function validateCorrections(doc, items) {
+    const changed = [];
+    const errors = [];
+    const pending = {}; // coil → { field: to } 교차 검증용
+    (items || []).forEach(function (it) {
+      const path = 'coils[].' + it.field;
+      const coil = doc.coils.find(function (c) { return c.no === it.coil; });
+      if (!coil) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: '코일 ' + it.coil + ' 이(가) 이 보증서에 없습니다' }); return; }
+      const grade = fieldGrade(path);
+      if (grade !== 'correct') {
+        const f = FIELDS[path] || {};
+        errors.push({ coil: it.coil, field: it.field, to: it.to,
+          reason: (f.label || it.field) + ' 은(는) ' + (grade === 'locked' ? (f.src ? f.src + ' 값이라 ' : '') + '이 화면에서 정정할 수 없습니다' : '정정 절차 대상이 아닙니다') });
+        return;
+      }
+      const f = FIELDS[path];
+      const v = num(it.to);
+      if (v == null) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: f.sym + ' 값이 숫자가 아닙니다' }); return; }
+      if (it.field === 'el' && doc.spec.el == null) { errors.push({ coil: it.coil, field: it.field, to: it.to, reason: '강종 ' + doc.spec.grade + ' 은 연신율 규정이 없어 보증 항목이 아닙니다' }); return; }
+      if (v === coil[it.field]) return; // 변경 없음
+      const min = it.field === 'coat' ? doc.coat.min : doc.spec[it.field];
+      if (v < min) { errors.push({ coil: it.coil, field: it.field, to: v, reason: f.sym + ' ' + v + ' < 기준 ' + min + ' — 규격 미달 값은 보증서에 실을 수 없습니다 (코일 제외 후 재발행은 별도 절차)' }); return; }
+      (pending[it.coil] = pending[it.coil] || {})[it.field] = v;
+      changed.push({ coil: it.coil, field: it.field, from: coil[it.field], to: v });
+    });
+    // 교차 검증: 인장강도는 항복강도보다 작을 수 없다
+    Object.keys(pending).forEach(function (no) {
+      const coil = doc.coils.find(function (c) { return c.no === no; });
+      const yp = pending[no].yp != null ? pending[no].yp : coil.yp;
+      const ts = pending[no].ts != null ? pending[no].ts : coil.ts;
+      if (ts < yp) {
+        const field = pending[no].ts != null ? 'ts' : 'yp';
+        errors.push({ coil: no, field: field, to: pending[no][field], reason: 'TS ' + ts + ' < YP ' + yp + ' — 인장강도는 항복강도보다 작을 수 없습니다' });
+      }
+    });
+    return { ok: errors.length === 0 && changed.length > 0, changed: changed, errors: errors };
+  }
+
+  // 정정 적용 — 순수 함수. 저장은 호출자가 한다.
+  // 현재 버전은 회수되고(supersededBy), 다음 버전이 재발행된다(supersedes, corrections 누적).
+  // req: { items, reason, by, at }  →  { recalled, reissued, history }
+  function applyCorrection(row, req) {
+    if (!/^(발행|재발행)$/.test(String(row.st))) throw new Error('발행·재발행 상태만 정정할 수 있습니다 (현재: ' + row.st + ')');
+    const reason = String(req && req.reason || '').trim();
+    if (!reason) throw new Error('정정 사유는 필수입니다');
+    const doc = buildCertDoc(row);
+    const v = validateCorrections(doc, req.items);
+    if (!v.ok) throw new Error(v.errors.length ? v.errors[0].reason : '변경된 값이 없습니다');
+
+    const at = req.at || new Date().toISOString().slice(0, 16);
+    const date = String(at).slice(0, 10);
+    const by = req.by || '품질관리자';
+    const nextVer = 'v' + ((num(row.ver) || 1) + 1);
+    const entries = v.changed.map(function (c) {
+      return { coil: c.coil, field: c.field, from: c.from, to: c.to, reason: reason, by: by, at: at, fromVer: row.ver, toVer: nextVer };
+    });
+    const reissued = Object.assign({}, row, {
+      id: row.no + '-' + nextVer,
+      ver: nextVer,
+      st: '재발행',
+      date: date,
+      by: by,
+      firstIssued: row.firstIssued || row.date,
+      supersedes: row.ver,
+      supersededBy: null,
+      corrections: (row.corrections || []).concat(entries),
+    });
+    const recalled = Object.assign({}, row, {
+      st: '회수',
+      supersededBy: nextVer,
+      recallReason: '시험값 정정 → ' + nextVer + ' 재발행',
+    });
+    const history = { at: at, by: by, no: row.no, fromVer: row.ver, toVer: nextVer, reason: reason, items: v.changed };
+    return { recalled: recalled, reissued: reissued, history: history };
   }
 
   // ── 페이지 분할 ──────────────────────────────────────────────────────────
@@ -556,8 +745,9 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 
   g.MesReport = Object.assign(g.MesReport || {}, {
     buildCertDoc, paginate, specFor, coatFor, parseSize, parsePrd,
+    validateCorrections, applyCorrection, fieldGrade, judge,
     esc, num, comma, splitWeight, rng, hash32,
-    SPECS, COATS, WATERMARKS,
+    SPECS, COATS, WATERMARKS, FIELDS, TEST_FIELDS,
   });
 })(globalThis);
 
@@ -597,6 +787,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
       + '<dl class="rp-stamp">'
       + '<dt>보증서번호</dt><dd class="mono">' + esc(doc.no) + ' ' + esc(doc.ver) + '</dd>'
       + '<dt>발행일</dt><dd class="mono">' + esc(doc.issued || '미발행') + '</dd>'
+      + (doc.firstIssued ? '<dt>최초 발행</dt><dd class="mono">' + esc(doc.firstIssued) + ' (' + esc(doc.supersedes || '') + ')</dd>' : '')
       + '<dt>페이지</dt><dd class="mono">' + pageNo + ' / ' + pageCount + '</dd>'
       + '</dl></div></div>';
   }
@@ -627,6 +818,37 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     return h + '</tbody></table></div>';
   }
 
+  // 정정 재발행일 때만. 읽는 사람이 첫 장에서 바로 알아야 한다.
+  function noticeHtml(doc) {
+    if (!doc.corrections.length) return '';
+    const n = doc.corrections.length;
+    return '<div class="rp-notice"><b>정정 재발행</b> — 본 보증서는 ' + esc(doc.supersedes || '이전 버전')
+      + (doc.firstIssued ? ' (' + esc(doc.firstIssued) + ' 발행)' : '') + '의 시험값 ' + n + '건을 정정하여 재발행한 것입니다. '
+      + '정정된 값은 <b>※</b> 로 표시하며 상세는 <span class="rp-nb">3항 정정 내역</span>에 있습니다. 이전 버전은 회수되었습니다.</div>';
+  }
+
+  const CORR_COLS = '<colgroup><col style="width:27mm"><col style="width:28mm"><col style="width:16mm"><col style="width:16mm">'
+    + '<col><col style="width:36mm"><col style="width:16mm"></colgroup>';
+  const FIELD_LABEL = { yp: '항복강도 YP', ts: '인장강도 TS', el: '연신율 EL', coat: '도금부착량 C/W' };
+
+  function corrHeadHtml(doc) {
+    return '<h4>3. 정정 내역<span class="rp-of">' + doc.corrections.length + '건</span></h4>';
+  }
+
+  function corrTableHtml(doc, from, to) {
+    const rows = doc.corrections.slice(from, to);
+    let h = '<table class="rp-tbl">' + CORR_COLS
+      + '<thead><tr><th>코일번호</th><th>항목</th><th>정정 전</th><th>정정 후</th><th>사유</th><th>정정자 · 일시</th><th>버전</th></tr></thead><tbody>';
+    rows.forEach(function (c) {
+      h += '<tr><td class="mono">' + esc(c.coil) + '</td><td>' + esc(FIELD_LABEL[c.field] || c.field) + '</td>'
+        + '<td class="num">' + comma(c.from) + '</td><td class="num rp-corr">' + comma(c.to) + '</td>'
+        + '<td class="wrap">' + esc(c.reason) + '</td>'
+        + '<td class="wrap">' + esc(c.by) + '<br><span class="mono rp-nb">' + esc(String(c.at || '').replace('T', ' ')) + '</span></td>'
+        + '<td class="ctr mono">' + esc(c.fromVer) + '→' + esc(c.toVer) + '</td></tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
   // 폭 합계 180mm = A4 210mm - 좌우 여백 15mm×2
   const COILS_COLS = '<colgroup><col style="width:11mm"><col style="width:26mm"><col style="width:20mm">'
     + '<col style="width:16mm"><col style="width:14mm"><col style="width:20mm"><col style="width:13mm">'
@@ -648,16 +870,21 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
       + '<th>중량<br>(kg)</th><th>YP<br>(MPa)</th><th>TS<br>(MPa)</th><th>EL<br>(%)</th>'
       + '<th>도금부착량<br>(g/㎡)</th><th>판정</th></tr></thead><tbody>';
     rows.forEach(function (c) {
+      // 정정된 칸은 ※ 를 붙여 원본 성적과 구분한다 — 상세는 3항
+      const tv = function (k, txt) {
+        const m = c.corrected && c.corrected[k];
+        return '<td class="num' + (m ? ' rp-corr' : '') + '">' + txt + (m ? '<sup>※</sup>' : '') + '</td>';
+      };
       h += '<tr><td class="ctr mono">' + c.seq + '</td>'
         + '<td class="mono">' + esc(c.no) + '</td>'
         + '<td class="mono">' + esc(c.heat) + '</td>'
         + '<td class="num">' + fx(c.thk, 3) + '</td>'
         + '<td class="num">' + comma(c.wid) + '</td>'
         + '<td class="num">' + comma(c.wgt) + '</td>'
-        + '<td class="num">' + comma(c.yp) + '</td>'
-        + '<td class="num">' + comma(c.ts) + '</td>'
-        + '<td class="num">' + (c.el == null ? '—' : comma(c.el)) + '</td>'
-        + '<td class="num">' + comma(c.coat) + '</td>'
+        + tv('yp', comma(c.yp))
+        + tv('ts', comma(c.ts))
+        + tv('el', c.el == null ? '—' : comma(c.el))
+        + tv('coat', comma(c.coat))
         + '<td class="ctr ' + (c.pass ? 'rp-pass' : 'rp-fail') + '">' + (c.pass ? '합격' : '불합격') + '</td></tr>';
     });
     h += '</tbody><tfoot><tr>'
@@ -704,19 +931,30 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     // 2) 높이 제한 없는 시트에 모든 조각을 그려 각각의 높이를 잰다.
     host.innerHTML = '<div class="rp-sheet rp-sheet--measure"><div class="rp-body">'
       + '<div id="rp-m-info">' + infoHtml(doc) + '</div>'
+      + '<div id="rp-m-notice">' + noticeHtml(doc) + '</div>'
       + '<div id="rp-m-crit">' + criteriaHtml(doc) + '</div>'
       + '<div class="rp-sect" id="rp-m-coils">' + coilsHeadHtml(doc) + coilsTableHtml(doc, 0, doc.coils.length, true) + '</div>'
+      + (doc.corrections.length ? '<div class="rp-sect" id="rp-m-corr">' + corrHeadHtml(doc) + corrTableHtml(doc, 0, doc.corrections.length) + '</div>' : '')
       + '<div id="rp-m-sign">' + signHtml(doc) + '</div>'
       + '</div></div>';
     const coilSect = host.querySelector('#rp-m-coils');
     const csCs = getComputedStyle(coilSect);
     const rowHs = Array.prototype.map.call(coilSect.querySelectorAll('tbody tr'), function (tr) { return tr.offsetHeight; });
+    const noticeEl = host.querySelector('#rp-m-notice').firstElementChild;
+    const corrSect = host.querySelector('#rp-m-corr');
+    const corrBlock = corrSect ? {
+      id: 'corr', kind: 'table',
+      headH: outerH(corrSect.querySelector('h4')) + corrSect.querySelector('thead').offsetHeight,
+      footH: parseFloat(getComputedStyle(corrSect).marginBottom || 0),
+      rowHs: Array.prototype.map.call(corrSect.querySelectorAll('tbody tr'), function (tr) { return tr.offsetHeight; }),
+    } : null;
 
     return {
       bodyH: bodyH,
       sheetPxW: sheetPxW,
       blocks: [
         { id: 'info', kind: 'block', h: outerH(host.querySelector('#rp-m-info').firstElementChild) },
+        noticeEl ? { id: 'notice', kind: 'block', h: outerH(noticeEl) } : null,
         { id: 'crit', kind: 'block', h: outerH(host.querySelector('#rp-m-crit').firstElementChild) },
         {
           id: 'coils', kind: 'table',
@@ -724,11 +962,12 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
           footH: coilSect.querySelector('tfoot').offsetHeight + parseFloat(csCs.marginBottom || 0),
           rowHs: rowHs,
         },
+        corrBlock,
         {
           id: 'sign', kind: 'block',
           h: outerH(host.querySelector('.rp-decl')) + outerH(host.querySelector('.rp-sign')),
         },
-      ],
+      ].filter(Boolean),
     };
   }
 
@@ -738,7 +977,13 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
       let body = '';
       pieces.forEach(function (p) {
         if (p.id === 'info') body += infoHtml(doc);
+        else if (p.id === 'notice') body += noticeHtml(doc);
         else if (p.id === 'crit') body += criteriaHtml(doc);
+        else if (p.id === 'corr') {
+          body += '<div class="rp-sect">' + (p.from === 0 ? corrHeadHtml(doc)
+            : '<h4>3. 정정 내역<span class="rp-of">' + (p.from + 1) + ' ~ ' + p.to + ' / ' + doc.corrections.length + '건 (이어서)</span></h4>')
+            + corrTableHtml(doc, p.from, p.to) + '</div>';
+        }
         else if (p.id === 'sign') body += signHtml(doc);
         else if (p.id === 'coils') {
           body += '<div class="rp-sect">' + (p.from === 0 ? coilsHeadHtml(doc)
@@ -856,11 +1101,37 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 
   g.MesReport = Object.assign(g.MesReport || {}, {
     open, close, isOpen, printNow, draw,
-    _internal: { measure, renderPages, headHtml, infoHtml, criteriaHtml, coilsTableHtml, signHtml, footHtml, outerH },
+    _internal: { measure, renderPages, headHtml, infoHtml, noticeHtml, criteriaHtml, coilsTableHtml, corrTableHtml, signHtml, footHtml, outerH },
   });
 })(globalThis);
 /*__REPORT_JS_END__*/
 var ROWS=[{"no": "QC-2609-0101", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77812", "ord": "D260831014-010", "prd": "3 : CCGI · KS3-CGCC", "size": "0.450 × 1490", "coils": "3", "wgt": "28,000", "st": "발행", "date": "2026-09-02", "by": "박서연", "id": "QC-2609-0101"}, {"no": "QC-2609-0102", "ver": "v1", "cus": "수요가 B", "po": "PO-B-10233", "ord": "D260831020-010", "prd": "L : G/L · KSL-SGLCC", "size": "0.400 × 915", "coils": "2", "wgt": "12,400", "st": "초안", "date": "—", "by": "김민석", "id": "QC-2609-0102"}, {"no": "QC-2608-0098", "ver": "v2", "cus": "수요가 C", "po": "PO-C-55021", "ord": "D260831021-010", "prd": "G : GI · KSG-SGC340", "size": "0.440 × 1225", "coils": "4", "wgt": "31,200", "st": "재발행", "date": "2026-08-31", "by": "이도현", "id": "QC-2608-0098"}, {"no": "QC-2608-0097", "ver": "v1", "cus": "수요가 C", "po": "PO-C-55021", "ord": "D260831023-010", "prd": "G : GI · KSG-SGC340", "size": "0.440 × 1225", "coils": "4", "wgt": "30,850", "st": "발행", "date": "2026-08-31", "by": "이도현", "id": "QC-2608-0097"}, {"no": "QC-2608-0096", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77790", "ord": "D260831024-010", "prd": "L : G/L · KSL-SGLC570", "size": "0.370 × 1221", "coils": "2", "wgt": "11,900", "st": "발행", "date": "2026-08-30", "by": "박서연", "id": "QC-2608-0096"}, {"no": "QC-2608-0095", "ver": "v1", "cus": "수요가 D", "po": "PO-D-30012", "ord": "D260831025-010", "prd": "G : GI · KSG-SGCC", "size": "0.440 × 1306", "coils": "5", "wgt": "40,100", "st": "회수", "date": "2026-08-29", "by": "정하윤", "id": "QC-2608-0095"}, {"no": "QC-2608-0094", "ver": "v1", "cus": "수요가 B", "po": "PO-B-10211", "ord": "D260831027-010", "prd": "L : G/L · KSL-SGLCC", "size": "0.800 × 1224", "coils": "3", "wgt": "24,300", "st": "발행", "date": "2026-08-28", "by": "김민석", "id": "QC-2608-0094"}, {"no": "QC-2608-0093", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77780", "ord": "D260831028-010", "prd": "G : GI · KSG-SGC340", "size": "0.510 × 1064", "coils": "2", "wgt": "15,600", "by": "박서연", "st": "발행", "date": "2026-08-27", "id": "QC-2608-0093"}, {"no": "QC-2608-0092", "ver": "v1", "cus": "수요가 D", "po": "PO-D-29998", "ord": "D260831032-010", "prd": "4 : CCLI · KS4-CGLCC", "size": "0.500 × 1070", "coils": "1", "wgt": "7,800", "st": "초안", "date": "—", "by": "정하윤", "id": "QC-2608-0092"}];
+var SEED_ROWS=ROWS;
+var LS_KEY='mes.qcert.v1';
+// 데이터 접근은 repo 로만 한다. 지금은 localStorage, DB 연동 시 이 객체의 내부만 바꾼다(spec-code 와 같은 방식).
+var repo=(function(){
+  var st=null;
+  function read(){try{var raw=localStorage.getItem(LS_KEY);if(raw){var x=JSON.parse(raw);if(x&&x.v===LS_KEY&&Array.isArray(x.rows))return x;}}catch(e){}return null;}
+  function write(){try{localStorage.setItem(LS_KEY,JSON.stringify(st));}catch(e){}}
+  // 시드의 id 는 보증서번호와 같았다. 정정으로 같은 번호의 버전이 여럿 생기므로 id = 번호-버전.
+  function seed(){return {v:LS_KEY,rows:SEED_ROWS.map(function(r){return Object.assign({},r,{id:r.no+'-'+r.ver});}),history:[]};}
+  st=read()||seed();
+  return {
+    rows:function(){return st.rows;},
+    history:function(){return st.history;},
+    // 시험값 정정: 현재 버전 회수 + 다음 버전 재발행. 검증·버전 계산은 MesReport.applyCorrection 이 한다.
+    correct:function(id,req){
+      var i=-1;st.rows.forEach(function(r,k){if(r.id===id)i=k;});
+      if(i<0)throw new Error('행 없음: '+id);
+      var res=MesReport.applyCorrection(st.rows[i],req);
+      st.rows.splice(i,1,res.reissued,res.recalled); // 새 버전이 위, 회수본이 바로 아래
+      st.history.unshift(res.history);
+      write();return res;
+    },
+    reset:function(){st=seed();write();}
+  };
+})();
+ROWS=repo.rows();
 var COLS=[{"k": "no", "l": "보증서번호", "t": "link", "sub": "ver"}, {"k": "cus", "l": "수요가", "t": "text", "sub": "po"}, {"k": "ord", "l": "주문번호", "t": "mono"}, {"k": "prd", "l": "품명 · 규격", "t": "text", "sub": "size"}, {"k": "coils", "l": "코일", "t": "num"}, {"k": "wgt", "l": "중량 (kg)", "t": "num"}, {"k": "st", "l": "상태", "t": "pill"}, {"k": "date", "l": "발행일", "t": "text", "sub": "by"}];
 var DETAIL={title:function(r){return r.no+' '+r.ver+' · 품질보증서';},
   sections:[{h:'발행 정보',f:[{l:'보증서번호',k:'no',t:'mono'},{l:'수요가 · PO',k:'cus'},{l:'주문번호',k:'ord',t:'mono'},{l:'품명 · 규격',k:'prd'},{l:'코일 수 · 중량',k:'coils'},{l:'상태',k:'st',t:'pill'},{l:'발행일 · 담당',k:'date'}]}],
@@ -899,6 +1170,7 @@ function renderTable(){
   h+='</tbody></table>';
   $('#grid').innerHTML=h;
   $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
+  $('#cnt-list').textContent=ROWS.length;
 }
 function rowById(id){var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});return r;}
 // 발행 목록 1행 → A4 품질보증서 미리보기(assets/report). autoPrint 면 인쇄 대화상자까지 연다.
@@ -910,6 +1182,17 @@ function openReport(id,autoPrint){
   else if(r.st==='회수')toast('회수된 보증서입니다 — VOID 표시가 들어갑니다');
   else if(r.st==='재발행')toast('재발행본입니다 — REISSUE 표시가 들어갑니다');
 }
+// 상태에 따라 할 수 있는 일이 다르다. 정정은 발행·재발행본에만, 회수본은 PDF 발행 불가.
+function actionsFor(r){
+  var live=/^(발행|재발행)$/.test(r.st),a=[];
+  if(live)a.push({k:'recall',l:'회수',warn:true});
+  a.push({k:'correct',l:'시험값 정정',dis:!live,
+    tip:r.st==='초안'?'초안은 발행 전이라 정정 대상이 아닙니다 — 발행 요청에서 수정':
+        r.st==='회수'?'회수된 버전은 정정할 수 없습니다'+(r.supersededBy?' — 유효본 '+r.supersededBy+' 에서 정정':''):''});
+  a.push({k:'preview',l:'미리보기'});
+  if(r.st!=='회수')a.push({k:'issue',l:'PDF 발행',pri:true});
+  return a;
+}
 function openDrawer(id){
   var r=rowById(id);if(!r)return;
   sel=id;renderTable();
@@ -920,7 +1203,7 @@ function openDrawer(id){
   });
   if(typeof extraDetail==='function')h+=extraDetail(r);
   $('#d-body').innerHTML=h;
-  $('#d-foot').innerHTML=DETAIL.actions.map(function(a){return '<button class="btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'" data-act="'+esc(a.k)+'">'+esc(a.l)+'</button>';}).join('');
+  $('#d-foot').innerHTML=actionsFor(r).map(function(a){return '<button class="btn'+(a.pri?' btn-pri':a.warn?' btn-warn':'')+'" data-act="'+esc(a.k)+'"'+(a.dis?' disabled':'')+(a.tip?' title="'+esc(a.tip)+'"':'')+'>'+esc(a.l)+'</button>';}).join('');
   $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
 }
 function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;renderTable();}
@@ -931,30 +1214,49 @@ function setTab(k){
 document.addEventListener('click',function(e){
   var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
   var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
-  if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
+  if(e.target.closest('#d-close')){closeDrawer();return;}
+  if(e.target.closest('#scrim')){if($('#corr').classList.contains('on'))closeCorrection();else closeDrawer();return;}
+  if(e.target.closest('#corr-close')||e.target.closest('#corr-cancel')){closeCorrection();return;}
+  if(e.target.closest('#corr-submit')){corrSubmit();return;}
+  var op=e.target.closest('[data-open]');if(op){setTab('list');openDrawer(op.getAttribute('data-open'));return;}
+  var rs=e.target.closest('[data-action="reset-seed"]');if(rs){
+    if(confirm('정정 이력과 재발행본을 지우고 시드로 되돌립니다. 계속할까요?')){repo.reset();ROWS=repo.rows();sel=null;renderTable();renderHistory();toast('시드로 초기화했습니다');}
+    return;}
   var a=e.target.closest('[data-act]');if(a){
     var act=a.getAttribute('data-act');
     if(act==='preview'||act==='issue'){openReport(sel,act==='issue');return;}
+    if(act==='correct'){openCorrection(sel);return;}
     toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
   var ps=e.target.closest('[data-action="print-sel"]');if(ps){openReport(sel,false);return;}
   var b=e.target.closest('[data-action="reset"]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
   var s=e.target.closest('[data-action="search"]');if(s){renderTable();return;}
   var m=e.target.closest('[data-action="msg"]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
 });
-document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
-document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
+document.addEventListener('input',function(e){
+  if(e.target.id==='f-q')renderTable();
+  else if(e.target.closest('#corr'))corrValidate();
+});
+document.addEventListener('change',function(e){
+  if(e.target.id==='f-st')renderTable();
+  else if(e.target.closest('#corr'))corrValidate();
+});
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
   if(MesReport.isOpen()){MesReport.close();return;}
+  if($('#corr').classList.contains('on')){closeCorrection();return;}
   if($('#drawer').classList.contains('on'))closeDrawer();
 });
 var STATUS={"발행": {"cls": "ok"}, "초안": {"cls": "warn"}, "재발행": {"cls": "hold"}, "회수": {"cls": "no"}};
 var STATUS_KEY="st";
 // drawer 요약과 A4 보증서가 다른 값을 보이면 안 되므로 같은 모델에서 뽑는다.
+var FIELD_LABEL={yp:'항복강도 YP',ts:'인장강도 TS',el:'연신율 EL',coat:'도금부착량 C/W'};
 function extraDetail(r){
   var d=MesReport.buildCertDoc(r);
   var keys=['yp','ts','el','coat'];
-  var h='<div class="d-sect"><h4>보증 항목 (강종 '+esc(d.spec.grade)+')</h4>'
+  var h='';
+  if(r.supersededBy)h+='<div class="d-sect"><div class="callout no"><b>회수됨</b> — '+esc(r.recallReason||'')+'. 현재 유효본은 <span class="lnk" data-open="'+esc(r.no+'-'+r.supersededBy)+'">'+esc(r.no)+' '+esc(r.supersededBy)+'</span> 입니다.</div></div>';
+  else if(r.supersedes)h+='<div class="d-sect"><div class="callout ok"><b>정정 재발행</b> — <span class="lnk" data-open="'+esc(r.no+'-'+r.supersedes)+'">'+esc(r.supersedes)+'</span> 을 회수하고 재발행한 버전입니다. 최초 발행 '+esc(r.firstIssued||'—')+'.</div></div>';
+  h+='<div class="d-sect"><h4>보증 항목 (강종 '+esc(d.spec.grade)+')</h4>'
     +'<table class="mini"><tr><th>항목</th><th>기준</th><th class="num">대표값</th></tr>';
   d.criteria.forEach(function(c,i){
     var k=keys[i],sum=0,n=0;
@@ -962,10 +1264,111 @@ function extraDetail(r){
     h+='<tr><td>'+esc(c.name)+' <span class="sub">'+esc(c.sym)+' · '+esc(c.unit)+'</span></td>'
       +'<td class="mono">'+esc(c.limit)+'</td><td class="num">'+(n?Math.round(sum/n):'—')+'</td></tr>';
   });
-  return h+'</table><div class="note" style="margin-top:8px">'+d.coilCount
+  h+='</table><div class="note" style="margin-top:8px">'+d.coilCount
     +'개 코일의 평균값입니다. 코일별 성적은 «미리보기»에서 A4 보증서로 확인합니다.</div></div>';
+  if(r.corrections&&r.corrections.length){
+    h+='<div class="d-sect"><h4>정정 이력 ('+r.corrections.length+'건)</h4><table class="mini"><tr><th>버전</th><th>코일</th><th>항목</th><th class="num">전 → 후</th></tr>';
+    r.corrections.forEach(function(c){h+='<tr><td class="mono">'+esc(c.fromVer)+'→'+esc(c.toVer)+'</td><td class="mono">'+esc(c.coil)+'</td><td>'+esc(FIELD_LABEL[c.field]||c.field)+'</td><td class="num">'+c.from+' → <b>'+c.to+'</b></td></tr>';});
+    h+='</table><div class="note" style="margin-top:8px">사유·정정자·일시는 «정정 이력» 탭과 재발행본 3항에 있습니다.</div></div>';
+  }
+  return h;
+}
+
+// ── 시험값 정정 ────────────────────────────────────────────────────────────
+// 시험값(YP·TS·EL·도금량)은 correct 등급 — 사유를 남기고 현재 버전을 회수한 뒤 다음 버전으로
+// 재발행하는 절차로만 고친다. 두께·폭·중량은 locked — 원천(생산실적·계량)에서 정정한다.
+var corr={row:null,doc:null};
+var REASONS=['시험기 보정 반영','전사(입력) 오류','재시험 결과 반영','기타'];
+function localNow(){var d=new Date(),p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}
+function nextVer(r){return 'v'+((MesReport.num(r.ver)||1)+1);}
+function openCorrection(id){
+  var r=rowById(id);if(!r)return;
+  if(!/^(발행|재발행)$/.test(r.st)){toast('발행·재발행 상태만 정정할 수 있습니다');return;}
+  corr.row=r;corr.doc=MesReport.buildCertDoc(r);
+  var d=corr.doc,F=MesReport.FIELDS,nv=nextVer(r);
+  $('#corr-title').textContent='시험값 정정 — '+r.no+' '+r.ver+' → '+nv;
+  var h='<div class="callout">시험값은 <b>정정 절차로만</b> 고칩니다. 저장하면 <b>'+esc(r.ver)+' 은 회수</b>되고 정정된 값으로 <b>'+nv+' 가 재발행</b>됩니다. '
+    +'정정 내역(전·후·사유·정정자·일시)은 재발행본의 3항에 인쇄되고 정정된 칸에는 ※ 가 붙습니다. '
+    +'두께·폭·중량은 생산실적·계량 값이라 이 화면에서 고칠 수 없습니다 — 원천에서 정정하세요.</div>';
+  h+='<div class="grid"><table class="mini corr-tbl"><thead><tr><th>코일번호</th>';
+  ['thk','wid','wgt'].forEach(function(k){var f=F['coils[].'+k];h+='<th class="lock num" title="'+esc(f.src)+' 값 — 이 화면에서 정정 불가">'+esc(f.label)+' <span class="lk">잠금</span></th>';});
+  MesReport.TEST_FIELDS.forEach(function(k){var f=F['coils[].'+k];var min=k==='coat'?d.coat.min:d.spec[k];
+    h+='<th class="num">'+esc(f.sym)+' <span class="sub" style="display:inline">('+esc(f.unit)+')</span><span class="min">'+(min==null?'규정 없음':'기준 ≥ '+min)+'</span></th>';});
+  h+='</tr></thead><tbody>';
+  d.coils.forEach(function(c){
+    h+='<tr><td class="mono">'+esc(c.no)+'<span class="sub">'+esc(c.heat)+'</span></td>'
+      +'<td class="lock num mono">'+(c.thk==null?'—':c.thk.toFixed(3))+'</td><td class="lock num mono">'+MesReport.comma(c.wid)+'</td><td class="lock num mono">'+MesReport.comma(c.wgt)+'</td>';
+    MesReport.TEST_FIELDS.forEach(function(k){
+      var noRule=k==='el'&&d.spec.el==null;
+      h+='<td class="num">'+(noRule?'<span class="sub">규정 없음</span>'
+        :'<input type="number" step="1" class="ci" data-coil="'+esc(c.no)+'" data-field="'+k+'" data-cur="'+c[k]+'" value="'+c[k]+'" aria-label="'+esc(c.no)+' '+esc(F['coils[].'+k].label)+'">'
+         +'<span class="cur">현재 '+c[k]+(c.corrected&&c.corrected[k]?' ※':'')+'</span>')+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="form" style="padding:0;grid-template-columns:220px 1fr"><div class="f-field"><label>정정 사유 (필수)</label><select class="inp" id="corr-cat">'
+    +REASONS.map(function(x){return '<option>'+esc(x)+'</option>';}).join('')+'</select></div>'
+    +'<div class="f-field"><label>상세</label><input class="inp" id="corr-txt" placeholder="예) 9/15 인장시험기 교정 후 재산출" maxlength="120" autocomplete="off"></div></div>';
+  h+='<div class="note">정정자 <b>품질관리자</b> (목업 — 역할 모델은 다음 단계) · 정정 일시 '+localNow().replace('T',' ')+'</div>';
+  $('#corr-body').innerHTML=h;
+  closeDrawer();
+  $('#corr').classList.add('on');$('#corr').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+  corrValidate();
+  var first=$('#corr .ci');if(first)first.focus();
+}
+function corrItems(){
+  // 비운 칸은 '변경 없음'으로 본다 — 새 값을 치려고 지운 순간마다 오류를 내지 않기 위해
+  return $$('#corr .ci').map(function(i){var cur=i.getAttribute('data-cur');return {coil:i.getAttribute('data-coil'),field:i.getAttribute('data-field'),to:i.value===''?cur:i.value,cur:cur,el:i};});
+}
+function corrReason(){var c=$('#corr-cat'),t=$('#corr-txt');if(!c)return '';var x=(t&&t.value.trim())||'';return c.value+(x?' — '+x:'');}
+function corrValidate(){
+  if(!corr.doc)return;
+  var items=corrItems();
+  var v=MesReport.validateCorrections(corr.doc,items.map(function(i){return {coil:i.coil,field:i.field,to:i.to};}));
+  items.forEach(function(i){
+    var err=null;v.errors.forEach(function(e){if(e.coil===i.coil&&e.field===i.field)err=e;});
+    var chg=String(i.to)!==String(i.cur);
+    i.el.classList.toggle('chg',chg&&!err);i.el.classList.toggle('bad',!!err);
+    var old=i.el.parentNode.querySelector('.err');if(old)old.remove();
+    if(err){var sp=document.createElement('span');sp.className='err';sp.textContent=err.reason;i.el.parentNode.appendChild(sp);}
+    i.el.title=err?err.reason:'';
+  });
+  var ok=v.ok&&!!corrReason();
+  $('#corr-sum').innerHTML='변경 <b>'+v.changed.length+'건</b>'+(v.errors.length?' · <span class="bad">오류 '+v.errors.length+'건</span>':'')
+    +(!v.changed.length&&!v.errors.length?' — 정정할 값을 입력하세요':'');
+  $('#corr-submit').disabled=!ok;
+  $('#corr-submit').textContent=nextVer(corr.row)+' 로 정정 재발행';
+}
+function corrSubmit(){
+  if(!corr.row||$('#corr-submit').disabled)return;
+  var items=corrItems().map(function(i){return {coil:i.coil,field:i.field,to:i.to};});
+  var res;
+  try{res=repo.correct(corr.row.id,{items:items,reason:corrReason(),by:'품질관리자',at:localNow()});}
+  catch(e){toast(e.message);return;}
+  ROWS=repo.rows();
+  closeCorrection();renderTable();renderHistory();
+  toast(res.reissued.no+' '+res.recalled.ver+' 회수 → '+res.reissued.ver+' 재발행 · '+res.history.items.length+'건 정정');
+  MesReport.open(res.reissued,false);
+}
+function closeCorrection(){$('#corr').classList.remove('on');$('#corr').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');corr.row=null;corr.doc=null;}
+function renderHistory(){
+  var H=repo.history();
+  $('#cnt-corr').textContent=H.length;
+  $('#corr-meta').innerHTML='정정 재발행 <b>'+H.length+'건</b> · 이 브라우저에 저장됨';
+  if(!H.length){$('#corr-grid').innerHTML='<div class="empty"><div class="big">정정 이력이 없습니다</div>발행 목록에서 보증서를 열고 «시험값 정정»을 실행하면 여기에 남습니다</div>';return;}
+  var h='<table class="tbl"><thead><tr><th>일시</th><th>보증서</th><th>버전</th><th>정정자</th><th>사유</th><th>정정 항목</th></tr></thead><tbody>';
+  H.forEach(function(e){
+    h+='<tr><td class="mono">'+esc(String(e.at).replace('T',' '))+'</td>'
+      +'<td><span class="lnk" data-open="'+esc(e.no+'-'+e.toVer)+'">'+esc(e.no)+'</span></td>'
+      +'<td class="mono">'+esc(e.fromVer)+' → '+esc(e.toVer)+'</td><td>'+esc(e.by)+'</td>'
+      +'<td style="white-space:normal;max-width:280px">'+esc(e.reason)+'</td>'
+      +'<td><div class="hist-items">'+e.items.map(function(i){return '<span class="code">'+esc(i.coil)+' '+esc((FIELD_LABEL[i.field]||i.field).split(' ').pop())+' '+i.from+'→'+i.to+'</span>';}).join('')+'</div></td></tr>';
+  });
+  $('#corr-grid').innerHTML=h+'</tbody></table>';
 }
 renderTable();
+renderHistory();
 </script>
 </body>
 </html>

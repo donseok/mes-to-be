@@ -34,6 +34,7 @@
       + '<dl class="rp-stamp">'
       + '<dt>보증서번호</dt><dd class="mono">' + esc(doc.no) + ' ' + esc(doc.ver) + '</dd>'
       + '<dt>발행일</dt><dd class="mono">' + esc(doc.issued || '미발행') + '</dd>'
+      + (doc.firstIssued ? '<dt>최초 발행</dt><dd class="mono">' + esc(doc.firstIssued) + ' (' + esc(doc.supersedes || '') + ')</dd>' : '')
       + '<dt>페이지</dt><dd class="mono">' + pageNo + ' / ' + pageCount + '</dd>'
       + '</dl></div></div>';
   }
@@ -64,6 +65,37 @@
     return h + '</tbody></table></div>';
   }
 
+  // 정정 재발행일 때만. 읽는 사람이 첫 장에서 바로 알아야 한다.
+  function noticeHtml(doc) {
+    if (!doc.corrections.length) return '';
+    const n = doc.corrections.length;
+    return '<div class="rp-notice"><b>정정 재발행</b> — 본 보증서는 ' + esc(doc.supersedes || '이전 버전')
+      + (doc.firstIssued ? ' (' + esc(doc.firstIssued) + ' 발행)' : '') + '의 시험값 ' + n + '건을 정정하여 재발행한 것입니다. '
+      + '정정된 값은 <b>※</b> 로 표시하며 상세는 <span class="rp-nb">3항 정정 내역</span>에 있습니다. 이전 버전은 회수되었습니다.</div>';
+  }
+
+  const CORR_COLS = '<colgroup><col style="width:27mm"><col style="width:28mm"><col style="width:16mm"><col style="width:16mm">'
+    + '<col><col style="width:36mm"><col style="width:16mm"></colgroup>';
+  const FIELD_LABEL = { yp: '항복강도 YP', ts: '인장강도 TS', el: '연신율 EL', coat: '도금부착량 C/W' };
+
+  function corrHeadHtml(doc) {
+    return '<h4>3. 정정 내역<span class="rp-of">' + doc.corrections.length + '건</span></h4>';
+  }
+
+  function corrTableHtml(doc, from, to) {
+    const rows = doc.corrections.slice(from, to);
+    let h = '<table class="rp-tbl">' + CORR_COLS
+      + '<thead><tr><th>코일번호</th><th>항목</th><th>정정 전</th><th>정정 후</th><th>사유</th><th>정정자 · 일시</th><th>버전</th></tr></thead><tbody>';
+    rows.forEach(function (c) {
+      h += '<tr><td class="mono">' + esc(c.coil) + '</td><td>' + esc(FIELD_LABEL[c.field] || c.field) + '</td>'
+        + '<td class="num">' + comma(c.from) + '</td><td class="num rp-corr">' + comma(c.to) + '</td>'
+        + '<td class="wrap">' + esc(c.reason) + '</td>'
+        + '<td class="wrap">' + esc(c.by) + '<br><span class="mono rp-nb">' + esc(String(c.at || '').replace('T', ' ')) + '</span></td>'
+        + '<td class="ctr mono">' + esc(c.fromVer) + '→' + esc(c.toVer) + '</td></tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
   // 폭 합계 180mm = A4 210mm - 좌우 여백 15mm×2
   const COILS_COLS = '<colgroup><col style="width:11mm"><col style="width:26mm"><col style="width:20mm">'
     + '<col style="width:16mm"><col style="width:14mm"><col style="width:20mm"><col style="width:13mm">'
@@ -85,16 +117,21 @@
       + '<th>중량<br>(kg)</th><th>YP<br>(MPa)</th><th>TS<br>(MPa)</th><th>EL<br>(%)</th>'
       + '<th>도금부착량<br>(g/㎡)</th><th>판정</th></tr></thead><tbody>';
     rows.forEach(function (c) {
+      // 정정된 칸은 ※ 를 붙여 원본 성적과 구분한다 — 상세는 3항
+      const tv = function (k, txt) {
+        const m = c.corrected && c.corrected[k];
+        return '<td class="num' + (m ? ' rp-corr' : '') + '">' + txt + (m ? '<sup>※</sup>' : '') + '</td>';
+      };
       h += '<tr><td class="ctr mono">' + c.seq + '</td>'
         + '<td class="mono">' + esc(c.no) + '</td>'
         + '<td class="mono">' + esc(c.heat) + '</td>'
         + '<td class="num">' + fx(c.thk, 3) + '</td>'
         + '<td class="num">' + comma(c.wid) + '</td>'
         + '<td class="num">' + comma(c.wgt) + '</td>'
-        + '<td class="num">' + comma(c.yp) + '</td>'
-        + '<td class="num">' + comma(c.ts) + '</td>'
-        + '<td class="num">' + (c.el == null ? '—' : comma(c.el)) + '</td>'
-        + '<td class="num">' + comma(c.coat) + '</td>'
+        + tv('yp', comma(c.yp))
+        + tv('ts', comma(c.ts))
+        + tv('el', c.el == null ? '—' : comma(c.el))
+        + tv('coat', comma(c.coat))
         + '<td class="ctr ' + (c.pass ? 'rp-pass' : 'rp-fail') + '">' + (c.pass ? '합격' : '불합격') + '</td></tr>';
     });
     h += '</tbody><tfoot><tr>'
@@ -141,19 +178,30 @@
     // 2) 높이 제한 없는 시트에 모든 조각을 그려 각각의 높이를 잰다.
     host.innerHTML = '<div class="rp-sheet rp-sheet--measure"><div class="rp-body">'
       + '<div id="rp-m-info">' + infoHtml(doc) + '</div>'
+      + '<div id="rp-m-notice">' + noticeHtml(doc) + '</div>'
       + '<div id="rp-m-crit">' + criteriaHtml(doc) + '</div>'
       + '<div class="rp-sect" id="rp-m-coils">' + coilsHeadHtml(doc) + coilsTableHtml(doc, 0, doc.coils.length, true) + '</div>'
+      + (doc.corrections.length ? '<div class="rp-sect" id="rp-m-corr">' + corrHeadHtml(doc) + corrTableHtml(doc, 0, doc.corrections.length) + '</div>' : '')
       + '<div id="rp-m-sign">' + signHtml(doc) + '</div>'
       + '</div></div>';
     const coilSect = host.querySelector('#rp-m-coils');
     const csCs = getComputedStyle(coilSect);
     const rowHs = Array.prototype.map.call(coilSect.querySelectorAll('tbody tr'), function (tr) { return tr.offsetHeight; });
+    const noticeEl = host.querySelector('#rp-m-notice').firstElementChild;
+    const corrSect = host.querySelector('#rp-m-corr');
+    const corrBlock = corrSect ? {
+      id: 'corr', kind: 'table',
+      headH: outerH(corrSect.querySelector('h4')) + corrSect.querySelector('thead').offsetHeight,
+      footH: parseFloat(getComputedStyle(corrSect).marginBottom || 0),
+      rowHs: Array.prototype.map.call(corrSect.querySelectorAll('tbody tr'), function (tr) { return tr.offsetHeight; }),
+    } : null;
 
     return {
       bodyH: bodyH,
       sheetPxW: sheetPxW,
       blocks: [
         { id: 'info', kind: 'block', h: outerH(host.querySelector('#rp-m-info').firstElementChild) },
+        noticeEl ? { id: 'notice', kind: 'block', h: outerH(noticeEl) } : null,
         { id: 'crit', kind: 'block', h: outerH(host.querySelector('#rp-m-crit').firstElementChild) },
         {
           id: 'coils', kind: 'table',
@@ -161,11 +209,12 @@
           footH: coilSect.querySelector('tfoot').offsetHeight + parseFloat(csCs.marginBottom || 0),
           rowHs: rowHs,
         },
+        corrBlock,
         {
           id: 'sign', kind: 'block',
           h: outerH(host.querySelector('.rp-decl')) + outerH(host.querySelector('.rp-sign')),
         },
-      ],
+      ].filter(Boolean),
     };
   }
 
@@ -175,7 +224,13 @@
       let body = '';
       pieces.forEach(function (p) {
         if (p.id === 'info') body += infoHtml(doc);
+        else if (p.id === 'notice') body += noticeHtml(doc);
         else if (p.id === 'crit') body += criteriaHtml(doc);
+        else if (p.id === 'corr') {
+          body += '<div class="rp-sect">' + (p.from === 0 ? corrHeadHtml(doc)
+            : '<h4>3. 정정 내역<span class="rp-of">' + (p.from + 1) + ' ~ ' + p.to + ' / ' + doc.corrections.length + '건 (이어서)</span></h4>')
+            + corrTableHtml(doc, p.from, p.to) + '</div>';
+        }
         else if (p.id === 'sign') body += signHtml(doc);
         else if (p.id === 'coils') {
           body += '<div class="rp-sect">' + (p.from === 0 ? coilsHeadHtml(doc)
@@ -293,6 +348,6 @@
 
   g.MesReport = Object.assign(g.MesReport || {}, {
     open, close, isOpen, printNow, draw,
-    _internal: { measure, renderPages, headHtml, infoHtml, criteriaHtml, coilsTableHtml, signHtml, footHtml, outerH },
+    _internal: { measure, renderPages, headHtml, infoHtml, noticeHtml, criteriaHtml, coilsTableHtml, corrTableHtml, signHtml, footHtml, outerH },
   });
 })(globalThis);
