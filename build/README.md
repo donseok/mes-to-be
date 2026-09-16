@@ -21,7 +21,9 @@
 | `modules/simulation.html` | 품질설계 시뮬레이션 모듈 (주문 1건을 ①입력검증 ②주문정합성 ③주문단중 ④생산가부 ⑤품질사양매칭 ⑥설계값산출 6단계에 태워 기준 반영을 추적 — 좌: 검증 케이스·주문 입력·변경 이력, 중: 파이프라인 단계 상세·기대값 대조, 우: 근거 추적 3층·이상징후. 기준 데이터는 다른 모듈의 localStorage를 먼저 읽고 없으면 내장 축약 시드 사용) |
 | `modules/order-consistency.html` | 주문정합성체크 모듈 (엑셀 룰 2종을 정제·병합한 통합 룰셋 138건 — 룰 목록·조건 빌더·주문 시뮬레이션·검토 이슈·코드 사전·변경 이력 6탭. 시드는 `build/clean_rules.py --inject`가 `/*__OC_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-judgment.html` | 품질판정 1차 화면 (판정 대기 목록 · 검사값 vs 기준값 drawer · 합격/불합격/보류) |
-| `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · PDF 발행) |
+| `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · A4 보증서 미리보기/인쇄) |
+| `assets/report/report-model.js` · `report-doc.js` · `report.css` | A4 리포트 렌더러 0단계 (발행 목록 1행 → 문서 모델 → 실측 페이지 분할 → A4 시트 DOM → 브라우저 인쇄/PDF). 전역 `MesReport`. `build/inject_report.py`가 `quality-certificate.html` 마커 구간(`/*__REPORT_CSS_START__*/`, `/*__REPORT_JS_START__*/`)에 주입. 테스트 `node --test tests/report/*.test.mjs` |
+| `build/inject_report.py` | 위 3파일을 `modules/quality-certificate.html`에 주입(멱등). `--check`는 최신 여부만 확인 |
 | `modules/inspection-certificate.html` | 검사증명서관리 1차 화면 (MTC 목록 · 기계적성질 · 화학 성분) |
 | `modules/tag-management.html` | Tag관리 1차 화면 (Tag 발행 목록 · Tag 레이아웃 미리보기) |
 | `build/template.html` | 포털 셸 (사이드바 메뉴, 해시 라우팅 뼈대, iframe 자리) |
@@ -35,6 +37,43 @@ python3 build/build_single.py
 
 `build/template.html`에 CSS/JS를 인라인하고 `modules/` 아래 모든 모듈(품질사양·원자재강종·규격약호·압연두께Set보정·공정라우팅·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·품질보증서·검사증명서·Tag·마스터코드)을 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
+
+## A4 리포트 렌더러 (품질보증서 — 0단계)
+
+`assets/report/`는 OZ Report 같은 상용 리포트 툴을 대신할 **자체 리포트 엔진의 0단계**다.
+양식은 아직 JSON이 아니라 코드에 고정돼 있고(1단계에서 양식 스키마로 분리), 품질보증서 1종만 그린다.
+
+```bash
+python3 build/inject_report.py --check   # 주입 구간이 assets/report 와 같은지 확인
+python3 build/inject_report.py           # 주입(멱등)
+node --test tests/report/*.test.mjs      # 모델 + 페이지 분할 + 주입 드리프트
+```
+
+**설계 — 렌더링 엔진을 직접 만들지 않는다.** 페이지를 실제로 그리는 일은 브라우저(Chromium)에
+맡기고, 우리는 "무엇을 어느 장에 올릴지"만 정한다. 미리보기와 인쇄가 같은 CSS·같은 엔진을 타므로
+화면과 출력이 어긋나지 않는다.
+
+**2-pass 렌더.** 크롬은 `@page` 여백 상자(`@bottom-right` 등)를 지원하지 않아 `N / M` 페이지 번호를
+CSS로 찍을 수 없고, 장마다 소계를 넣는 것도 CSS로는 불가능하다. 그래서
+
+1. 숨은 컨테이너(`.rp-measure`)에 전부 그려 블록·표 행의 실제 높이를 잰다 (`report-doc.js` `measure`)
+2. 측정값만 받는 순수 함수로 장을 나눈다 (`report-model.js` `paginate` — DOM 없이 테스트 가능)
+3. 장별로 머리글·바닥글·소계를 붙여 다시 그린다 (`renderPages`)
+
+웹폰트가 측정 뒤에 도착하면 행 높이가 달라져 장 나눔이 어긋나므로 `document.fonts.ready` 후 한 번 더 그린다.
+
+**인쇄.** `@page{size:A4;margin:0}` + 시트 `210mm × 296.8mm`(297mm로 딱 맞추면 반올림 때문에 빈 장이
+한 장 더 나오는 브라우저가 있다). 인쇄 규칙은 `body.rp-on`(미리보기 열림)으로 한정해, 미리보기를 닫은
+상태의 Ctrl+P가 빈 종이를 뱉지 않게 한다. 포털에서는 모듈이 같은 출처 `srcdoc` iframe 안에서 돌고,
+프레임 안에서 부른 `window.print()`는 그 프레임 문서만 인쇄한다.
+
+**검증.** 실제 Chromium으로 시드 9건 + 코일 수 1·2·12·24·37·60·120·200에 대해 «미리보기 장수 ==
+인쇄 PDF 장수», «어느 장도 `overflow:hidden`에 잘린 내용이 없음», «페이지 번호·총계·서명란 각 1회»를
+확인했다. 200코일 → 7장까지 일치한다.
+
+**아직 없는 것 (1단계 이후).** 양식 JSON 스키마·양식 편집기, 서버 렌더링(headless Chromium)과 대량
+배치, 발행본 스냅샷·전자서명·QR 검증, 검사증명서·Tag 라벨(라벨 프린터는 PDF가 아니라 ZPL 직결이라
+별도 경로다).
 
 ## 룰 시드 파이프라인 (주문정합성체크 모듈 전용)
 

@@ -1,0 +1,123 @@
+/* assets/report/report.css — A4 품질보증서 시트 + 미리보기 오버레이 + 인쇄 스타일
+   빌드 시 build/inject_report.py 가 modules/quality-certificate.html 마커 구간에 복사한다.
+
+   화면 미리보기와 인쇄가 같은 규칙을 탄다. 미리보기 전용 CSS를 따로 두면
+   "화면과 출력이 다르다"가 반드시 생기므로, 화면에서만 다른 것은 배율·그림자·스크림뿐이다. */
+
+:root{
+  /* A4. 시트 높이를 297mm 로 딱 맞추면 렌더러 반올림 때문에 빈 페이지가 한 장 더 나오는
+     브라우저가 있어 0.2mm 를 뺀다. 빈 장이 보이면 이 값을 더 줄인다. */
+  --rp-sheet-w:210mm; --rp-sheet-h:296.8mm;
+  --rp-pad-x:15mm; --rp-pad-y:14mm;
+  --rp-ink:#000; --rp-ink-2:#333; --rp-ink-3:#666;
+  --rp-line:#000; --rp-line-2:#999; --rp-band:#ECECEC;
+  --rp-zoom:1;
+}
+
+/* ── 미리보기 오버레이 (화면 전용) ───────────────────────────────────────── */
+.rp-overlay{position:fixed;inset:0;z-index:80;background:rgba(28,26,22,.55);display:none;flex-direction:column}
+.rp-overlay.on{display:flex}
+.rp-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#23282D;color:#fff;flex:0 0 auto}
+.rp-bar h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.01em}
+.rp-bar .rp-sub{font-size:12px;color:#B9C0C7}
+.rp-bar .rp-spacer{flex:1}
+.rp-bar label{font-size:11.5px;color:#B9C0C7;display:flex;align-items:center;gap:6px}
+.rp-bar input[type=number]{width:62px;height:30px;padding:0 8px;border-radius:8px;border:1px solid #4A5158;background:#161A1E;color:#fff;font:inherit;font-size:12.5px}
+.rp-bar button{height:32px;padding:0 14px;border-radius:9px;border:1px solid #4A5158;background:#2E353B;color:#fff;font-size:13px;font-weight:600}
+.rp-bar button:hover{background:#3A4147}
+.rp-bar button.pri{background:#166578;border-color:#166578;font-weight:800}
+.rp-bar button.pri:hover{background:#0F4854}
+.rp-scroll{flex:1;overflow:auto;padding:18px 0 28px}
+.rp-pages{zoom:var(--rp-zoom);display:flex;flex-direction:column;align-items:center;gap:14px}
+.rp-note{color:#C9D0D7;font-size:11.5px;text-align:center;padding:0 16px 10px}
+
+/* 측정 전용 컨테이너. 화면 밖에 두되 레이아웃은 실제와 같은 폭으로 잡아야 높이가 맞는다. */
+.rp-measure{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;zoom:1}
+.rp-sheet--measure{height:auto;box-shadow:none}
+
+/* ── A4 시트 ─────────────────────────────────────────────────────────────── */
+.rp-sheet{
+  position:relative;box-sizing:border-box;
+  width:var(--rp-sheet-w);height:var(--rp-sheet-h);
+  padding:var(--rp-pad-y) var(--rp-pad-x);
+  background:#fff;color:var(--rp-ink);overflow:hidden;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-size:8.6pt;line-height:1.38;
+  display:flex;flex-direction:column;
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.rp-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.rp-sheet .mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.rp-sheet .num{text-align:right;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.rp-sheet .ctr{text-align:center}
+
+/* 머리글 — 모든 장에 반복 */
+.rp-head{flex:0 0 auto;border-bottom:1.6pt solid var(--rp-line);padding-bottom:3mm;margin-bottom:4mm}
+.rp-head-top{display:flex;align-items:flex-start;gap:8mm}
+.rp-maker{flex:0 0 52mm}
+.rp-maker b{display:block;font-size:10pt;font-weight:800;letter-spacing:.02em}
+.rp-maker span{display:block;font-size:7.4pt;color:var(--rp-ink-3);margin-top:.6mm}
+.rp-title{flex:1;text-align:center}
+.rp-title b{display:block;font-size:16pt;font-weight:800;letter-spacing:.22em;padding-left:.22em}
+.rp-title span{display:block;font-size:7.6pt;color:var(--rp-ink-2);letter-spacing:.06em;margin-top:.8mm}
+.rp-stamp{flex:0 0 52mm;display:grid;grid-template-columns:auto 1fr;gap:.6mm 3mm;font-size:7.6pt}
+.rp-stamp dt{color:var(--rp-ink-3);margin:0;white-space:nowrap}
+.rp-stamp dd{margin:0;text-align:right;font-weight:700}
+
+/* 정보 블록 — 1장에만 */
+.rp-info{flex:0 0 auto;margin-bottom:4mm}
+.rp-info table{width:100%;border-collapse:collapse;font-size:8.4pt}
+.rp-info th,.rp-info td{border:.5pt solid var(--rp-line-2);padding:1.5mm 2.4mm;vertical-align:middle}
+.rp-info th{background:var(--rp-band);text-align:left;font-weight:700;width:24mm;white-space:nowrap;color:var(--rp-ink-2)}
+
+.rp-sect{flex:0 0 auto;margin-bottom:4mm}
+.rp-sect > h4{margin:0 0 1.6mm;font-size:8.6pt;font-weight:800;letter-spacing:.04em}
+.rp-sect > h4 .rp-of{font-weight:400;color:var(--rp-ink-3);font-size:7.6pt;margin-left:2mm}
+
+/* 표 공통 */
+.rp-tbl{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed}
+.rp-tbl th,.rp-tbl td{border:.5pt solid var(--rp-line-2);padding:1.15mm 1.6mm;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-tbl thead th{background:var(--rp-band);font-weight:700;text-align:center;color:var(--rp-ink-2)}
+.rp-tbl tfoot td{background:#F6F6F6;font-weight:700}
+.rp-tbl .sub{font-size:7pt;color:var(--rp-ink-3)}
+.rp-pass{font-weight:800}
+.rp-fail{font-weight:800;text-decoration:underline}
+
+/* 판정문·서명 — 마지막 장에만 */
+.rp-decl{flex:0 0 auto;border:.8pt solid var(--rp-line);padding:3mm 4mm;margin-bottom:4mm;font-size:8.6pt;line-height:1.55}
+.rp-decl b{font-weight:800}
+.rp-sign{flex:0 0 auto;display:flex;gap:6mm;align-items:flex-end}
+.rp-sign-txt{flex:1;font-size:8pt;color:var(--rp-ink-2);line-height:1.6}
+.rp-sign-box{flex:0 0 40mm;border:.5pt solid var(--rp-line-2);height:26mm;display:flex;flex-direction:column}
+.rp-sign-box b{display:block;background:var(--rp-band);border-bottom:.5pt solid var(--rp-line-2);padding:1.2mm 0;text-align:center;font-size:7.6pt;font-weight:700;color:var(--rp-ink-2)}
+.rp-sign-box i{flex:1;display:grid;place-items:center;font-style:normal;font-size:7.4pt;color:var(--rp-ink-3)}
+
+/* 바닥글 — 모든 장에 반복 */
+.rp-foot{flex:0 0 auto;margin-top:auto;padding-top:2.4mm;border-top:.5pt solid var(--rp-line-2);display:flex;align-items:baseline;gap:6mm;font-size:7pt;color:var(--rp-ink-3)}
+.rp-foot .rp-spacer{flex:1}
+.rp-foot b{font-weight:700;color:var(--rp-ink-2)}
+
+/* 워터마크 */
+.rp-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0}
+.rp-wm span{font-size:72pt;font-weight:800;letter-spacing:.18em;color:rgba(176,58,50,.13);transform:rotate(-24deg);white-space:nowrap}
+.rp-sheet > *{position:relative;z-index:1}
+
+/* 목업 표시 — 실제 발행본과 헷갈리지 않게 모든 장에 남긴다 */
+.rp-mock{position:absolute;right:var(--rp-pad-x);top:calc(var(--rp-pad-y) / 2);font-size:6.6pt;letter-spacing:.14em;font-weight:800;color:#B03A32;z-index:2}
+
+/* ── 인쇄 ────────────────────────────────────────────────────────────────── */
+@page{size:A4;margin:0}
+@media print{
+  /* 미리보기가 열려 있을 때만 화면을 리포트로 바꾼다. 닫힌 상태의 Ctrl+P 는 건드리지 않는다. */
+  body.rp-on{margin:0!important;padding:0!important;background:#fff!important;height:auto!important}
+  body.rp-on > *:not(#rp-root){display:none!important}
+  body.rp-on #rp-root{position:static!important;display:block!important;inset:auto!important;background:none!important}
+  body.rp-on #rp-root .rp-bar,
+  body.rp-on #rp-root .rp-note,
+  body.rp-on #rp-root .rp-measure{display:none!important}
+  body.rp-on .rp-scroll{overflow:visible!important;padding:0!important}
+  body.rp-on .rp-pages{zoom:1!important;display:block!important;gap:0!important}
+  body.rp-on .rp-sheet{box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always}
+  body.rp-on .rp-sheet:last-child{break-after:auto;page-break-after:auto}
+}

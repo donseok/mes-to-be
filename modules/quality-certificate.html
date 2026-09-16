@@ -118,6 +118,133 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 .layer .nm{flex:1;font-weight:700}
 .layer .th{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
 
+
+/* A4 보증서 리포트 — assets/report/report.css 주입 구간 (build/inject_report.py) */
+/*__REPORT_CSS_START__*/
+/* assets/report/report.css — A4 품질보증서 시트 + 미리보기 오버레이 + 인쇄 스타일
+   빌드 시 build/inject_report.py 가 modules/quality-certificate.html 마커 구간에 복사한다.
+
+   화면 미리보기와 인쇄가 같은 규칙을 탄다. 미리보기 전용 CSS를 따로 두면
+   "화면과 출력이 다르다"가 반드시 생기므로, 화면에서만 다른 것은 배율·그림자·스크림뿐이다. */
+
+:root{
+  /* A4. 시트 높이를 297mm 로 딱 맞추면 렌더러 반올림 때문에 빈 페이지가 한 장 더 나오는
+     브라우저가 있어 0.2mm 를 뺀다. 빈 장이 보이면 이 값을 더 줄인다. */
+  --rp-sheet-w:210mm; --rp-sheet-h:296.8mm;
+  --rp-pad-x:15mm; --rp-pad-y:14mm;
+  --rp-ink:#000; --rp-ink-2:#333; --rp-ink-3:#666;
+  --rp-line:#000; --rp-line-2:#999; --rp-band:#ECECEC;
+  --rp-zoom:1;
+}
+
+/* ── 미리보기 오버레이 (화면 전용) ───────────────────────────────────────── */
+.rp-overlay{position:fixed;inset:0;z-index:80;background:rgba(28,26,22,.55);display:none;flex-direction:column}
+.rp-overlay.on{display:flex}
+.rp-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#23282D;color:#fff;flex:0 0 auto}
+.rp-bar h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.01em}
+.rp-bar .rp-sub{font-size:12px;color:#B9C0C7}
+.rp-bar .rp-spacer{flex:1}
+.rp-bar label{font-size:11.5px;color:#B9C0C7;display:flex;align-items:center;gap:6px}
+.rp-bar input[type=number]{width:62px;height:30px;padding:0 8px;border-radius:8px;border:1px solid #4A5158;background:#161A1E;color:#fff;font:inherit;font-size:12.5px}
+.rp-bar button{height:32px;padding:0 14px;border-radius:9px;border:1px solid #4A5158;background:#2E353B;color:#fff;font-size:13px;font-weight:600}
+.rp-bar button:hover{background:#3A4147}
+.rp-bar button.pri{background:#166578;border-color:#166578;font-weight:800}
+.rp-bar button.pri:hover{background:#0F4854}
+.rp-scroll{flex:1;overflow:auto;padding:18px 0 28px}
+.rp-pages{zoom:var(--rp-zoom);display:flex;flex-direction:column;align-items:center;gap:14px}
+.rp-note{color:#C9D0D7;font-size:11.5px;text-align:center;padding:0 16px 10px}
+
+/* 측정 전용 컨테이너. 화면 밖에 두되 레이아웃은 실제와 같은 폭으로 잡아야 높이가 맞는다. */
+.rp-measure{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;zoom:1}
+.rp-sheet--measure{height:auto;box-shadow:none}
+
+/* ── A4 시트 ─────────────────────────────────────────────────────────────── */
+.rp-sheet{
+  position:relative;box-sizing:border-box;
+  width:var(--rp-sheet-w);height:var(--rp-sheet-h);
+  padding:var(--rp-pad-y) var(--rp-pad-x);
+  background:#fff;color:var(--rp-ink);overflow:hidden;
+  font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;
+  font-size:8.6pt;line-height:1.38;
+  display:flex;flex-direction:column;
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.rp-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.rp-sheet .mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.rp-sheet .num{text-align:right;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.rp-sheet .ctr{text-align:center}
+
+/* 머리글 — 모든 장에 반복 */
+.rp-head{flex:0 0 auto;border-bottom:1.6pt solid var(--rp-line);padding-bottom:3mm;margin-bottom:4mm}
+.rp-head-top{display:flex;align-items:flex-start;gap:8mm}
+.rp-maker{flex:0 0 52mm}
+.rp-maker b{display:block;font-size:10pt;font-weight:800;letter-spacing:.02em}
+.rp-maker span{display:block;font-size:7.4pt;color:var(--rp-ink-3);margin-top:.6mm}
+.rp-title{flex:1;text-align:center}
+.rp-title b{display:block;font-size:16pt;font-weight:800;letter-spacing:.22em;padding-left:.22em}
+.rp-title span{display:block;font-size:7.6pt;color:var(--rp-ink-2);letter-spacing:.06em;margin-top:.8mm}
+.rp-stamp{flex:0 0 52mm;display:grid;grid-template-columns:auto 1fr;gap:.6mm 3mm;font-size:7.6pt}
+.rp-stamp dt{color:var(--rp-ink-3);margin:0;white-space:nowrap}
+.rp-stamp dd{margin:0;text-align:right;font-weight:700}
+
+/* 정보 블록 — 1장에만 */
+.rp-info{flex:0 0 auto;margin-bottom:4mm}
+.rp-info table{width:100%;border-collapse:collapse;font-size:8.4pt}
+.rp-info th,.rp-info td{border:.5pt solid var(--rp-line-2);padding:1.5mm 2.4mm;vertical-align:middle}
+.rp-info th{background:var(--rp-band);text-align:left;font-weight:700;width:24mm;white-space:nowrap;color:var(--rp-ink-2)}
+
+.rp-sect{flex:0 0 auto;margin-bottom:4mm}
+.rp-sect > h4{margin:0 0 1.6mm;font-size:8.6pt;font-weight:800;letter-spacing:.04em}
+.rp-sect > h4 .rp-of{font-weight:400;color:var(--rp-ink-3);font-size:7.6pt;margin-left:2mm}
+
+/* 표 공통 */
+.rp-tbl{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed}
+.rp-tbl th,.rp-tbl td{border:.5pt solid var(--rp-line-2);padding:1.15mm 1.6mm;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-tbl thead th{background:var(--rp-band);font-weight:700;text-align:center;color:var(--rp-ink-2)}
+.rp-tbl tfoot td{background:#F6F6F6;font-weight:700}
+.rp-tbl .sub{font-size:7pt;color:var(--rp-ink-3)}
+.rp-pass{font-weight:800}
+.rp-fail{font-weight:800;text-decoration:underline}
+
+/* 판정문·서명 — 마지막 장에만 */
+.rp-decl{flex:0 0 auto;border:.8pt solid var(--rp-line);padding:3mm 4mm;margin-bottom:4mm;font-size:8.6pt;line-height:1.55}
+.rp-decl b{font-weight:800}
+.rp-sign{flex:0 0 auto;display:flex;gap:6mm;align-items:flex-end}
+.rp-sign-txt{flex:1;font-size:8pt;color:var(--rp-ink-2);line-height:1.6}
+.rp-sign-box{flex:0 0 40mm;border:.5pt solid var(--rp-line-2);height:26mm;display:flex;flex-direction:column}
+.rp-sign-box b{display:block;background:var(--rp-band);border-bottom:.5pt solid var(--rp-line-2);padding:1.2mm 0;text-align:center;font-size:7.6pt;font-weight:700;color:var(--rp-ink-2)}
+.rp-sign-box i{flex:1;display:grid;place-items:center;font-style:normal;font-size:7.4pt;color:var(--rp-ink-3)}
+
+/* 바닥글 — 모든 장에 반복 */
+.rp-foot{flex:0 0 auto;margin-top:auto;padding-top:2.4mm;border-top:.5pt solid var(--rp-line-2);display:flex;align-items:baseline;gap:6mm;font-size:7pt;color:var(--rp-ink-3)}
+.rp-foot .rp-spacer{flex:1}
+.rp-foot b{font-weight:700;color:var(--rp-ink-2)}
+
+/* 워터마크 */
+.rp-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0}
+.rp-wm span{font-size:72pt;font-weight:800;letter-spacing:.18em;color:rgba(176,58,50,.13);transform:rotate(-24deg);white-space:nowrap}
+.rp-sheet > *{position:relative;z-index:1}
+
+/* 목업 표시 — 실제 발행본과 헷갈리지 않게 모든 장에 남긴다 */
+.rp-mock{position:absolute;right:var(--rp-pad-x);top:calc(var(--rp-pad-y) / 2);font-size:6.6pt;letter-spacing:.14em;font-weight:800;color:#B03A32;z-index:2}
+
+/* ── 인쇄 ────────────────────────────────────────────────────────────────── */
+@page{size:A4;margin:0}
+@media print{
+  /* 미리보기가 열려 있을 때만 화면을 리포트로 바꾼다. 닫힌 상태의 Ctrl+P 는 건드리지 않는다. */
+  body.rp-on{margin:0!important;padding:0!important;background:#fff!important;height:auto!important}
+  body.rp-on > *:not(#rp-root){display:none!important}
+  body.rp-on #rp-root{position:static!important;display:block!important;inset:auto!important;background:none!important}
+  body.rp-on #rp-root .rp-bar,
+  body.rp-on #rp-root .rp-note,
+  body.rp-on #rp-root .rp-measure{display:none!important}
+  body.rp-on .rp-scroll{overflow:visible!important;padding:0!important}
+  body.rp-on .rp-pages{zoom:1!important;display:block!important;gap:0!important}
+  body.rp-on .rp-sheet{box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always}
+  body.rp-on .rp-sheet:last-child{break-after:auto;page-break-after:auto}
+}
+/*__REPORT_CSS_END__*/
 </style>
 </head>
 <body>
@@ -141,7 +268,7 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
     <div class="f-field" style="flex:1;min-width:180px"><label>키워드</label><input class="inp" id="f-q" type="search" placeholder="번호·품명·규격·담당 검색" autocomplete="off"></div>
     <button class="btn btn-pri" data-action="search">조회</button><button class="btn" data-action="reset">초기화</button>
   </div>
-  <div class="meta"><span id="meta"></span><span class="f-spacer"></span><button class="btn btn-sm" data-action="msg" data-msg="출력할 보증서를 선택하세요">선택 PDF 출력</button></div>
+  <div class="meta"><span id="meta"></span><span class="f-spacer"></span><button class="btn btn-sm" data-action="print-sel">선택 PDF 출력</button></div>
   <div class="card grid" id="grid"></div>
 </section>
 <section class="sc" id="sc-reg">
@@ -167,6 +294,572 @@ table.mini{width:100%;border-collapse:collapse;font-size:12.5px}
 <div class="toast" id="toast"></div>
 <script>
 'use strict';
+/* A4 보증서 리포트 — assets/report/*.js 주입 구간 (build/inject_report.py). 전역 MesReport */
+/*__REPORT_JS_START__*/
+/* assets/report/report-model.js — 품질보증서 문서 모델 + 페이지 분할 (순수 함수, DOM 없음)
+   빌드 시 build/inject_report.py 가 modules/quality-certificate.html 마커 구간에 복사한다.
+
+   0단계 리포트 프로토타입의 데이터 레이어다. 양식은 아직 JSON이 아니라 코드에 고정돼 있고
+   (1단계에서 양식 스키마로 분리), 여기서는 "발행 목록 1행 → A4 문서 데이터" 변환만 담당한다. */
+(function (g) {
+  'use strict';
+
+  // ── 규격 기준 ────────────────────────────────────────────────────────────
+  // 규격약호에서 강종을 골라 기계적 성질 하한을 정한다. 목업 값이며 실제 KS 표를 옮긴 것이 아니다.
+  // min 만 쓰는 이유: 보증서에 싣는 항목이 모두 '이상' 기준이기 때문이다.
+  const SPECS = [
+    { re: /SGC340|CGC340/, grade: 'SGC340', yp: 245, ts: 340, el: 20 },
+    { re: /SGLC570/, grade: 'SGLC570', yp: 560, ts: 570, el: null },
+    { re: /SGLCC|CGLCC/, grade: 'SGLCC', yp: 205, ts: 270, el: 20 },
+    { re: /SGCC|CGCC/, grade: 'SGCC', yp: 205, ts: 270, el: 20 },
+  ];
+  const DEFAULT_SPEC = { grade: '일반용', yp: 205, ts: 270, el: 20 };
+
+  // 품명코드 → 도금 종류·최소 부착량(양면, g/㎡). 주문 도금량코드가 시드에 없어 품명 기본값을 쓴다.
+  const COATS = {
+    G: { code: 'Z12', min: 120, label: '용융아연도금 (Z12)' },
+    L: { code: 'AZ150', min: 150, label: '알루미늄아연도금 (AZ150)' },
+    W: { code: 'AM90', min: 90, label: '아연알루미늄마그네슘도금 (AM90)' },
+    3: { code: 'Z08', min: 80, label: '칼라원판 용융아연도금 (Z08)' },
+    4: { code: 'AZ100', min: 100, label: '칼라원판 알루미늄아연도금 (AZ100)' },
+  };
+  const DEFAULT_COAT = { code: 'Z08', min: 80, label: '용융아연도금 (Z08)' };
+
+  // 상태 → 워터마크. '발행'만 워터마크가 없다.
+  const WATERMARKS = { 초안: 'DRAFT', 재발행: 'REISSUE', 회수: 'VOID' };
+
+  const TEST_METHODS = { yp: 'KS B 0802', ts: 'KS B 0802', el: 'KS B 0802', coat: 'KS D 0201' };
+
+  // ── 작은 유틸 ────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // 문자열에서 첫 숫자. 콤마 제거. 없으면 null. (shape-model.num 과 같은 규약)
+  function num(v) {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+    if (v == null) return null;
+    const m = String(v).replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+    return m ? Number(m[0]) : null;
+  }
+
+  function comma(n) {
+    if (n == null || !Number.isFinite(n)) return '—';
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // '0.450 × 1490' → { thk: 0.45, wid: 1490 }
+  function parseSize(s) {
+    const parts = String(s == null ? '' : s).split(/[×x]/);
+    return { thk: num(parts[0]), wid: num(parts[1]) };
+  }
+
+  // '3 : CCGI · KS3-CGCC' → { code: '3', name: 'CCGI', spec: 'KS3-CGCC' }
+  function parsePrd(s) {
+    const t = String(s == null ? '' : s);
+    const head = t.split('·')[0] || '';
+    const tail = t.indexOf('·') >= 0 ? t.slice(t.indexOf('·') + 1) : '';
+    const bits = head.split(':');
+    return {
+      code: (bits[0] || '').trim(),
+      name: (bits[1] || '').trim(),
+      spec: tail.trim(),
+    };
+  }
+
+  function specFor(specCode) {
+    const t = String(specCode == null ? '' : specCode).toUpperCase();
+    for (const s of SPECS) if (s.re.test(t)) return { grade: s.grade, yp: s.yp, ts: s.ts, el: s.el };
+    return Object.assign({}, DEFAULT_SPEC);
+  }
+
+  function coatFor(prdCode) {
+    return Object.assign({}, COATS[prdCode] || DEFAULT_COAT);
+  }
+
+  // ── 시드 난수 (문자열 → 재현 가능한 난수열) ───────────────────────────────
+  // 같은 보증서번호는 언제 열어도 같은 코일 목록이 나와야 한다. 목업이 매번 달라지면
+  // 화면 캡처·검토 기록이 서로 어긋나므로 Math.random 은 쓰지 않는다.
+  function hash32(str) {
+    let h = 2166136261 >>> 0;
+    const s = String(str);
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function rng(seed) {
+    let a = hash32(seed) || 1;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 총중량을 n개로 쪼갠다. 10kg 단위로 반올림하고 마지막 코일이 잔차를 흡수해 합이 정확히 total.
+  function splitWeight(total, n, rnd) {
+    if (n <= 0) return [];
+    if (n === 1) return [total];
+    const f = [];
+    let fs = 0;
+    for (let i = 0; i < n; i++) {
+      const v = 0.85 + rnd() * 0.3;
+      f.push(v);
+      fs += v;
+    }
+    const out = [];
+    let acc = 0;
+    for (let i = 0; i < n - 1; i++) {
+      const v = Math.max(10, Math.round((total * f[i]) / fs / 10) * 10);
+      out.push(v);
+      acc += v;
+    }
+    out.push(total - acc);
+    return out;
+  }
+
+  // ── 문서 모델 ────────────────────────────────────────────────────────────
+  // row: 발행 목록 1행. opts.coilCount 를 주면 코일 수를 바꾼다(페이지 분할 확인용 목업 조작).
+  // 코일 수를 바꾸면 코일당 평균 중량을 유지한 채 총중량을 다시 계산한다.
+  function buildCertDoc(row, opts) {
+    const o = opts || {};
+    const seedCoils = Math.max(1, num(row.coils) || 1);
+    const seedWgt = Math.max(0, num(row.wgt) || 0);
+    const n = Math.max(1, Math.min(200, o.coilCount == null ? seedCoils : Math.round(o.coilCount)));
+    const total = n === seedCoils ? seedWgt : Math.round((seedWgt / seedCoils) * n / 10) * 10;
+
+    const size = parseSize(row.size);
+    const prd = parsePrd(row.prd);
+    const spec = specFor(prd.spec);
+    const coat = coatFor(prd.code);
+    const rnd = rng(row.no + '|' + row.ver);
+
+    const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(row.date))
+      ? String(row.date).slice(2).replace(/-/g, '')
+      : String(row.no).replace(/\D/g, '').slice(0, 4) + '01';
+    const startSeq = 1 + Math.floor(rnd() * 40);
+    const weights = splitWeight(total, n, rnd);
+
+    const coils = [];
+    for (let i = 0; i < n; i++) {
+      const yp = Math.round(spec.yp * (1 + rnd() * 0.22));
+      const ts = Math.max(Math.round(spec.ts * (1 + rnd() * 0.18)), Math.round(yp * 1.12));
+      const el = spec.el == null ? null : Math.round(spec.el + rnd() * 12);
+      const cw = Math.round(coat.min * (1 + rnd() * 0.25));
+      const thk = size.thk == null ? null : Math.round((size.thk + (rnd() - 0.5) * 0.008) * 1000) / 1000;
+      const wid = size.wid == null ? null : size.wid + Math.round(rnd() * 3);
+      coils.push({
+        seq: i + 1,
+        no: 'C' + ymd + String(startSeq + i).padStart(3, '0'),
+        heat: 'H' + ymd.slice(0, 2) + '-' + (8800 + Math.floor(i / 3)),
+        thk: thk,
+        wid: wid,
+        wgt: weights[i],
+        yp: yp,
+        ts: ts,
+        el: el,
+        coat: cw,
+        pass: yp >= spec.yp && ts >= spec.ts && (el == null || el >= spec.el) && cw >= coat.min,
+      });
+    }
+
+    const issued = String(row.date) === '—' || !row.date ? null : String(row.date);
+    const doc = {
+      no: row.no,
+      ver: row.ver,
+      status: row.st,
+      watermark: WATERMARKS[row.st] || null,
+      customer: row.cus,
+      po: row.po,
+      order: row.ord,
+      prd: prd,
+      spec: spec,
+      coat: coat,
+      thk: size.thk,
+      wid: size.wid,
+      coilCount: n,
+      totalWgt: total,
+      issued: issued,
+      issuer: row.by,
+      coils: coils,
+      criteria: [
+        { name: '항복강도', sym: 'YP', unit: 'MPa', limit: spec.yp + ' 이상', method: TEST_METHODS.yp },
+        { name: '인장강도', sym: 'TS', unit: 'MPa', limit: spec.ts + ' 이상', method: TEST_METHODS.ts },
+        { name: '연신율', sym: 'EL', unit: '%', limit: spec.el == null ? '규정 없음' : spec.el + ' 이상', method: TEST_METHODS.el },
+        { name: '도금부착량(양면)', sym: 'C/W', unit: 'g/㎡', limit: coat.min + ' 이상', method: TEST_METHODS.coat },
+      ],
+    };
+    doc.docId = row.no + '-' + row.ver;
+    // 발행본 식별용 지문. 0단계에서는 표시만 하고 검증 화면은 없다(2단계).
+    doc.fingerprint = hash32(JSON.stringify([doc.docId, doc.totalWgt, coils.map(function (c) { return [c.no, c.yp, c.ts, c.el, c.coat]; })]))
+      .toString(16).padStart(8, '0').toUpperCase();
+    return doc;
+  }
+
+  // ── 페이지 분할 ──────────────────────────────────────────────────────────
+  // 측정된 높이만 받는 순수 함수. 실제 DOM 측정은 report-doc.js 가 하고 여기로 넘긴다.
+  // blocks: [{ id, kind:'block', h } | { id, kind:'table', headH, footH, rowHs:[…] }]
+  // 반환: 페이지 배열. 각 페이지는 조각 배열 [{ id, kind, from, to, last }]
+  //
+  // 표는 페이지마다 헤더(headH)를 다시 그리고 소계 행(footH) 자리를 남긴다 — 표가 잘려도
+  // 각 페이지가 그 자체로 읽히도록 하는 게 성적서의 기본 요구다.
+  function paginate(blocks, pageH) {
+    const pages = [];
+    let cur = [];
+    let used = 0;
+    function flush() {
+      if (cur.length) pages.push(cur);
+      cur = [];
+      used = 0;
+    }
+    for (const b of blocks) {
+      if (b.kind === 'table') {
+        const rowHs = b.rowHs || [];
+        if (!rowHs.length) continue;
+        let i = 0;
+        while (i < rowHs.length) {
+          let avail = pageH - used;
+          // 헤더 + 1행 + 소계가 안 들어가면 다음 장으로. 빈 페이지에서도 안 들어가면
+          // 무한 루프를 막기 위해 넘치더라도 1행은 올린다.
+          if (avail < b.headH + rowHs[i] + b.footH && cur.length) {
+            flush();
+            avail = pageH;
+          }
+          let h = b.headH;
+          let j = i;
+          while (j < rowHs.length && h + rowHs[j] + b.footH <= avail) {
+            h += rowHs[j];
+            j++;
+          }
+          if (j === i) j = i + 1; // 최소 1행 보장
+          cur.push({ id: b.id, kind: 'table', from: i, to: j, last: j >= rowHs.length });
+          used += h + b.footH;
+          i = j;
+          if (i < rowHs.length) flush();
+        }
+      } else {
+        if (b.h > pageH - used && cur.length) flush();
+        cur.push({ id: b.id, kind: 'block' });
+        used += b.h;
+      }
+    }
+    flush();
+    return pages.length ? pages : [[]];
+  }
+
+  g.MesReport = Object.assign(g.MesReport || {}, {
+    buildCertDoc, paginate, specFor, coatFor, parseSize, parsePrd,
+    esc, num, comma, splitWeight, rng, hash32,
+    SPECS, COATS, WATERMARKS,
+  });
+})(globalThis);
+
+/* assets/report/report-doc.js — 문서 모델 → A4 DOM, 실측 페이지 분할, 미리보기·인쇄
+   빌드 시 build/inject_report.py 가 modules/quality-certificate.html 마커 구간에 복사한다.
+
+   왜 CSS 만으로 안 되는가: 크롬은 @page 안의 여백 상자(@bottom-right 등)를 지원하지 않아
+   'N / M' 페이지 번호를 CSS 로 찍을 수 없고, 장마다 소계를 넣는 것도 CSS 로는 불가능하다.
+   그래서 (1) 숨은 컨테이너에 전부 그려 높이를 재고 (2) 순수 함수로 장을 나눈 뒤
+   (3) 장별로 다시 그린다. 리포트 엔진이 흔히 말하는 2-pass 렌더다. */
+(function (g) {
+  'use strict';
+
+  const ROOT_ID = 'rp-root';
+  const MAKER = '(주)목업제철 광양공장';
+  const MAKER_EN = 'MOCKUP STEEL CO., LTD.';
+
+  let state = null; // { row, doc, sheetPxW }
+
+  function M() { return g.MesReport; }
+  function esc(s) { return M().esc(s); }
+  function comma(n) { return M().comma(n); }
+  function fx(n, d) { return n == null || !Number.isFinite(n) ? '—' : n.toFixed(d); }
+
+  // offsetHeight 는 마진을 빼고 센다. 블록 사이 간격도 장 높이를 먹으므로 마진까지 더한다.
+  function outerH(el) {
+    if (!el) return 0;
+    const cs = getComputedStyle(el);
+    return el.offsetHeight + parseFloat(cs.marginTop || 0) + parseFloat(cs.marginBottom || 0);
+  }
+
+  // ── 조각별 HTML ──────────────────────────────────────────────────────────
+  function headHtml(doc, pageNo, pageCount) {
+    return '<div class="rp-head"><div class="rp-head-top">'
+      + '<div class="rp-maker"><b>' + esc(MAKER) + '</b><span>' + esc(MAKER_EN) + '</span></div>'
+      + '<div class="rp-title"><b>품질보증서</b><span>QUALITY GUARANTEE CERTIFICATE</span></div>'
+      + '<dl class="rp-stamp">'
+      + '<dt>보증서번호</dt><dd class="mono">' + esc(doc.no) + ' ' + esc(doc.ver) + '</dd>'
+      + '<dt>발행일</dt><dd class="mono">' + esc(doc.issued || '미발행') + '</dd>'
+      + '<dt>페이지</dt><dd class="mono">' + pageNo + ' / ' + pageCount + '</dd>'
+      + '</dl></div></div>';
+  }
+
+  function infoHtml(doc) {
+    const size = fx(doc.thk, 3) + ' × ' + (doc.wid == null ? '—' : comma(doc.wid));
+    return '<div class="rp-info"><table>'
+      + '<tr><th>수요가</th><td>' + esc(doc.customer) + '</td>'
+      + '<th>주문번호</th><td class="mono">' + esc(doc.order) + '</td></tr>'
+      + '<tr><th>발주번호(PO)</th><td class="mono">' + esc(doc.po) + '</td>'
+      + '<th>품명 · 규격</th><td>' + esc(doc.prd.name) + ' · ' + esc(doc.prd.spec) + '</td></tr>'
+      + '<tr><th>주문 치수 (mm)</th><td class="mono">' + esc(size) + '</td>'
+      + '<th>도금 종류</th><td>' + esc(doc.coat.label) + '</td></tr>'
+      + '<tr><th>수량 · 중량</th><td class="mono">' + doc.coilCount + ' 코일 · ' + comma(doc.totalWgt) + ' kg</td>'
+      + '<th>발행 담당</th><td>' + esc(doc.issuer) + '</td></tr>'
+      + '</table></div>';
+  }
+
+  function criteriaHtml(doc) {
+    let h = '<div class="rp-sect"><h4>1. 보증 기준<span class="rp-of">강종 ' + esc(doc.spec.grade) + ' · 주문 사양 기준</span></h4>'
+      + '<table class="rp-tbl"><colgroup><col style="width:46mm"><col style="width:18mm"><col style="width:20mm"><col style="width:44mm"><col></colgroup>'
+      + '<thead><tr><th>항목</th><th>기호</th><th>단위</th><th>규격 기준</th><th>시험 방법</th></tr></thead><tbody>';
+    doc.criteria.forEach(function (c) {
+      h += '<tr><td>' + esc(c.name) + '</td><td class="ctr mono">' + esc(c.sym) + '</td>'
+        + '<td class="ctr">' + esc(c.unit) + '</td><td class="ctr mono">' + esc(c.limit) + '</td>'
+        + '<td class="ctr mono">' + esc(c.method) + '</td></tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  // 폭 합계 180mm = A4 210mm - 좌우 여백 15mm×2
+  const COILS_COLS = '<colgroup><col style="width:11mm"><col style="width:26mm"><col style="width:20mm">'
+    + '<col style="width:16mm"><col style="width:14mm"><col style="width:20mm"><col style="width:13mm">'
+    + '<col style="width:13mm"><col style="width:11mm"><col style="width:19mm"><col></colgroup>';
+
+  function coilsHeadHtml(doc) {
+    return '<h4>2. 코일별 시험 성적<span class="rp-of">총 ' + doc.coilCount + ' 코일</span></h4>';
+  }
+
+  function coilsTableHtml(doc, from, to, last) {
+    const rows = doc.coils.slice(from, to);
+    let sub = 0;
+    rows.forEach(function (c) { sub += c.wgt; });
+    let acc = 0;
+    for (let i = 0; i < to; i++) acc += doc.coils[i].wgt;
+
+    let h = '<table class="rp-tbl">' + COILS_COLS
+      + '<thead><tr><th>No.</th><th>코일번호</th><th>용강번호</th><th>두께<br>(mm)</th><th>폭<br>(mm)</th>'
+      + '<th>중량<br>(kg)</th><th>YP<br>(MPa)</th><th>TS<br>(MPa)</th><th>EL<br>(%)</th>'
+      + '<th>도금부착량<br>(g/㎡)</th><th>판정</th></tr></thead><tbody>';
+    rows.forEach(function (c) {
+      h += '<tr><td class="ctr mono">' + c.seq + '</td>'
+        + '<td class="mono">' + esc(c.no) + '</td>'
+        + '<td class="mono">' + esc(c.heat) + '</td>'
+        + '<td class="num">' + fx(c.thk, 3) + '</td>'
+        + '<td class="num">' + comma(c.wid) + '</td>'
+        + '<td class="num">' + comma(c.wgt) + '</td>'
+        + '<td class="num">' + comma(c.yp) + '</td>'
+        + '<td class="num">' + comma(c.ts) + '</td>'
+        + '<td class="num">' + (c.el == null ? '—' : comma(c.el)) + '</td>'
+        + '<td class="num">' + comma(c.coat) + '</td>'
+        + '<td class="ctr ' + (c.pass ? 'rp-pass' : 'rp-fail') + '">' + (c.pass ? '합격' : '불합격') + '</td></tr>';
+    });
+    h += '</tbody><tfoot><tr>'
+      + '<td colspan="5">' + (last ? '총계 — 전체 ' + doc.coilCount + ' 코일' : '이 장 소계 — ' + rows.length + ' 코일')
+      + '</td><td class="num">' + comma(last ? doc.totalWgt : sub) + '</td>'
+      + '<td colspan="5" class="ctr">' + (last ? '이상 ' + doc.coilCount + ' 코일 전량 합격' : '누계 ' + comma(acc) + ' kg · 다음 장에 계속')
+      + '</td></tr></tfoot></table>';
+    return h;
+  }
+
+  function signHtml(doc) {
+    return '<div class="rp-decl">위 제품은 <b>' + esc(doc.prd.spec) + '</b> 및 주문 사양(' + esc(doc.po)
+      + ')의 요구사항에 따라 시험한 결과 <b>적합</b>함을 보증합니다.<br>'
+      + '본 성적값은 각 코일의 대표 시험편 측정값이며, 시험 방법은 1항 보증 기준에 따른다.</div>'
+      + '<div class="rp-sign"><div class="rp-sign-txt">'
+      + '문서 지문 <span class="mono">' + esc(doc.fingerprint) + '</span><br>'
+      + '재발행·회수 이력은 품질보증서관리 화면에서 확인할 수 있습니다.'
+      + '</div>'
+      + '<div class="rp-sign-box"><b>검사 책임자</b><i>서명 / 직인</i></div>'
+      + '<div class="rp-sign-box"><b>품질보증 책임자</b><i>서명 / 직인</i></div>'
+      + '</div>';
+  }
+
+  function footHtml(doc, pageNo, pageCount) {
+    return '<div class="rp-foot"><span>문서 <b class="mono">' + esc(doc.docId) + '</b></span>'
+      + '<span>지문 <b class="mono">' + esc(doc.fingerprint) + '</b></span>'
+      + '<span class="rp-spacer"></span>'
+      + '<span>상태 <b>' + esc(doc.status) + '</b></span>'
+      + '<span><b class="mono">' + pageNo + ' / ' + pageCount + '</b></span></div>';
+  }
+
+  function wmHtml(doc) {
+    return doc.watermark ? '<div class="rp-wm"><span>' + esc(doc.watermark) + '</span></div>' : '';
+  }
+
+  // ── 측정 → 분할 → 렌더 ───────────────────────────────────────────────────
+  function measure(doc, host) {
+    // 1) 머리글·바닥글만 넣은 실제 높이의 시트에서 본문 가용 높이를 잰다(단위 환산 없이 정확).
+    host.innerHTML = '<div class="rp-sheet">' + headHtml(doc, 1, 1)
+      + '<div class="rp-body" id="rp-m-body"></div>' + footHtml(doc, 1, 1) + '</div>';
+    const bodyH = host.querySelector('#rp-m-body').offsetHeight;
+    const sheetPxW = host.querySelector('.rp-sheet').offsetWidth;
+
+    // 2) 높이 제한 없는 시트에 모든 조각을 그려 각각의 높이를 잰다.
+    host.innerHTML = '<div class="rp-sheet rp-sheet--measure"><div class="rp-body">'
+      + '<div id="rp-m-info">' + infoHtml(doc) + '</div>'
+      + '<div id="rp-m-crit">' + criteriaHtml(doc) + '</div>'
+      + '<div class="rp-sect" id="rp-m-coils">' + coilsHeadHtml(doc) + coilsTableHtml(doc, 0, doc.coils.length, true) + '</div>'
+      + '<div id="rp-m-sign">' + signHtml(doc) + '</div>'
+      + '</div></div>';
+    const coilSect = host.querySelector('#rp-m-coils');
+    const csCs = getComputedStyle(coilSect);
+    const rowHs = Array.prototype.map.call(coilSect.querySelectorAll('tbody tr'), function (tr) { return tr.offsetHeight; });
+
+    return {
+      bodyH: bodyH,
+      sheetPxW: sheetPxW,
+      blocks: [
+        { id: 'info', kind: 'block', h: outerH(host.querySelector('#rp-m-info').firstElementChild) },
+        { id: 'crit', kind: 'block', h: outerH(host.querySelector('#rp-m-crit').firstElementChild) },
+        {
+          id: 'coils', kind: 'table',
+          headH: outerH(coilSect.querySelector('h4')) + coilSect.querySelector('thead').offsetHeight,
+          footH: coilSect.querySelector('tfoot').offsetHeight + parseFloat(csCs.marginBottom || 0),
+          rowHs: rowHs,
+        },
+        {
+          id: 'sign', kind: 'block',
+          h: outerH(host.querySelector('.rp-decl')) + outerH(host.querySelector('.rp-sign')),
+        },
+      ],
+    };
+  }
+
+  function renderPages(doc, pages) {
+    const total = pages.length;
+    return pages.map(function (pieces, i) {
+      let body = '';
+      pieces.forEach(function (p) {
+        if (p.id === 'info') body += infoHtml(doc);
+        else if (p.id === 'crit') body += criteriaHtml(doc);
+        else if (p.id === 'sign') body += signHtml(doc);
+        else if (p.id === 'coils') {
+          body += '<div class="rp-sect">' + (p.from === 0 ? coilsHeadHtml(doc)
+            : '<h4>2. 코일별 시험 성적<span class="rp-of">' + (p.from + 1) + ' ~ ' + p.to + ' / ' + doc.coilCount + ' 코일 (이어서)</span></h4>')
+            + coilsTableHtml(doc, p.from, p.to, p.last) + '</div>';
+        }
+      });
+      return '<div class="rp-sheet">' + wmHtml(doc) + '<span class="rp-mock">MOCK-UP</span>'
+        + headHtml(doc, i + 1, total) + '<div class="rp-body">' + body + '</div>'
+        + footHtml(doc, i + 1, total) + '</div>';
+    }).join('');
+  }
+
+  // ── 오버레이 ─────────────────────────────────────────────────────────────
+  function root() {
+    let el = document.getElementById(ROOT_ID);
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = ROOT_ID;
+    el.className = 'rp-overlay';
+    el.innerHTML = '<div class="rp-bar">'
+      + '<h3 id="rp-ttl">품질보증서</h3><span class="rp-sub" id="rp-sub"></span>'
+      + '<span class="rp-spacer"></span>'
+      + '<label title="페이지 분할을 확인하기 위한 목업 조작입니다. 코일당 평균 중량은 유지한 채 총중량을 다시 계산합니다.">코일 수(목업) <input type="number" id="rp-n" min="1" max="200" step="1"></label>'
+      + '<button type="button" id="rp-close">닫기</button>'
+      + '<button type="button" class="pri" id="rp-print">인쇄 · PDF 저장</button>'
+      + '</div>'
+      + '<div class="rp-scroll"><div class="rp-pages" id="rp-pages"></div>'
+      + '<p class="rp-note">브라우저 인쇄 대화상자에서 <b>용지 A4 · 배율 100% · 여백 없음 · 머리글/바닥글 끄기</b>로 인쇄하거나 «PDF로 저장»을 고르세요. 이 문서는 목업 시드로 생성된 표본입니다.</p>'
+      + '</div><div class="rp-measure" id="rp-measure" aria-hidden="true"></div>';
+    document.body.appendChild(el);
+    el.addEventListener('click', function (e) {
+      if (e.target.closest('#rp-close')) close();
+      else if (e.target.closest('#rp-print')) printNow();
+    });
+    el.querySelector('#rp-n').addEventListener('change', function (e) {
+      const v = Math.max(1, Math.min(200, Math.round(Number(e.target.value) || 1)));
+      e.target.value = v;
+      if (state) draw(state.row, v);
+    });
+    window.addEventListener('resize', fit);
+    return el;
+  }
+
+  function draw(row, coilCount) {
+    const el = root();
+    const doc = M().buildCertDoc(row, { coilCount: coilCount });
+    const host = el.querySelector('#rp-measure');
+    const m = measure(doc, host);
+    host.innerHTML = '';
+    const pages = M().paginate(m.blocks, m.bodyH);
+    el.querySelector('#rp-pages').innerHTML = renderPages(doc, pages);
+    el.querySelector('#rp-ttl').textContent = doc.no + ' ' + doc.ver + ' 품질보증서';
+    el.querySelector('#rp-sub').textContent = doc.customer + ' · ' + doc.coilCount + ' 코일 · ' + pages.length + '장'
+      + (doc.watermark ? ' · ' + doc.watermark : '');
+    el.querySelector('#rp-n').value = doc.coilCount;
+    state = { row: row, doc: doc, sheetPxW: m.sheetPxW, pageCount: pages.length };
+    fit();
+    return state;
+  }
+
+  // A4 폭이 모듈 패널보다 넓으면 화면에서만 축소한다. 인쇄에는 영향이 없다(@media print 에서 zoom:1).
+  function fit() {
+    const el = document.getElementById(ROOT_ID);
+    if (!el || !el.classList.contains('on') || !state) return;
+    const avail = el.querySelector('.rp-scroll').clientWidth - 36;
+    const z = Math.min(1, Math.max(0.25, avail / state.sheetPxW));
+    el.style.setProperty('--rp-zoom', String(Math.round(z * 1000) / 1000));
+  }
+
+  function open(row, autoPrint) {
+    const el = root();
+    el.classList.add('on');
+    document.body.classList.add('rp-on');
+    document.body.style.overflow = 'hidden';
+    draw(row, null);
+    el.querySelector('#rp-print').focus();
+
+    // 웹폰트가 측정 뒤에 도착하면 행 높이가 달라져 장 나눔이 어긋난다(마지막 행이 잘리거나
+    // 빈 장이 생긴다). 폰트가 준비되면 같은 코일 수로 한 번 더 그린 뒤 인쇄한다.
+    const fonts = document.fonts;
+    if (fonts && fonts.ready && fonts.status !== 'loaded') {
+      fonts.ready.then(function () {
+        if (!isOpen()) return;
+        draw(row, state ? state.doc.coilCount : null);
+        if (autoPrint) printNow();
+      });
+    } else if (autoPrint) {
+      setTimeout(printNow, 60);
+    }
+    return state;
+  }
+
+  function close() {
+    const el = document.getElementById(ROOT_ID);
+    if (!el) return;
+    el.classList.remove('on');
+    document.body.classList.remove('rp-on');
+    document.body.style.overflow = '';
+    state = null;
+  }
+
+  function isOpen() {
+    const el = document.getElementById(ROOT_ID);
+    return !!(el && el.classList.contains('on'));
+  }
+
+  // 포털에서는 이 모듈이 같은 출처의 srcdoc iframe 안에서 돈다. 프레임 안에서 부른
+  // window.print() 는 그 프레임 문서만 인쇄한다(크롬·엣지·파이어폭스).
+  function printNow() {
+    if (!isOpen()) return;
+    try { window.focus(); } catch (e) { /* 무시 */ }
+    window.print();
+  }
+
+  g.MesReport = Object.assign(g.MesReport || {}, {
+    open, close, isOpen, printNow, draw,
+    _internal: { measure, renderPages, headHtml, infoHtml, criteriaHtml, coilsTableHtml, signHtml, footHtml, outerH },
+  });
+})(globalThis);
+/*__REPORT_JS_END__*/
 var ROWS=[{"no": "QC-2609-0101", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77812", "ord": "D260831014-010", "prd": "3 : CCGI · KS3-CGCC", "size": "0.450 × 1490", "coils": "3", "wgt": "28,000", "st": "발행", "date": "2026-09-02", "by": "박서연", "id": "QC-2609-0101"}, {"no": "QC-2609-0102", "ver": "v1", "cus": "수요가 B", "po": "PO-B-10233", "ord": "D260831020-010", "prd": "L : G/L · KSL-SGLCC", "size": "0.400 × 915", "coils": "2", "wgt": "12,400", "st": "초안", "date": "—", "by": "김민석", "id": "QC-2609-0102"}, {"no": "QC-2608-0098", "ver": "v2", "cus": "수요가 C", "po": "PO-C-55021", "ord": "D260831021-010", "prd": "G : GI · KSG-SGC340", "size": "0.440 × 1225", "coils": "4", "wgt": "31,200", "st": "재발행", "date": "2026-08-31", "by": "이도현", "id": "QC-2608-0098"}, {"no": "QC-2608-0097", "ver": "v1", "cus": "수요가 C", "po": "PO-C-55021", "ord": "D260831023-010", "prd": "G : GI · KSG-SGC340", "size": "0.440 × 1225", "coils": "4", "wgt": "30,850", "st": "발행", "date": "2026-08-31", "by": "이도현", "id": "QC-2608-0097"}, {"no": "QC-2608-0096", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77790", "ord": "D260831024-010", "prd": "L : G/L · KSL-SGLC570", "size": "0.370 × 1221", "coils": "2", "wgt": "11,900", "st": "발행", "date": "2026-08-30", "by": "박서연", "id": "QC-2608-0096"}, {"no": "QC-2608-0095", "ver": "v1", "cus": "수요가 D", "po": "PO-D-30012", "ord": "D260831025-010", "prd": "G : GI · KSG-SGCC", "size": "0.440 × 1306", "coils": "5", "wgt": "40,100", "st": "회수", "date": "2026-08-29", "by": "정하윤", "id": "QC-2608-0095"}, {"no": "QC-2608-0094", "ver": "v1", "cus": "수요가 B", "po": "PO-B-10211", "ord": "D260831027-010", "prd": "L : G/L · KSL-SGLCC", "size": "0.800 × 1224", "coils": "3", "wgt": "24,300", "st": "발행", "date": "2026-08-28", "by": "김민석", "id": "QC-2608-0094"}, {"no": "QC-2608-0093", "ver": "v1", "cus": "수요가 A", "po": "PO-A-77780", "ord": "D260831028-010", "prd": "G : GI · KSG-SGC340", "size": "0.510 × 1064", "coils": "2", "wgt": "15,600", "by": "박서연", "st": "발행", "date": "2026-08-27", "id": "QC-2608-0093"}, {"no": "QC-2608-0092", "ver": "v1", "cus": "수요가 D", "po": "PO-D-29998", "ord": "D260831032-010", "prd": "4 : CCLI · KS4-CGLCC", "size": "0.500 × 1070", "coils": "1", "wgt": "7,800", "st": "초안", "date": "—", "by": "정하윤", "id": "QC-2608-0092"}];
 var COLS=[{"k": "no", "l": "보증서번호", "t": "link", "sub": "ver"}, {"k": "cus", "l": "수요가", "t": "text", "sub": "po"}, {"k": "ord", "l": "주문번호", "t": "mono"}, {"k": "prd", "l": "품명 · 규격", "t": "text", "sub": "size"}, {"k": "coils", "l": "코일", "t": "num"}, {"k": "wgt", "l": "중량 (kg)", "t": "num"}, {"k": "st", "l": "상태", "t": "pill"}, {"k": "date", "l": "발행일", "t": "text", "sub": "by"}];
 var DETAIL={title:function(r){return r.no+' '+r.ver+' · 품질보증서';},
@@ -207,8 +900,18 @@ function renderTable(){
   $('#grid').innerHTML=h;
   $('#meta').innerHTML='총 <b>'+ROWS.length+'건</b> 중 <b>'+rows.length+'건</b> 표시';
 }
+function rowById(id){var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});return r;}
+// 발행 목록 1행 → A4 품질보증서 미리보기(assets/report). autoPrint 면 인쇄 대화상자까지 연다.
+function openReport(id,autoPrint){
+  var r=rowById(id);
+  if(!r){toast('출력할 보증서를 선택하세요');return;}
+  MesReport.open(r,autoPrint);
+  if(r.st==='초안')toast('초안입니다 — DRAFT 표시가 들어간 미발행본입니다');
+  else if(r.st==='회수')toast('회수된 보증서입니다 — VOID 표시가 들어갑니다');
+  else if(r.st==='재발행')toast('재발행본입니다 — REISSUE 표시가 들어갑니다');
+}
 function openDrawer(id){
-  var r=null;ROWS.forEach(function(x){if(x.id===id)r=x;});if(!r)return;
+  var r=rowById(id);if(!r)return;
   sel=id;renderTable();
   $('#d-title').textContent=DETAIL.title(r);
   var h='';
@@ -229,21 +932,39 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('.tab');if(t){setTab(t.getAttribute('data-tab'));return;}
   var row=e.target.closest('tr.row');if(row){openDrawer(row.getAttribute('data-id'));return;}
   if(e.target.closest('#d-close')||e.target.closest('#scrim')){closeDrawer();return;}
-  var a=e.target.closest('[data-act]');if(a){toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var a=e.target.closest('[data-act]');if(a){
+    var act=a.getAttribute('data-act');
+    if(act==='preview'||act==='issue'){openReport(sel,act==='issue');return;}
+    toast(a.textContent.trim()+' — 목업에서는 반영되지 않습니다');return;}
+  var ps=e.target.closest('[data-action="print-sel"]');if(ps){openReport(sel,false);return;}
   var b=e.target.closest('[data-action="reset"]');if(b){if($('#f-q'))$('#f-q').value='';if($('#f-st'))$('#f-st').value='';renderTable();return;}
   var s=e.target.closest('[data-action="search"]');if(s){renderTable();return;}
   var m=e.target.closest('[data-action="msg"]');if(m){toast(m.getAttribute('data-msg')||m.textContent.trim());return;}
 });
 document.addEventListener('input',function(e){if(e.target.id==='f-q')renderTable();});
 document.addEventListener('change',function(e){if(e.target.id==='f-st')renderTable();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('#drawer').classList.contains('on'))closeDrawer();});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if(MesReport.isOpen()){MesReport.close();return;}
+  if($('#drawer').classList.contains('on'))closeDrawer();
+});
 var STATUS={"발행": {"cls": "ok"}, "초안": {"cls": "warn"}, "재발행": {"cls": "hold"}, "회수": {"cls": "no"}};
 var STATUS_KEY="st";
-function extraDetail(r){return '<div class="d-sect"><h4>보증 항목 (양식 KS 표준)</h4><table class="mini"><tr><th>항목</th><th>기준</th><th class="num">대표값</th></tr>'
-  +'<tr><td>인장강도 TS (MPa)</td><td class="mono">규격 하한 이상</td><td class="num">312</td></tr>'
-  +'<tr><td>항복강도 YP (MPa)</td><td class="mono">규격 범위</td><td class="num">268</td></tr>'
-  +'<tr><td>연신율 EL (%)</td><td class="mono">규격 하한 이상</td><td class="num">34</td></tr>'
-  +'<tr><td>도금 부착량 (g/㎡)</td><td class="mono">주문 도금량 이상</td><td class="num">96</td></tr></table></div>';}
+// drawer 요약과 A4 보증서가 다른 값을 보이면 안 되므로 같은 모델에서 뽑는다.
+function extraDetail(r){
+  var d=MesReport.buildCertDoc(r);
+  var keys=['yp','ts','el','coat'];
+  var h='<div class="d-sect"><h4>보증 항목 (강종 '+esc(d.spec.grade)+')</h4>'
+    +'<table class="mini"><tr><th>항목</th><th>기준</th><th class="num">대표값</th></tr>';
+  d.criteria.forEach(function(c,i){
+    var k=keys[i],sum=0,n=0;
+    d.coils.forEach(function(x){if(x[k]!=null){sum+=x[k];n++;}});
+    h+='<tr><td>'+esc(c.name)+' <span class="sub">'+esc(c.sym)+' · '+esc(c.unit)+'</span></td>'
+      +'<td class="mono">'+esc(c.limit)+'</td><td class="num">'+(n?Math.round(sum/n):'—')+'</td></tr>';
+  });
+  return h+'</table><div class="note" style="margin-top:8px">'+d.coilCount
+    +'개 코일의 평균값입니다. 코일별 성적은 «미리보기»에서 A4 보증서로 확인합니다.</div></div>';
+}
 renderTable();
 </script>
 </body>
