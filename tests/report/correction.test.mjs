@@ -155,7 +155,7 @@ test('applyCorrection: 현재 버전 회수 + 다음 버전 재발행 + 이력',
   assert.equal(res.reissued.corrections.length, 1);
   assert.deepEqual(res.reissued.corrections[0], { coil: c.no, field: 'ts', from: c.ts, to: c.ts + 6, reason: '시험기 보정 반영', by: '품질관리자', at: '2026-09-16T14:20', fromVer: 'v1', toVer: 'v2' });
 
-  assert.deepEqual(res.history, { at: '2026-09-16T14:20', by: '품질관리자', no: 'QC-2609-0101', fromVer: 'v1', toVer: 'v2', reason: '시험기 보정 반영', items: [{ coil: c.no, field: 'ts', from: c.ts, to: c.ts + 6 }] });
+  assert.deepEqual(res.history, { kind: 'correct', at: '2026-09-16T14:20', by: '품질관리자', no: 'QC-2609-0101', fromVer: 'v1', toVer: 'v2', reason: '시험기 보정 반영', items: [{ coil: c.no, field: 'ts', from: c.ts, to: c.ts + 6 }] });
 
   // 재발행본을 그리면 정정값이 들어가고 워터마크는 REISSUE
   const d2 = R.buildCertDoc(res.reissued);

@@ -32,6 +32,32 @@
 
   const TEST_METHODS = { yp: 'KS B 0802', ts: 'KS B 0802', el: 'KS B 0802', coat: 'KS D 0201' };
 
+  // ── 역할·권한 ────────────────────────────────────────────────────────────
+  // 필드 등급은 "어떤 절차로" 고치는가, 역할은 "누가" 그 절차를 밟을 수 있는가다. 두 축은 따로 둔다.
+  // 목업이라 역할마다 사람 하나를 고정한다 — 실제로는 로그인 계정의 역할이다.
+  const ROLES = {
+    user: { label: '현업', name: '김현업' },
+    qm:   { label: '품질관리자', name: '박품질' },
+    dev:  { label: '개발자', name: '이개발' },
+  };
+  const PERMISSIONS = {
+    preview:  ['user', 'qm', 'dev'],
+    issue:    ['user', 'qm', 'dev'],
+    request:  ['user', 'qm', 'dev'],   // approve 등급 필드의 변경 '요청'
+    correct:  ['qm', 'dev'],           // 시험값 정정
+    recall:   ['qm', 'dev'],
+    approve:  ['qm', 'dev'],           // 변경 요청 승인·반려 (요청자 본인은 불가)
+    reset:    ['dev'],
+    template: ['dev'],                 // 양식 관리
+  };
+  function can(role, action) {
+    return (PERMISSIONS[action] || []).indexOf(role) >= 0;
+  }
+  // '품질관리자·개발자' 같은 안내문용
+  function rolesFor(action) {
+    return (PERMISSIONS[action] || []).map(function (r) { return ROLES[r].label; }).join('·');
+  }
+
   // ── 필드 편집 등급 ───────────────────────────────────────────────────────
   // 보증서의 값은 "누가 고칠 수 있는가"가 아니라 "어떤 절차로 고칠 수 있는가"로 나눈다.
   //   locked  : 원천 시스템 값. 이 화면에서는 어떤 절차로도 못 고친다 (정정은 원천에서)
@@ -51,14 +77,22 @@
     'coils[].ts':   { edit: 'correct', label: '인장강도',   sym: 'TS',  unit: 'MPa' },
     'coils[].el':   { edit: 'correct', label: '연신율',     sym: 'EL',  unit: '%' },
     'coils[].coat': { edit: 'correct', label: '도금부착량', sym: 'C/W', unit: 'g/㎡' },
-    'remark':       { edit: 'free',    label: '비고', max: 200 },
-    'customer.displayName': { edit: 'approve', label: '수요가 표기명' },
+    'remark':       { edit: 'free',    label: '비고', max: 200,
+                      get: function (r) { return r.remark || ''; }, set: function (r, v) { r.remark = v; } },
+    // 표기명은 수요가 마스터(cus)를 덮어쓰는 문서상의 표기다. 비어 있으면 마스터 값.
+    'customer.displayName': { edit: 'approve', label: '수요가 표기명',
+                      get: function (r) { return r.displayName || r.cus || ''; }, set: function (r, v) { r.displayName = v; } },
   };
   // coils[].<k> 중 correct 등급 — 정정 화면의 열 순서이기도 하다
   const TEST_FIELDS = ['yp', 'ts', 'el', 'coat'];
+  const FIELD_LABELS = { yp: '항복강도 YP', ts: '인장강도 TS', el: '연신율 EL', coat: '도금부착량 C/W' };
 
   function fieldGrade(path) {
     return (FIELDS[path] || {}).edit || 'locked';
+  }
+  function fieldValue(row, path) {
+    const f = FIELDS[path];
+    return f && f.get ? f.get(row) : undefined;
   }
 
   // ── 작은 유틸 ────────────────────────────────────────────────────────────
@@ -214,6 +248,7 @@
     // 시간순이므로 같은 코일·항목이 여러 번 정정됐으면 마지막 값이 남는다. 정정된 칸에는
     // corrected 표시를 남겨 출력물에서 ※ 로 드러낸다.
     const corrections = Array.isArray(row.corrections) ? row.corrections : [];
+    const changes = Array.isArray(row.changes) ? row.changes : [];
     if (corrections.length) {
       const byCoil = {};
       corrections.forEach(function (c) {
@@ -255,6 +290,18 @@
       issuer: row.by,
       coils: coils,
       corrections: corrections,
+      changes: changes,
+      // 출력물에 찍히는 수요가 이름. approve 절차로 바뀌었으면 ※
+      customerDisplay: FIELDS['customer.displayName'].get(row),
+      customerChanged: changes.some(function (c) { return c.field === 'customer.displayName'; }),
+      // 3항 '정정·변경 내역' — 시험값 정정과 필드 변경을 시간순으로 합친다
+      revisions: corrections.map(function (c) {
+        return { kind: 'correct', coil: c.coil, label: FIELD_LABELS[c.field] || c.field, from: c.from, to: c.to,
+          reason: c.reason, by: c.by, at: c.at, fromVer: c.fromVer, toVer: c.toVer };
+      }).concat(changes.map(function (c) {
+        return { kind: 'change', coil: null, label: c.label, from: c.from, to: c.to,
+          reason: c.reason, by: '요청 ' + c.requestedBy + ' · 승인 ' + c.approvedBy, at: c.at, fromVer: c.fromVer, toVer: c.toVer };
+      })).sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; }),
       criteria: [
         { name: '항복강도', sym: 'YP', unit: 'MPa', limit: spec.yp + ' 이상', method: TEST_METHODS.yp },
         { name: '인장강도', sym: 'TS', unit: 'MPa', limit: spec.ts + ' 이상', method: TEST_METHODS.ts },
@@ -347,8 +394,68 @@
       supersededBy: nextVer,
       recallReason: '시험값 정정 → ' + nextVer + ' 재발행',
     });
-    const history = { at: at, by: by, no: row.no, fromVer: row.ver, toVer: nextVer, reason: reason, items: v.changed };
+    const history = { kind: 'correct', at: at, by: by, no: row.no, fromVer: row.ver, toVer: nextVer, reason: reason, items: v.changed };
     return { recalled: recalled, reissued: reissued, history: history };
+  }
+
+  // ── approve 등급 필드 변경: 요청 → 승인/반려 ─────────────────────────────
+  // 요청은 누구나 낼 수 있지만 문서는 승인 전까지 그대로다. 승인되면 시험값 정정과 같은
+  // 메커니즘으로 현재 버전을 회수하고 다음 버전을 재발행한다 — 발행된 문서가 바뀌면 언제나 새 버전이다.
+  // req: { field, to, reason, by, role, at }  →  요청 객체(status '대기'). id 는 저장소가 붙인다.
+  function requestFieldChange(row, req) {
+    const path = String(req && req.field || '');
+    const f = FIELDS[path];
+    const grade = fieldGrade(path);
+    if (grade !== 'approve') throw new Error(((f && f.label) || path) + ' 은(는) 승인 절차 대상이 아닙니다 (등급: ' + grade + ')');
+    if (!can(req.role, 'request')) throw new Error('변경 요청은 ' + rolesFor('request') + ' 권한입니다');
+    if (!/^(발행|재발행)$/.test(String(row.st))) throw new Error('발행·재발행 상태만 변경 요청할 수 있습니다 (현재: ' + row.st + ')');
+    if (row.pending) throw new Error('승인 대기 중인 요청이 이미 있습니다: ' + row.pending);
+    const from = String(f.get(row));
+    const to = String(req.to == null ? '' : req.to).trim();
+    if (!to) throw new Error('새 ' + f.label + ' 을(를) 입력하세요');
+    if (to === from) throw new Error('현재 값과 같습니다');
+    const reason = String(req.reason || '').trim();
+    if (!reason) throw new Error('사유는 필수입니다');
+    return { rowId: row.id, no: row.no, ver: row.ver, field: path, label: f.label, from: from, to: to,
+      reason: reason, by: req.by, role: req.role, at: req.at || new Date().toISOString().slice(0, 16), status: '대기' };
+  }
+
+  function assertApprover(request, appr) {
+    if (!can(appr && appr.role, 'approve')) throw new Error('승인·반려는 ' + rolesFor('approve') + ' 권한입니다');
+    if (appr.by === request.by) throw new Error('요청자 본인은 승인·반려할 수 없습니다 (요청 ' + request.by + ')');
+    if (request.status !== '대기') throw new Error('이미 처리된 요청입니다 (' + request.status + ')');
+  }
+
+  // 승인 — 순수 함수. appr: { by, role, at } → { recalled, reissued, history, request }
+  function applyFieldChange(row, request, appr) {
+    assertApprover(request, appr);
+    if (row.id !== request.rowId) throw new Error('요청 대상(' + request.rowId + ')과 다른 행입니다: ' + row.id);
+    if (!/^(발행|재발행)$/.test(String(row.st))) throw new Error('발행·재발행 상태만 변경할 수 있습니다 (현재: ' + row.st + ')');
+    const f = FIELDS[request.field];
+    const at = appr.at || new Date().toISOString().slice(0, 16);
+    const nextVer = 'v' + ((num(row.ver) || 1) + 1);
+    const entry = { field: request.field, label: f.label, from: request.from, to: request.to, reason: request.reason,
+      requestedBy: request.by, approvedBy: appr.by, at: at, fromVer: row.ver, toVer: nextVer };
+    const reissued = Object.assign({}, row, {
+      id: row.no + '-' + nextVer, ver: nextVer, st: '재발행', date: String(at).slice(0, 10), by: appr.by,
+      firstIssued: row.firstIssued || row.date, supersedes: row.ver, supersededBy: null, pending: null,
+      changes: (row.changes || []).concat(entry),
+    });
+    f.set(reissued, request.to);
+    const recalled = Object.assign({}, row, { st: '회수', supersededBy: nextVer, pending: null,
+      recallReason: f.label + ' 변경 → ' + nextVer + ' 재발행' });
+    const history = { kind: 'change', at: at, by: appr.by, no: row.no, fromVer: row.ver, toVer: nextVer,
+      reason: request.reason, items: [{ field: request.field, label: f.label, from: request.from, to: request.to, requestedBy: request.by }] };
+    const done = Object.assign({}, request, { status: '승인', approvedBy: appr.by, approvedAt: at, toVer: nextVer });
+    return { recalled: recalled, reissued: reissued, history: history, request: done };
+  }
+
+  // 반려 — 문서는 그대로, 요청만 닫힌다. appr: { by, role, at, reason }
+  function rejectFieldChange(request, appr) {
+    assertApprover(request, appr);
+    const why = String(appr.reason || '').trim();
+    if (!why) throw new Error('반려 사유는 필수입니다');
+    return Object.assign({}, request, { status: '반려', approvedBy: appr.by, approvedAt: appr.at || new Date().toISOString().slice(0, 16), rejectReason: why });
   }
 
   // ── 페이지 분할 ──────────────────────────────────────────────────────────
@@ -404,8 +511,9 @@
 
   g.MesReport = Object.assign(g.MesReport || {}, {
     buildCertDoc, paginate, specFor, coatFor, parseSize, parsePrd,
-    validateCorrections, applyCorrection, fieldGrade, judge,
+    validateCorrections, applyCorrection, fieldGrade, fieldValue, judge,
+    requestFieldChange, applyFieldChange, rejectFieldChange, can, rolesFor,
     esc, num, comma, splitWeight, rng, hash32,
-    SPECS, COATS, WATERMARKS, FIELDS, TEST_FIELDS,
+    SPECS, COATS, WATERMARKS, FIELDS, TEST_FIELDS, FIELD_LABELS, ROLES, PERMISSIONS,
   });
 })(globalThis);

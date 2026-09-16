@@ -21,7 +21,7 @@
 | `modules/simulation.html` | 품질설계 시뮬레이션 모듈 (주문 1건을 ①입력검증 ②주문정합성 ③주문단중 ④생산가부 ⑤품질사양매칭 ⑥설계값산출 6단계에 태워 기준 반영을 추적 — 좌: 검증 케이스·주문 입력·변경 이력, 중: 파이프라인 단계 상세·기대값 대조, 우: 근거 추적 3층·이상징후. 기준 데이터는 다른 모듈의 localStorage를 먼저 읽고 없으면 내장 축약 시드 사용) |
 | `modules/order-consistency.html` | 주문정합성체크 모듈 (엑셀 룰 2종을 정제·병합한 통합 룰셋 138건 — 룰 목록·조건 빌더·주문 시뮬레이션·검토 이슈·코드 사전·변경 이력 6탭. 시드는 `build/clean_rules.py --inject`가 `/*__OC_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-judgment.html` | 품질판정 1차 화면 (판정 대기 목록 · 검사값 vs 기준값 drawer · 합격/불합격/보류) |
-| `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · A4 보증서 미리보기/인쇄 · 시험값 정정 → 회수/재발행 · 정정 이력. 데이터는 `repo`(localStorage)로만 접근) |
+| `modules/quality-certificate.html` | 품질보증서관리 1차 화면 (발행 목록 · 보증 항목 · A4 보증서 미리보기/인쇄 · 역할 토글(현업/품질관리자/개발자) · 시험값 정정 → 회수/재발행 · 표기명 변경 요청 → 승인 대기 → 승인/반려(4-eyes) · 정정·변경 이력. 데이터는 `repo`(localStorage)로만 접근) |
 | `assets/report/report-model.js` · `report-doc.js` · `report.css` | A4 리포트 렌더러 0단계 (발행 목록 1행 → 문서 모델 → 실측 페이지 분할 → A4 시트 DOM → 브라우저 인쇄/PDF). 전역 `MesReport`. `build/inject_report.py`가 `quality-certificate.html` 마커 구간(`/*__REPORT_CSS_START__*/`, `/*__REPORT_JS_START__*/`)에 주입. 테스트 `node --test tests/report/*.test.mjs` |
 | `build/inject_report.py` | 위 3파일을 `modules/quality-certificate.html`에 주입(멱등). `--check`는 최신 여부만 확인 |
 | `modules/inspection-certificate.html` | 검사증명서관리 1차 화면 (MTC 목록 · 기계적성질 · 화학 성분) |
@@ -46,7 +46,7 @@ python3 build/build_single.py
 ```bash
 python3 build/inject_report.py --check   # 주입 구간이 assets/report 와 같은지 확인
 python3 build/inject_report.py           # 주입(멱등)
-node --test tests/report/*.test.mjs      # 모델 + 페이지 분할 + 시험값 정정 + 주입 드리프트
+node --test tests/report/*.test.mjs      # 모델 + 페이지 분할 + 시험값 정정 + 역할·승인 + 주입 드리프트
 ```
 
 **설계 — 렌더링 엔진을 직접 만들지 않는다.** 페이지를 실제로 그리는 일은 브라우저(Chromium)에
@@ -93,7 +93,25 @@ CSS로 찍을 수 없고, 장마다 소계를 넣는 것도 CSS로는 불가능�
 난수 시드는 보증서번호만 쓴다(버전 제외). v1과 v2가 같은 코일 목록에서 출발해야 정정이 그 위에 겹쳐진다.
 코일번호는 최초 발행일(`firstIssued`)로 만들어 재발행일이 바뀌어도 흔들리지 않는다.
 
-**아직 없는 것 (1단계 이후).** 양식 JSON 스키마·양식 편집기, 역할·승인 모델(`approve`/`free` 등급의 실제 동작),
+**역할·권한 (`ROLES` · `PERMISSIONS` · `can(role, action)`).** 필드 등급이 "어떤 절차로"라면 역할은 "누가 그 절차를
+밟을 수 있는가"다. 두 축은 따로 둔다. 목업이라 역할마다 사람 하나를 고정하고(현업 김현업 · 품질관리자 박품질 ·
+개발자 이개발) 탭 줄 오른쪽 토글로 바꾼다 — 실제로는 로그인 계정의 역할이다. 권한이 없으면 버튼을 숨기지 않고
+**비활성 + 이유**를 보인다.
+
+| 동작 | 현업 | 품질관리자 | 개발자 |
+|---|---|---|---|
+| 미리보기 · PDF 발행 · 변경 요청 | ○ | ○ | ○ |
+| 시험값 정정 · 회수 · 승인/반려 | — | ○ | ○ |
+| 시드 초기화 · 양식 관리 | — | — | ○ |
+
+**approve 등급 변경 절차 (수요가 표기명).** drawer «표기명 변경 요청» → `requestFieldChange`가 등급·상태·중복·값·사유를
+검증해 요청(대기)을 만든다. 문서는 승인 전까지 그대로고 행에는 `pending`만 붙는다(목록에 «승인 대기» pill). «승인 대기»
+탭에서 `applyFieldChange`(승인)가 시험값 정정과 같은 메커니즘으로 현재 버전을 회수하고 다음 버전을 재발행한다 —
+**발행된 문서가 바뀌면 언제나 새 버전**. `rejectFieldChange`(반려)는 사유를 남기고 요청만 닫는다. **요청자 본인은
+승인·반려할 수 없다(4-eyes)** — 품질 문서라 모델에 박아둔다. 재발행본 A4의 수요가 셀에 ※가 붙고, 3항 «정정·변경 내역»에
+시험값 정정과 표기 변경이 시간순으로 합쳐져 인쇄된다(요청자·승인자 분리 기재).
+
+**아직 없는 것 (1단계 이후).** 양식 JSON 스키마·양식 편집기, `free` 등급(비고 자유 입력)의 실제 동작, 초안의 편집·발행 전환,
 독립 회수(정정 없이 회수만)·코일 제외 재발행, 서버 렌더링(headless Chromium)과 대량 배치, 발행본 스냅샷·전자서명·QR
 검증, 검사증명서·Tag 라벨(라벨 프린터는 PDF가 아니라 ZPL 직결이라 별도 경로다).
 

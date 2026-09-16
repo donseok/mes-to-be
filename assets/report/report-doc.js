@@ -42,7 +42,7 @@
   function infoHtml(doc) {
     const size = fx(doc.thk, 3) + ' × ' + (doc.wid == null ? '—' : comma(doc.wid));
     return '<div class="rp-info"><table>'
-      + '<tr><th>수요가</th><td>' + esc(doc.customer) + '</td>'
+      + '<tr><th>수요가</th><td' + (doc.customerChanged ? ' class="rp-corr"' : '') + '>' + esc(doc.customerDisplay) + (doc.customerChanged ? '<sup>※</sup>' : '') + '</td>'
       + '<th>주문번호</th><td class="mono">' + esc(doc.order) + '</td></tr>'
       + '<tr><th>발주번호(PO)</th><td class="mono">' + esc(doc.po) + '</td>'
       + '<th>품명 · 규격</th><td>' + esc(doc.prd.name) + ' · ' + esc(doc.prd.spec) + '</td></tr>'
@@ -67,30 +67,33 @@
 
   // 정정 재발행일 때만. 읽는 사람이 첫 장에서 바로 알아야 한다.
   function noticeHtml(doc) {
-    if (!doc.corrections.length) return '';
-    const n = doc.corrections.length;
+    if (!doc.revisions.length) return '';
+    const parts = [];
+    if (doc.corrections.length) parts.push('시험값 ' + doc.corrections.length + '건');
+    if (doc.changes.length) parts.push('표기 ' + doc.changes.length + '건');
     return '<div class="rp-notice"><b>정정 재발행</b> — 본 보증서는 ' + esc(doc.supersedes || '이전 버전')
-      + (doc.firstIssued ? ' (' + esc(doc.firstIssued) + ' 발행)' : '') + '의 시험값 ' + n + '건을 정정하여 재발행한 것입니다. '
-      + '정정된 값은 <b>※</b> 로 표시하며 상세는 <span class="rp-nb">3항 정정 내역</span>에 있습니다. 이전 버전은 회수되었습니다.</div>';
+      + (doc.firstIssued ? ' (' + esc(doc.firstIssued) + ' 최초 발행)' : '') + '의 ' + parts.join(' · ') + '을 정정·변경하여 재발행한 것입니다. '
+      + '바뀐 값은 <b>※</b> 로 표시하며 상세는 <span class="rp-nb">3항 정정·변경 내역</span>에 있습니다. 이전 버전은 회수되었습니다.</div>';
   }
 
   const CORR_COLS = '<colgroup><col style="width:27mm"><col style="width:28mm"><col style="width:16mm"><col style="width:16mm">'
     + '<col><col style="width:36mm"><col style="width:16mm"></colgroup>';
-  const FIELD_LABEL = { yp: '항복강도 YP', ts: '인장강도 TS', el: '연신율 EL', coat: '도금부착량 C/W' };
 
   function corrHeadHtml(doc) {
-    return '<h4>3. 정정 내역<span class="rp-of">' + doc.corrections.length + '건</span></h4>';
+    return '<h4>3. 정정·변경 내역<span class="rp-of">' + doc.revisions.length + '건</span></h4>';
   }
 
   function corrTableHtml(doc, from, to) {
-    const rows = doc.corrections.slice(from, to);
+    const rows = doc.revisions.slice(from, to);
     let h = '<table class="rp-tbl">' + CORR_COLS
-      + '<thead><tr><th>코일번호</th><th>항목</th><th>정정 전</th><th>정정 후</th><th>사유</th><th>정정자 · 일시</th><th>버전</th></tr></thead><tbody>';
+      + '<thead><tr><th>대상</th><th>항목</th><th>변경 전</th><th>변경 후</th><th>사유</th><th>처리자 · 일시</th><th>버전</th></tr></thead><tbody>';
     rows.forEach(function (c) {
-      h += '<tr><td class="mono">' + esc(c.coil) + '</td><td>' + esc(FIELD_LABEL[c.field] || c.field) + '</td>'
-        + '<td class="num">' + comma(c.from) + '</td><td class="num rp-corr">' + comma(c.to) + '</td>'
+      const isNum = c.kind === 'correct';
+      h += '<tr><td class="mono">' + (c.coil ? esc(c.coil) : '<span class="sub">문서</span>') + '</td><td>' + esc(c.label) + '</td>'
+        + '<td class="' + (isNum ? 'num' : 'wrap') + '">' + (isNum ? comma(c.from) : esc(c.from)) + '</td>'
+        + '<td class="' + (isNum ? 'num' : 'wrap') + ' rp-corr">' + (isNum ? comma(c.to) : esc(c.to)) + '</td>'
         + '<td class="wrap">' + esc(c.reason) + '</td>'
-        + '<td class="wrap">' + esc(c.by) + '<br><span class="mono rp-nb">' + esc(String(c.at || '').replace('T', ' ')) + '</span></td>'
+        + '<td class="wrap">' + esc(c.by).replace(' · ', '<br>') + '<br><span class="mono rp-nb">' + esc(String(c.at || '').replace('T', ' ')) + '</span></td>'
         + '<td class="ctr mono">' + esc(c.fromVer) + '→' + esc(c.toVer) + '</td></tr>';
     });
     return h + '</tbody></table>';
@@ -181,7 +184,7 @@
       + '<div id="rp-m-notice">' + noticeHtml(doc) + '</div>'
       + '<div id="rp-m-crit">' + criteriaHtml(doc) + '</div>'
       + '<div class="rp-sect" id="rp-m-coils">' + coilsHeadHtml(doc) + coilsTableHtml(doc, 0, doc.coils.length, true) + '</div>'
-      + (doc.corrections.length ? '<div class="rp-sect" id="rp-m-corr">' + corrHeadHtml(doc) + corrTableHtml(doc, 0, doc.corrections.length) + '</div>' : '')
+      + (doc.revisions.length ? '<div class="rp-sect" id="rp-m-corr">' + corrHeadHtml(doc) + corrTableHtml(doc, 0, doc.revisions.length) + '</div>' : '')
       + '<div id="rp-m-sign">' + signHtml(doc) + '</div>'
       + '</div></div>';
     const coilSect = host.querySelector('#rp-m-coils');
@@ -228,7 +231,7 @@
         else if (p.id === 'crit') body += criteriaHtml(doc);
         else if (p.id === 'corr') {
           body += '<div class="rp-sect">' + (p.from === 0 ? corrHeadHtml(doc)
-            : '<h4>3. 정정 내역<span class="rp-of">' + (p.from + 1) + ' ~ ' + p.to + ' / ' + doc.corrections.length + '건 (이어서)</span></h4>')
+            : '<h4>3. 정정·변경 내역<span class="rp-of">' + (p.from + 1) + ' ~ ' + p.to + ' / ' + doc.revisions.length + '건 (이어서)</span></h4>')
             + corrTableHtml(doc, p.from, p.to) + '</div>';
         }
         else if (p.id === 'sign') body += signHtml(doc);
