@@ -53,14 +53,14 @@
       viewId: 'line-width-shrinkage-view',
       title: '폭수축량관리',
       crumbs: ['품질관리', '품질설계', '모듈관리'],
-      openLink: false
+      openLink: true
     },
     'line-width-margin': {
       hash: '#/quality-design/module-management/line-width-margin',
       viewId: 'line-width-margin-view',
       title: '폭마진량관리',
       crumbs: ['품질관리', '품질설계', '모듈관리'],
-      openLink: false
+      openLink: true
     },
     'order-unit-weight-error': {
       hash: '#/quality-design/feasibility-management/order-unit-weight-error',

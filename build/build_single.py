@@ -252,6 +252,37 @@ index = index.replace(
     '          <iframe id="module-frame-pr" title="공정라우팅관리 목업" '
     'loading="lazy" srcdoc="' + escaped_pr + '"></iframe>', 1)
 
+# --- 2r. 폭수축량관리 모듈 iframe srcdoc 내장 --------------------------------
+#     메뉴 슬롯(line-width-shrinkage)은 placeholder 로 예약돼 있었고, 여기서 실제 모듈로 교체한다.
+module_wr = open(path('modules', 'width-reduction.html'), encoding='utf-8').read()
+old_iframe_lws = '''          <iframe
+            id="module-frame-lws"
+            title="폭수축량관리 목업"
+            src="./modules/width-reduction.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_lws in index, 'lws iframe block not found'
+escaped_wr = module_wr.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_lws,
+    '          <iframe id="module-frame-lws" title="폭수축량관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_wr + '"></iframe>', 1)
+
+# --- 2s. 폭마진량관리 모듈 iframe srcdoc 내장 --------------------------------
+module_wm = open(path('modules', 'width-margin.html'), encoding='utf-8').read()
+old_iframe_lwm = '''          <iframe
+            id="module-frame-lwm"
+            title="폭마진량관리 목업"
+            src="./modules/width-margin.html?embed=1"
+            loading="lazy">
+          </iframe>'''
+assert old_iframe_lwm in index, 'lwm iframe block not found'
+escaped_wm = module_wm.replace('&', '&amp;').replace('"', '&quot;')
+index = index.replace(
+    old_iframe_lwm,
+    '          <iframe id="module-frame-lwm" title="폭마진량관리 목업" '
+    'loading="lazy" srcdoc="' + escaped_wm + '"></iframe>', 1)
+
 # --- 3. JS 인라인 (마지막 </body> 앞 — srcdoc 안의 </body>와 혼동 금지) -------
 module_mc = open(path('modules', 'master-code.html'), encoding='utf-8').read()
 old_iframe_mc = '<iframe id="module-frame-mc" title="마스터코드 관리" src="./modules/master-code.html?embed=1" loading="lazy"></iframe>'

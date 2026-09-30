@@ -1,0 +1,1276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W-RED 폭수축량관리</title>
+<script>try{if(window.self!==window.top)document.documentElement.classList.add('embedded');}catch(e){document.documentElement.classList.add('embedded');}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   W-RED 폭수축량관리 — 압연 후공정 폭수축량 기준 룰 (조건 → 결과)
+   AS-IS 업무기준 5종을 공정에 따라 묶어 ONE 프로그램으로 운영한다.
+     C10B1074 PLTCM폭수축량 · C10B1075 CGL폭감소량 · C10B1076 EGL폭감소량
+     C10B1077 정전폭감소량  · C10B1078 CCL폭감소량
+   탭: 공정별 룰 목록 · 공정 흐름(전체) · 간편판정 · 변경 이력 · 코드 범례
+   데이터는 repo 객체(브라우저 localStorage)를 통해서만 읽고 쓴다.
+   실제 DB(REST API) 연동 시 repo 객체 내부만 교체하면 되도록 분리했다.
+   시드는 build/width_rule_seed.py 가 원본 RuleData xlsx 에서 생성해
+   아래 첫 번째 script 블록의 SEED_REDUCTION 마커 구간에 주입한다 — 손으로 고치지 않는다.
+   ============================================================ */
+:root{
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface-2:#F1F0EB;--surface-3:#E9E7E1;
+  --border:#E8E6E1;--border-strong:#D6D2CA;
+  --ink:#1C2126;--ink-2:#4A5158;--ink-3:#8A9198;
+  --accent:#166578;--accent-strong:#0F4854;--accent-on:#FFFFFF;
+  --accent-soft:#E4EEF1;--accent-soft-ink:#0F4854;
+  --result:#96610E;--result-soft:#FBF0DC;--result-soft-ink:#7A4F0B;
+  --danger:#B03A32;--danger-bg:#F7E4E2;
+  --ok:#276B39;--ok-bg:#E8F2E9;--hold:#3F5E8C;--hold-bg:#E7ECF6;
+  --code-bg:#F1F0EC;--scrim:rgba(28,26,22,.44);
+  --shadow:0 8px 28px rgba(44,40,32,.12);
+  --topbar-bg:#FBFAF7;--topbar-ink:#3A4148;--topbar-dim:#7A8188;--focus:#166578;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;font-size:14px;line-height:1.55}
+.mono{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* 상단바 · 탭 */
+.topbar{position:sticky;top:0;z-index:40;height:52px;display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--topbar-bg);border-bottom:1px solid var(--border);color:var(--topbar-ink)}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);color:var(--accent-on);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.brand-name{font-weight:800;letter-spacing:.4px}
+.crumb{color:var(--topbar-dim);font-size:12.5px}
+.mock-flag{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--result);background:var(--result-soft);border:1px solid #EAD9B5;border-radius:5px;padding:3px 8px}
+.embedded .topbar{display:none}
+.tabs{position:sticky;top:52px;z-index:30;display:flex;gap:2px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.embedded .tabs{top:0}
+.tab{padding:12px 14px;font-weight:700;font-size:13.5px;color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink-2)}
+.tab.on{color:var(--accent-strong);border-bottom-color:var(--accent)}
+.tab .cnt{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:999px;background:var(--surface-3);color:var(--ink-2);font-size:11px;text-align:center}
+.tab.on .cnt{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+.wrap{max-width:1400px;margin:0 auto;padding:18px 18px 60px}
+.screen{display:none}
+.screen.on{display:block}
+.screen-head{margin:4px 0 14px}
+.screen-head h2{margin:0 0 4px;font-size:18px}
+.screen-head p{margin:0;color:var(--ink-2);font-size:13px}
+.head-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.head-meta span{font-size:11.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.head-meta b{color:var(--ink)}
+
+/* 공정 선택 바 */
+.procbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.procbar .pb-lbl{font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.4px;margin-right:2px}
+.proc{display:flex;flex-direction:column;gap:2px;min-width:104px;padding:7px 11px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);text-align:left}
+.proc:hover{background:var(--surface-2)}
+.proc .pc{font-weight:800;font-size:13.5px;color:var(--ink-2)}
+.proc .pn{font-size:10.5px;color:var(--ink-3);font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.proc .pr{display:inline-block;margin-top:2px;font-size:10.5px;font-weight:800;color:var(--result-soft-ink);background:var(--result-soft);border-radius:5px;padding:0 6px}
+.proc.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.proc.on .pc{color:var(--accent-strong)}
+.proc.on .pr{background:#fff}
+.proc-sum{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2)}
+.proc-sum b{font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;font-size:15px;color:var(--result-soft-ink)}
+
+/* 조회 바 · 입력 */
+.fbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.f-field{display:flex;flex-direction:column;gap:4px}
+.f-field>label{font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.3px}
+.inp{height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;min-width:0}
+textarea.inp{height:auto;padding:8px 10px;resize:vertical}
+.inp[readonly],.inp:disabled{background:var(--surface-2);color:var(--ink-3)}
+.f-spacer{flex:1}
+.fbar-meta{font-size:12.5px;color:var(--ink-3);align-self:center}
+.btn{height:34px;padding:0 14px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);font-weight:700;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn-pri{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn-pri:hover{background:var(--accent-strong)}
+.btn-danger{background:var(--danger-bg);border-color:#EAC7C4;color:var(--danger)}
+.btn-sm{height:26px;padding:0 9px;font-size:12px;border-radius:6px}
+
+/* 패널 · 테이블 */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.panel-head h3{margin:0;font-size:14.5px}
+.panel-body{padding:12px 14px}
+.panel-note{padding:10px 14px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--ink-2)}
+.tbl-scroll{overflow:auto;max-height:calc(100vh - 320px)}
+table.tbl{border-collapse:collapse;width:100%;min-width:1560px;font-size:12.5px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);color:var(--ink-2);font-size:11.5px;text-align:left;padding:8px 9px;border-bottom:1px solid var(--border-strong);white-space:nowrap;z-index:1}
+.tbl thead tr.grp th{top:0;text-align:center;font-size:11px;letter-spacing:.6px;border-bottom:1px solid var(--border)}
+.tbl thead tr.grp+tr th{top:30px}
+.tbl th.g-cond{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.tbl th.g-res{background:var(--result-soft);color:var(--result-soft-ink)}
+.tbl th.g-etc{background:var(--surface-2);color:var(--ink-3)}
+.tbl td{padding:7px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+.tbl td.res{background:#FFFCF5}
+.tbl tr.row{cursor:pointer}
+.tbl tr.row:hover td{background:#F8FAF9}
+.tbl tr.row:hover td.res{background:#FBF5E6}
+.tbl tr.sel td{background:var(--accent-soft)}
+.tbl td.c{text-align:center}
+.tbl td.num{text-align:right}
+.tbl td.dim{color:var(--ink-3)}
+.tbl td.nw{white-space:nowrap}
+.cond-cell{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cond-cell.long{max-width:210px}
+.nc{color:var(--ink-3);font-size:11px}
+.empty{padding:36px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+.adj{font-weight:800;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.adj.neg{color:var(--danger)}
+.adj.pos{color:var(--ok)}
+.adj.zero{color:var(--ink-3)}
+.resbig{font-weight:800;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+
+/* 뱃지 */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--result-soft);color:var(--result)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}
+.pill.dim{background:var(--surface-2);color:var(--ink-2)}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap}
+.chip.exc{background:var(--danger-bg);color:var(--danger)}
+.chip.apply{background:var(--ok-bg);color:var(--ok)}
+.chip.cand{background:var(--surface-2);color:var(--ink-2)}
+.chip.rule{background:var(--accent-soft);color:var(--accent-soft-ink)}
+.chip.proc{background:var(--hold-bg);color:var(--hold)}
+.chip.warnchip{background:var(--result-soft);color:var(--result-soft-ink)}
+.op{display:inline-block;padding:0 4px;border-radius:4px;background:var(--code-bg);color:var(--ink-2);font-size:10.5px;font-family:'JetBrains Mono','Consolas',ui-monospace,monospace;margin-right:3px}
+.inherit{color:var(--ink-3);font-size:11px}
+
+/* 공정 흐름도 */
+.flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:14px}
+.flow-step{flex:1 1 0;min-width:150px;position:relative;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left}
+.flow-step:hover{background:var(--surface-2)}
+.flow-step+.flow-step{margin-left:22px}
+.flow-step+.flow-step::before{content:'';position:absolute;left:-16px;top:50%;width:10px;height:2px;background:var(--border-strong)}
+.flow-step+.flow-step::after{content:'';position:absolute;left:-8px;top:50%;margin-top:-4px;border:4px solid transparent;border-left-color:var(--border-strong)}
+.flow-step.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.flow-step .fs-ord{font-size:10.5px;font-weight:800;color:var(--ink-3);letter-spacing:.5px}
+.flow-step .fs-name{font-weight:800;font-size:15px;margin:2px 0 4px;color:var(--ink)}
+.flow-step.on .fs-name{color:var(--accent-strong)}
+.flow-step .fs-rule{font-size:10.5px;color:var(--ink-3);font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.flow-step .fs-val{display:inline-block;margin-top:7px;font-size:12px;font-weight:800;color:var(--result-soft-ink);background:var(--result-soft);border-radius:6px;padding:2px 8px}
+.flow-step .fs-val.zero{color:var(--ink-3);background:var(--surface-2)}
+.flow-step .fs-val.miss{color:var(--ink-3);background:var(--surface-2)}
+.flow-total{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:4px;margin-left:22px;padding:12px 16px;background:#FFFCF5;border:1px solid #EAD9B5;border-radius:10px;min-width:168px}
+.flow-total .ft-lbl{font-size:11px;font-weight:800;color:var(--result-soft-ink);letter-spacing:.3px}
+.flow-total .ft-val{font-size:24px;font-weight:800;color:var(--result-soft-ink);font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.flow-total .ft-sub{font-size:11px;color:var(--ink-2)}
+
+/* 간편판정 */
+.judge-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px}
+.judge-result{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.jr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.jr-card .lbl{font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.4px;margin-bottom:6px}
+.jr-card .val{font-size:26px;font-weight:800;color:var(--accent-strong);font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+.jr-card .val.miss{color:var(--danger);font-size:18px}
+.jr-card .sub{font-size:12px;color:var(--ink-2);margin-top:4px}
+.judge-hint{font-size:12px;color:var(--ink-3);margin:6px 0 0}
+.apply-row td{background:#F2F7F4}
+.src-badge{font-size:10.5px;color:var(--ink-3);font-family:'JetBrains Mono','Consolas',ui-monospace,monospace}
+
+/* 범례 */
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 12px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-3);font-weight:700}
+.kv dd{margin:0}
+.kv-3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 18px;font-size:12.5px}
+.kv-3 div{display:flex;gap:8px}
+.kv-3 .mono{min-width:34px;color:var(--ink-2);font-weight:700}
+.fieldtab{display:flex;flex-wrap:wrap;gap:2px;padding:0 14px 12px;border-bottom:1px solid var(--border)}
+.fieldtab button{padding:6px 11px;border-radius:7px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+.fieldtab button:hover{background:var(--surface-2);color:var(--ink-2)}
+.fieldtab button.on{background:var(--accent-soft);color:var(--accent-soft-ink)}
+
+/* 드로어 */
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:760px;max-width:96vw;background:var(--surface);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .2s;z-index:60;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.d-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.d-head h3{margin:0;font-size:15.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-close{width:30px;height:30px;border-radius:7px;color:var(--ink-3);font-size:15px}
+.d-close:hover{background:var(--surface-2)}
+.d-body{flex:1;overflow:auto;padding:14px 18px}
+.d-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--border)}
+.d-sect{margin-bottom:16px}
+.d-sect h4{margin:0 0 8px;font-size:12px;color:var(--ink-3);letter-spacing:.5px}
+.d-sect h4.cond{color:var(--accent-soft-ink)}
+.d-sect h4.res{color:var(--result-soft-ink)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px}
+.form-grid .wide{grid-column:1 / -1}
+.form-grid .f-field>label .req{color:var(--danger)}
+.cond-form{display:grid;grid-template-columns:132px 152px 1fr 1fr;gap:6px 8px;align-items:center;font-size:12.5px}
+.cond-form .cl{font-weight:700;color:var(--ink-2)}
+.cond-form .ch{font-size:11px;color:var(--ink-3);font-weight:800;letter-spacing:.3px}
+.f-help{font-size:11.5px;color:var(--ink-3)}
+.f-help.err{color:var(--danger)}
+.kv.detail{grid-template-columns:132px 1fr}
+
+/* 모달 · 토스트 */
+.modal-back{position:fixed;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;z-index:70}
+.modal-back.on{display:flex}
+.modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);width:400px;max-width:92vw;padding:18px}
+.modal h3{margin:0 0 8px;font-size:15px}
+.modal p{margin:0 0 16px;color:var(--ink-2);font-size:13px}
+.modal .m-foot{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:80;max-width:88vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--danger)}
+
+@media (max-width:1100px){
+  .judge-grid{grid-template-columns:1fr 1fr}
+  .judge-result{grid-template-columns:1fr 1fr}
+}
+@media (max-width:900px){
+  .kv-3{grid-template-columns:1fr}
+  .judge-result{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  .wrap{padding:12px 10px 50px}
+  .form-grid{grid-template-columns:1fr}
+  .cond-form{grid-template-columns:1fr 1fr}
+  .drawer{width:100%}
+  .judge-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">M</span><span class="brand-name">W-RED</span></div>
+  <span class="crumb">품질관리 › 품질설계 › 모듈관리 › 폭수축량관리</span>
+  <span class="mock-flag">MOCK-UP</span>
+</header>
+<nav class="tabs" role="tablist" aria-label="폭수축량관리 탭">
+  <button class="tab on" role="tab" data-tab="list" aria-selected="true" aria-controls="sc-list" tabindex="0">공정별 룰 목록 <span class="cnt" id="cnt-list">0</span></button>
+  <button class="tab" role="tab" data-tab="flow" aria-selected="false" aria-controls="sc-flow" tabindex="-1">공정 흐름</button>
+  <button class="tab" role="tab" data-tab="judge" aria-selected="false" aria-controls="sc-judge" tabindex="-1">간편판정</button>
+  <button class="tab" role="tab" data-tab="hist" aria-selected="false" aria-controls="sc-hist" tabindex="-1">변경 이력 <span class="cnt" id="cnt-hist">0</span></button>
+  <button class="tab" role="tab" data-tab="legend" aria-selected="false" aria-controls="sc-legend" tabindex="-1">코드 범례</button>
+</nav>
+<main class="wrap" id="main-content">
+
+  <!-- ── 공정별 룰 목록 ──────────────────────────────────── -->
+  <section class="screen on" id="sc-list" role="tabpanel" aria-label="공정별 룰 목록">
+    <div class="screen-head">
+      <h2>폭수축량(폭감소량) 룰</h2>
+      <p>압연 후 공정 단계마다 실제로 줄어드는 폭(폭감소량)을 결정합니다. PLTCM → CGL → EGL → 정전 → CCL 순으로 이어지는 하나의 프로그램이며, 위 공정 바에서 단계를 고르면 그 단계의 룰만 조회·등록·수정합니다.</p>
+      <div class="head-meta" id="head-meta"></div>
+    </div>
+    <div class="procbar" id="procbar" role="tablist" aria-label="공정 선택"></div>
+    <div class="fbar" id="list-bar">
+      <div class="f-field"><label for="f-pcd">공정(라인)코드</label><select class="inp" id="f-pcd"><option value="">전체</option></select></div>
+      <div class="f-field"><label for="f-prod">품명코드</label><select class="inp" id="f-prod"><option value="">전체</option></select></div>
+      <div class="f-field"><label for="f-mat">재질코드</label><select class="inp" id="f-mat"><option value="">전체</option></select></div>
+      <div class="f-field"><label for="f-raw">원자재코드</label><select class="inp" id="f-raw"><option value="">전체</option></select></div>
+      <div class="f-field"><label for="f-size">감소량 구분</label>
+        <select class="inp" id="f-size"><option value="">전체</option><option value="0">0 (수축 없음)</option><option value="1">1 mm</option><option value="2">2 mm</option><option value="3">3 mm</option><option value="4">4 mm</option><option value="5">5 mm 이상</option></select></div>
+      <div class="f-field"><label for="f-st">상태</label>
+        <select class="inp" id="f-st"><option value="">전체</option><option value="Y">Y — 사용중</option><option value="S">S — 대기상태</option><option value="F">F — 미완료</option><option value="N">N — 사용종료</option></select></div>
+      <div class="f-field"><label for="f-q">검색</label>
+        <input class="inp" id="f-q" type="search" placeholder="ID, 조건값, 비고" style="width:200px"></div>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="list-meta" aria-live="polite"></div>
+      <button class="btn btn-pri" data-action="new-rule">＋ 룰 등록</button>
+    </div>
+    <div class="panel">
+      <div class="tbl-scroll" id="list-grid"></div>
+      <div class="panel-note" id="list-note"></div>
+    </div>
+  </section>
+
+  <!-- ── 공정 흐름 ────────────────────────────────────────── -->
+  <section class="screen" id="sc-flow" role="tabpanel" aria-label="공정 흐름">
+    <div class="screen-head">
+      <h2>공정 흐름 — 단계별 폭수축량 합산</h2>
+      <p>같은 주문 조건으로 PLTCM → CGL → EGL → 정전 → CCL 각 단계의 폭감소량을 한 번에 구해 합산합니다. 각 단계는 <b>그 단계로 들어오는 폭</b>(직전 단계 출측폭)을 자기 룰의 폭범위 조건에 대입합니다.</p>
+    </div>
+    <div class="panel"><div class="panel-body">
+      <div class="judge-grid" id="flow-inputs"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-pri" data-action="flow-run">합산 계산</button>
+        <button class="btn" data-action="flow-clear">입력 지우기</button>
+        <div class="f-spacer"></div>
+        <div class="fbar-meta" id="flow-meta" aria-live="polite"></div>
+      </div>
+    </div></div>
+    <div class="panel">
+      <div class="panel-head"><h3>단계별 폭수축량</h3><span class="src-badge" id="flow-width-note"></span></div>
+      <div class="flow" id="flow-steps"></div>
+      <div class="panel-note">합산 폭수축량은 공정 단계별 룰의 폭감소량을 더한 값입니다. 단계는 <b>선택한 공정</b>만 계산하고, 건너뛴 단계는 0 으로 둡니다. 단계 카드를 클릭하면 해당 단계 룰 목록으로 이동합니다.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>단계별 산출 근거</h3></div>
+      <div class="tbl-scroll" id="flow-grid" style="max-height:none"><div class="empty">조건을 입력하고 합산 계산을 실행해 주세요.</div></div>
+    </div>
+  </section>
+
+  <!-- ── 간편판정 ─────────────────────────────────────────── -->
+  <section class="screen" id="sc-judge" role="tabpanel" aria-label="간편판정">
+    <div class="screen-head">
+      <h2>간편판정</h2>
+      <p>선택한 공정의 조건을 입력하면 매칭되는 룰과 폭감소량을 확인합니다. 상태 Y(사용중) 룰만 사용하며 우선순위 → 순번 순으로 평가해 첫 번째 룰을 적용합니다.</p>
+      <div class="head-meta" id="judge-head"></div>
+    </div>
+    <div class="panel"><div class="panel-body">
+      <div class="judge-grid" id="judge-inputs"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-pri" data-action="judge-run">판정</button>
+        <button class="btn" data-action="judge-clear">입력 지우기</button>
+        <div class="f-spacer"></div><div class="fbar-meta" id="judge-meta" aria-live="polite"></div>
+      </div>
+    </div></div>
+    <div class="judge-result" id="judge-result"></div>
+    <div class="panel">
+      <div class="tbl-scroll" id="judge-grid"><div class="empty">조건을 입력하고 판정을 실행해 주세요.</div></div>
+      <div class="panel-note">여러 룰이 매칭되면 우선순위·순번 순으로 정렬되며 첫 번째 룰이 <b>적용</b>됩니다. 나머지는 후보로 표시합니다. 비워둔 입력 항목은 체크 안 함(NOT_CHECK) 조건에만 매칭됩니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 변경 이력 ───────────────────────────────────────── -->
+  <section class="screen" id="sc-hist" role="tabpanel" aria-label="변경 이력">
+    <div class="screen-head">
+      <h2>변경 이력</h2>
+      <p>공정 구분과 함께 룰 등록·수정·삭제가 기록됩니다.</p>
+    </div>
+    <div class="fbar">
+      <div class="f-field"><label for="h-from">시작일</label><input class="inp" id="h-from" type="date"></div>
+      <div class="f-field"><label for="h-to">종료일</label><input class="inp" id="h-to" type="date"></div>
+      <div class="f-field"><label for="h-proc">공정</label><select class="inp" id="h-proc"><option value="">전체</option></select></div>
+      <div class="f-field"><label for="h-kind">구분</label>
+        <select class="inp" id="h-kind"><option value="">전체</option><option>룰 등록</option><option>룰 수정</option><option>룰 삭제</option><option>시드 적재</option></select></div>
+      <div class="f-field"><label for="h-q">검색</label><input class="inp" id="h-q" type="search" placeholder="대상, 작업자" style="width:190px"></div>
+      <button class="btn" data-action="h-reset">초기화</button>
+      <div class="f-spacer"></div>
+      <div class="fbar-meta" id="h-meta" aria-live="polite"></div>
+    </div>
+    <div class="panel"><div class="tbl-scroll" id="hist-grid"></div></div>
+  </section>
+
+  <!-- ── 코드 범례 ───────────────────────────────────────── -->
+  <section class="screen" id="sc-legend" role="tabpanel" aria-label="코드 범례">
+    <div class="screen-head">
+      <h2>코드 범례</h2>
+      <p>AS-IS 룰 시트 하단 범례와 이 프로그램이 쓰는 조건 항목·코드를 정리했습니다. 공정별 조건 항목이 다르므로 아래 탭으로 공정을 바꿔 보세요.</p>
+    </div>
+    <div class="panel">
+      <div class="fieldtab" id="legend-procbar" role="tablist" aria-label="범례 공정 선택"></div>
+      <div class="panel-body" id="legend-procbody"></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>결과 — 폭감소량</h3></div><div class="panel-body"><dl class="kv">
+      <dt>폭감소량</dt><dd>해당 공정에서 실제로 줄어드는 폭(mm). <b>후공정 폭 = 진입 폭 − 폭감소량</b>. 값 0 은 그 단계에서 폭을 줄이지 않는다는 뜻입니다.</dd>
+      <dt>합산 폭수축량</dt><dd>선택한 공정 단계들의 폭감소량 합계(PLTCM·CGL·EGL·정전·CCL).</dd>
+      <dt>진입 폭</dt><dd>각 단계 룰의 폭범위 조건에 대입하는 값. PLTCM 는 원자재 폭, 이후 공정은 직전 단계 출측폭(진입 폭 − 직전 감소량)을 씁니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>공정(라인) 코드</h3></div><div class="panel-body">
+      <dl class="kv"><dt class="mono">C10B1075</dt><dd>냉연도금(CGL) 단계 조건 <span class="mono">공정</span> — <span class="mono" id="lg-cgl-proc"></span></dd>
+      <dt class="mono">C10B1076</dt><dd>전해도금(EGL) 단계 조건 <span class="mono">공정</span> — <span class="mono" id="lg-egl-proc"></span></dd>
+      <dt>라벨</dt><dd>원본에 코드 라벨이 없어 코드값만 노출합니다. 실제 라인명은 코드사전(<span class="mono">PROC_CD</span>) 연동 시 채워집니다.</dd></dl>
+    </div></div>
+    <div class="panel"><div class="panel-head"><h3>코드 사전</h3></div><div class="panel-body"><div class="kv-3" id="legend-dict"></div></div></div>
+    <div class="panel"><div class="panel-head"><h3>유형 · 상태 · 순번 · 우선순위</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">1B0</dt><dd>조건판단 — 이 프로그램 5개 업무기준(C10B1074~C10B1078)의 유형. (1A0 일반 · 1A1 매트릭스 · 1A2 판단성일반 · 1B1 연관판단)</dd>
+      <dt class="mono">S</dt><dd>대기상태</dd><dt class="mono">F</dt><dd>미완료</dd><dt class="mono">Y</dt><dd>사용중 — 간편판정·공정 흐름은 Y 룰만 사용합니다.</dd><dt class="mono">N</dt><dd>사용종료</dd>
+      <dt class="mono">no.</dt><dd>데이터 순번(1, 2, 3…) — 원본 시트의 행 순서. <b>0</b> 은 예외 룰로 먼저 평가합니다.</dd>
+      <dt class="mono">우선순위</dt><dd>원본 시트 2행. 공란은 바로 위 값을 이어받는 것으로 보고(그룹 표기용), 평가 순서는 <b>우선순위 → 순번</b> 입니다.</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>연산자</h3></div><div class="panel-body"><dl class="kv">
+      <dt class="mono">NOT_CHECK</dt><dd>체크 안함</dd>
+      <dt class="mono">= / !=</dt><dd>같다 / 다르다</dd>
+      <dt class="mono">&gt; &gt;= &lt; &lt;=</dt><dd>비교</dd>
+      <dt class="mono">BETWEEN1</dt><dd>값1 ≤ 변수 ≤ 값2</dd><dt class="mono">BETWEEN2</dt><dd>값1 ≤ 변수 &lt; 값2</dd>
+      <dt class="mono">BETWEEN3</dt><dd>값1 &lt; 변수 ≤ 값2</dd><dt class="mono">BETWEEN4</dt><dd>값1 &lt; 변수 &lt; 값2</dd>
+      <dt class="mono">LIKE1</dt><dd>%LIKE% (포함)</dd><dt class="mono">LIKE2</dt><dd>%LIKE (끝 일치)</dd><dt class="mono">LIKE3</dt><dd>LIKE% (시작 일치)</dd>
+      <dt class="mono">IN / NOT_IN</dt><dd>목록 포함 / 미포함 (쉼표 구분)</dd>
+      <dt class="mono">NOT_NULL / IS_NULL</dt><dd>값 있음 / 값 없음</dd>
+    </dl></div></div>
+    <div class="panel"><div class="panel-head"><h3>원본 데이터 주의</h3></div><div class="panel-body"><dl class="kv" id="legend-issues"></dl></div></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="d-head"><h3 id="d-title">상세</h3><button class="d-close" data-action="drawer-close" aria-label="닫기">✕</button></div>
+  <div class="d-body" id="d-body"></div>
+  <div class="d-foot" id="d-foot"></div>
+</aside>
+<div class="modal-back" id="modal-back">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <h3 id="m-title">룰 삭제</h3>
+    <p id="m-body"></p>
+    <div class="m-foot"><button class="btn" data-action="modal-close">취소</button><button class="btn btn-danger" data-action="modal-ok">삭제</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*__SEED_REDUCTION_START__*/
+var SEED_REDUCTION={"generated":"원본 RuleData xlsx 파싱 결과","kind":"reduction","processes":[{"ruleId":"C10B1074","name":"PLTCM폭수축량","version":"1.0","type":"1B0","status":"Y","startAt":"2012-06-12 19:04:25","kind":"reduction","proc":"PLTCM","procLabel":"PLTCM","result":"폭감소량","unit":"mm","fields":[{"key":"rawCd","label":"원자재코드","type":"text"},{"key":"pltcmThk","label":"PLTCM두께범위","type":"num"},{"key":"pltcmWid","label":"PLTCM폭범위","type":"num"}],"rules":[{"id":"WR-PLTCM-001","no":1,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.22,"v2":0.249},"pltcmWid":{"op":"BETWEEN1","v1":550.0,"v2":1010.0}},"res":2.0,"status":"Y","srcRow":6,"note":""},{"id":"WR-PLTCM-002","no":2,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":550.0,"v2":1100.9}},"res":2.0,"status":"Y","srcRow":7,"note":""},{"id":"WR-PLTCM-003","no":3,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":8,"note":""},{"id":"WR-PLTCM-004","no":4,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":0.999},"pltcmWid":{"op":"BETWEEN1","v1":550.0,"v2":1100.9}},"res":2.0,"status":"Y","srcRow":9,"note":""},{"id":"WR-PLTCM-005","no":5,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.0,"v2":3.045},"pltcmWid":{"op":"BETWEEN1","v1":550.0,"v2":1100.9}},"res":2.0,"status":"Y","srcRow":10,"note":""},{"id":"WR-PLTCM-006","no":6,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":0.999},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":11,"note":""},{"id":"WR-PLTCM-007","no":7,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H32,M32,HAB,MAF,HB1","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.0,"v2":3.06},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":12,"note":""},{"id":"WR-PLTCM-008","no":8,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.699},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1000.9}},"res":2.0,"status":"Y","srcRow":13,"note":""},{"id":"WR-PLTCM-009","no":9,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.699},"pltcmWid":{"op":"BETWEEN1","v1":1001.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":14,"note":""},{"id":"WR-PLTCM-010","no":10,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.7,"v2":2.651},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1000.9}},"res":1.0,"status":"Y","srcRow":15,"note":""},{"id":"WR-PLTCM-011","no":11,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.7,"v2":3.045},"pltcmWid":{"op":"BETWEEN1","v1":1001.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":16,"note":""},{"id":"WR-PLTCM-012","no":12,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H70,H7A,H7B,HAC,HAE,H8C,H8D,HB3,H7J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1100.9}},"res":4.0,"status":"Y","srcRow":17,"note":""},{"id":"WR-PLTCM-013","no":13,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H70,H7A,H7B,HAC,HAE,H8C,H8D,HB3,H7J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":18,"note":""},{"id":"WR-PLTCM-014","no":14,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H70,H7A,H7B,HAC,HAE,H8C,H8D,HB3,H7J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":2.521},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1100.9}},"res":3.0,"status":"Y","srcRow":19,"note":""},{"id":"WR-PLTCM-015","no":15,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H70,H7A,H7B,HAC,HAE,H8C,H8D,HB3,H7J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":2.651},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":4.0,"status":"Y","srcRow":20,"note":""},{"id":"WR-PLTCM-016","no":16,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H25,H33,HB2,H3W,H2J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.23,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1100.9}},"res":4.0,"status":"Y","srcRow":21,"note":""},{"id":"WR-PLTCM-017","no":17,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H25,H33,HB2,H3W,H2J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":22,"note":""},{"id":"WR-PLTCM-018","no":18,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H25,H33,HB2,H3W,H2J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":2.5},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1100.9}},"res":3.0,"status":"Y","srcRow":23,"note":""},{"id":"WR-PLTCM-019","no":19,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H25,H33,HB2,H3W,H2J","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":2.851},"pltcmWid":{"op":"BETWEEN1","v1":1101.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":24,"note":""},{"id":"WR-PLTCM-020","no":20,"prio":1,"cond":{"rawCd":{"op":"=","v1":"H32","v2":""},"pltcmThk":{"op":"=","v1":3.2,"v2":null},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":0.0,"status":"Y","srcRow":25,"note":""},{"id":"WR-PLTCM-021","no":21,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"D32,D36,D37,D39","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":2.5},"pltcmWid":{"op":"BETWEEN1","v1":600.0,"v2":1300.0}},"res":0.0,"status":"Y","srcRow":26,"note":""},{"id":"WR-PLTCM-022","no":22,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"E32","v2":""},"pltcmThk":{"op":"NOT_CHECK","v1":null,"v2":null},"pltcmWid":{"op":"NOT_CHECK","v1":null,"v2":null}},"res":0.0,"status":"Y","srcRow":27,"note":""},{"id":"WR-PLTCM-023","no":23,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H53","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.9,"v2":6.01},"pltcmWid":{"op":"BETWEEN2","v1":1100.0,"v2":1350.0}},"res":0.0,"status":"Y","srcRow":28,"note":""},{"id":"WR-PLTCM-024","no":24,"prio":1,"cond":{"rawCd":{"op":"=","v1":"H32","v2":""},"pltcmThk":{"op":"=","v1":3.0,"v2":null},"pltcmWid":{"op":"BETWEEN2","v1":600.0,"v2":1270.0}},"res":0.0,"status":"Y","srcRow":29,"note":""},{"id":"WR-PLTCM-025","no":25,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H2A,H2B,H2C","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.57,"v2":6.01},"pltcmWid":{"op":"BETWEEN2","v1":600.0,"v2":1300.0}},"res":2.0,"status":"Y","srcRow":30,"note":""},{"id":"WR-PLTCM-026","no":26,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H60","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":2.3,"v2":6.01},"pltcmWid":{"op":"BETWEEN2","v1":600.0,"v2":1271.0}},"res":2.0,"status":"Y","srcRow":31,"note":""},{"id":"WR-PLTCM-027","no":27,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"NOT_CHECK","v1":null,"v2":null},"pltcmWid":{"op":"NOT_CHECK","v1":null,"v2":null}},"res":0.0,"status":"Y","srcRow":32,"note":""},{"id":"WR-PLTCM-028","no":28,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"C7T","v2":""},"pltcmThk":{"op":"NOT_CHECK","v1":null,"v2":null},"pltcmWid":{"op":"NOT_CHECK","v1":null,"v2":null}},"res":0.0,"status":"Y","srcRow":33,"note":""},{"id":"WR-PLTCM-029","no":29,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H37,H38,H39,H44,HAD,H51","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"NOT_CHECK","v1":600.0,"v2":1000.0}},"res":1.0,"status":"Y","srcRow":34,"note":"","stray":[{"key":"pltcmWid","label":"PLTCM폭범위","v1":"600","v2":"1000"}]},{"id":"WR-PLTCM-030","no":30,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H37,H38,H39,H44,HAD,H51","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":0.599},"pltcmWid":{"op":"NOT_CHECK","v1":1001.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":35,"note":"","stray":[{"key":"pltcmWid","label":"PLTCM폭범위","v1":"1001","v2":"1600"}]},{"id":"WR-PLTCM-031","no":31,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H37,H38,H39,H44,HAD,H51","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":3.05},"pltcmWid":{"op":"NOT_CHECK","v1":600.0,"v2":1000.0}},"res":1.0,"status":"Y","srcRow":36,"note":"","stray":[{"key":"pltcmWid","label":"PLTCM폭범위","v1":"600","v2":"1000"}]},{"id":"WR-PLTCM-032","no":32,"prio":1,"cond":{"rawCd":{"op":"IN","v1":"H37,H38,H39,H44,HAD,H51","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":3.05},"pltcmWid":{"op":"NOT_CHECK","v1":1001.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":37,"note":"","stray":[{"key":"pltcmWid","label":"PLTCM폭범위","v1":"1001","v2":"1600"}]}]},{"ruleId":"C10B1075","name":"CGL폭감소량","version":"1.0","type":"1B0","status":"Y","startAt":"2012-06-12 19:04:36","kind":"reduction","proc":"CGL","procLabel":"CGL(냉연도금)","result":"폭감소량","unit":"mm","fields":[{"key":"procCd","label":"공정","type":"text"},{"key":"prodCd","label":"품명코드","type":"text"},{"key":"matCd","label":"재질코드","type":"text"},{"key":"rawCd","label":"원자재코드","type":"text"},{"key":"pltcmThk","label":"PLTCM두께범위","type":"num"},{"key":"prodWid","label":"제품폭범위","type":"num"}],"rules":[{"id":"WR-CGL-001","no":1,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"=","v1":"H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.801},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":0.0,"status":"Y","srcRow":6,"note":""},{"id":"WR-CGL-002","no":2,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"W","v2":""},"matCd":{"op":"NOT_CHECK","v1":"","v2":""},"rawCd":{"op":"=","v1":"H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.801},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":0.0,"status":"Y","srcRow":7,"note":""},{"id":"WR-CGL-003","no":3,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"=","v1":"L","v2":""},"matCd":{"op":"=","v1":"EA","v2":""},"rawCd":{"op":"=","v1":"H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.35,"v2":0.5},"prodWid":{"op":"BETWEEN2","v1":800.0,"v2":1000.0}},"res":0.0,"status":"Y","srcRow":8,"note":""},{"id":"WR-CGL-004","no":4,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.35},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":9,"note":""},{"id":"WR-CGL-005","no":5,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.35,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":10,"note":""},{"id":"WR-CGL-006","no":6,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":0.8},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":11,"note":""},{"id":"WR-CGL-007","no":7,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.8,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":12,"note":""},{"id":"WR-CGL-008","no":8,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":13,"note":""},{"id":"WR-CGL-009","no":9,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":5.0,"status":"Y","srcRow":14,"note":""},{"id":"WR-CGL-010","no":10,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":15,"note":""},{"id":"WR-CGL-011","no":11,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":16,"note":""},{"id":"WR-CGL-012","no":12,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":5.0,"status":"Y","srcRow":17,"note":""},{"id":"WR-CGL-013","no":13,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":18,"note":""},{"id":"WR-CGL-014","no":14,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":19,"note":""},{"id":"WR-CGL-015","no":15,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":7.0,"status":"Y","srcRow":20,"note":""},{"id":"WR-CGL-016","no":16,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":5.0,"status":"Y","srcRow":21,"note":""},{"id":"WR-CGL-017","no":17,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":22,"note":""},{"id":"WR-CGL-018","no":18,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.6,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":23,"note":""},{"id":"WR-CGL-019","no":19,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H32,H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.801},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":24,"note":""},{"id":"WR-CGL-020","no":20,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":25,"note":""},{"id":"WR-CGL-021","no":21,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.6,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":26,"note":""},{"id":"WR-CGL-022","no":22,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"G,3,K,6,V","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":27,"note":""},{"id":"WR-CGL-023","no":23,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"IN","v1":"H32,H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.001},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":28,"note":""},{"id":"WR-CGL-024","no":24,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"G,3,K,6,V","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.6,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":29,"note":""},{"id":"WR-CGL-025","no":25,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":30,"note":""},{"id":"WR-CGL-026","no":26,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.001},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":31,"note":""},{"id":"WR-CGL-027","no":27,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"L,4,G,3,K,6,9,V,W","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.6,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":32,"note":""},{"id":"WR-CGL-028","no":28,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN2","v1":550.0,"v2":900.0}},"res":2.0,"status":"Y","srcRow":33,"note":""},{"id":"WR-CGL-029","no":29,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":2.6},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":34,"note":""},{"id":"WR-CGL-030","no":30,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":35,"note":""},{"id":"WR-CGL-031","no":31,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":900.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":36,"note":""},{"id":"WR-CGL-032","no":32,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":37,"note":""},{"id":"WR-CGL-033","no":33,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":38,"note":""},{"id":"WR-CGL-034","no":34,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":39,"note":""},{"id":"WR-CGL-035","no":35,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":40,"note":""},{"id":"WR-CGL-036","no":36,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":5.0,"status":"Y","srcRow":41,"note":""},{"id":"WR-CGL-037","no":37,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":42,"note":""},{"id":"WR-CGL-038","no":38,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":43,"note":""},{"id":"WR-CGL-039","no":39,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.5},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":44,"note":""},{"id":"WR-CGL-040","no":40,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.5},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":45,"note":""},{"id":"WR-CGL-041","no":41,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.5,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":46,"note":""},{"id":"WR-CGL-042","no":42,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":47,"note":""},{"id":"WR-CGL-043","no":43,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":48,"note":""},{"id":"WR-CGL-044","no":44,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.95},"prodWid":{"op":"BETWEEN1","v1":400.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":49,"note":""},{"id":"WR-CGL-045","no":45,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":50,"note":""},{"id":"WR-CGL-046","no":46,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.401},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":51,"note":""},{"id":"WR-CGL-047","no":47,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DC","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":52,"note":""},{"id":"WR-CGL-048","no":48,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DC","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.401},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":53,"note":""},{"id":"WR-CGL-049","no":49,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":54,"note":""},{"id":"WR-CGL-050","no":50,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":55,"note":""},{"id":"WR-CGL-051","no":51,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.5},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":56,"note":""},{"id":"WR-CGL-052","no":52,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":57,"note":""},{"id":"WR-CGL-053","no":53,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.5,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":58,"note":""},{"id":"WR-CGL-054","no":54,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CB","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":59,"note":""},{"id":"WR-CGL-055","no":55,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CB","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":60,"note":""},{"id":"WR-CGL-056","no":56,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CB","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":400.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":61,"note":""},{"id":"WR-CGL-057","no":57,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":62,"note":""},{"id":"WR-CGL-058","no":58,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.401},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":63,"note":""},{"id":"WR-CGL-059","no":59,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.23,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":64,"note":""},{"id":"WR-CGL-060","no":60,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":2.301},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":65,"note":""},{"id":"WR-CGL-061","no":61,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":66,"note":""},{"id":"WR-CGL-062","no":62,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":67,"note":""},{"id":"WR-CGL-063","no":63,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":0.801},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":68,"note":""},{"id":"WR-CGL-064","no":64,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":69,"note":""},{"id":"WR-CGL-065","no":65,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":70,"note":""},{"id":"WR-CGL-066","no":66,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":71,"note":""},{"id":"WR-CGL-067","no":67,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":0.831},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":72,"note":""},{"id":"WR-CGL-068","no":68,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"4,9","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":73,"note":""},{"id":"WR-CGL-069","no":69,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":74,"note":""},{"id":"WR-CGL-070","no":70,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":75,"note":""},{"id":"WR-CGL-071","no":71,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":76,"note":""},{"id":"WR-CGL-072","no":72,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":77,"note":""},{"id":"WR-CGL-073","no":73,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":78,"note":""},{"id":"WR-CGL-074","no":74,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"AA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":79,"note":""},{"id":"WR-CGL-075","no":75,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"BA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":1.0,"status":"Y","srcRow":80,"note":""},{"id":"WR-CGL-076","no":76,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":900.0}},"res":2.0,"status":"Y","srcRow":81,"note":""},{"id":"WR-CGL-077","no":77,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":900.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":82,"note":""},{"id":"WR-CGL-078","no":78,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":3.2},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":83,"note":""},{"id":"WR-CGL-079","no":79,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":84,"note":""},{"id":"WR-CGL-080","no":80,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":1271.0,"v2":1600.0}},"res":6.0,"status":"Y","srcRow":85,"note":""},{"id":"WR-CGL-081","no":81,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":900.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":86,"note":""},{"id":"WR-CGL-082","no":82,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":1271.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":87,"note":""},{"id":"WR-CGL-083","no":83,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.65},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":88,"note":""},{"id":"WR-CGL-084","no":84,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":4.0,"status":"Y","srcRow":89,"note":""},{"id":"WR-CGL-085","no":85,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":1271.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":90,"note":""},{"id":"WR-CGL-086","no":86,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":91,"note":""},{"id":"WR-CGL-087","no":87,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":1271.0,"v2":1600.0}},"res":4.0,"status":"Y","srcRow":92,"note":""},{"id":"WR-CGL-088","no":88,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.851},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":93,"note":""},{"id":"WR-CGL-089","no":89,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.65},"prodWid":{"op":"BETWEEN1","v1":1271.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":94,"note":""},{"id":"WR-CGL-090","no":90,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":95,"note":""},{"id":"WR-CGL-091","no":91,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":4.0,"status":"Y","srcRow":96,"note":""},{"id":"WR-CGL-092","no":92,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"5A,5B,8C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.651},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":97,"note":""},{"id":"WR-CGL-093","no":93,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.5},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":98,"note":""},{"id":"WR-CGL-094","no":94,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":99,"note":""},{"id":"WR-CGL-095","no":95,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.5,"v2":3.01},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":100,"note":""},{"id":"WR-CGL-096","no":96,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H37,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":101,"note":""},{"id":"WR-CGL-097","no":97,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":102,"note":""},{"id":"WR-CGL-098","no":98,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":3.01},"prodWid":{"op":"BETWEEN1","v1":400.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":103,"note":""},{"id":"WR-CGL-099","no":99,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DA,DC,DD","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H39,H44","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":104,"note":""},{"id":"WR-CGL-100","no":100,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DA,DC,DD","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.201},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":105,"note":""},{"id":"WR-CGL-101","no":101,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"DA,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":3.03},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":106,"note":""},{"id":"WR-CGL-102","no":102,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":1.2},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":107,"note":""},{"id":"WR-CGL-103","no":103,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.2,"v2":3.001},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":108,"note":""},{"id":"WR-CGL-104","no":104,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.8},"prodWid":{"op":"BETWEEN1","v1":800.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":109,"note":""},{"id":"WR-CGL-105","no":105,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.8,"v2":1.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":110,"note":""},{"id":"WR-CGL-106","no":106,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.6,"v2":3.01},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":111,"note":""},{"id":"WR-CGL-107","no":107,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":4.0,"status":"Y","srcRow":112,"note":""},{"id":"WR-CGL-108","no":108,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":113,"note":""},{"id":"WR-CGL-109","no":109,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"3A,3B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.65},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":114,"note":""},{"id":"WR-CGL-110","no":110,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":115,"note":""},{"id":"WR-CGL-111","no":111,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":116,"note":""},{"id":"WR-CGL-112","no":112,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"4A,4B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":117,"note":""},{"id":"WR-CGL-113","no":113,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":6.0,"status":"Y","srcRow":118,"note":""},{"id":"WR-CGL-114","no":114,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":4.0,"status":"Y","srcRow":119,"note":""},{"id":"WR-CGL-115","no":115,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"5A,5B","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":1.0,"v2":2.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":120,"note":""},{"id":"WR-CGL-116","no":116,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.751},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":121,"note":""},{"id":"WR-CGL-117","no":117,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.751},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":122,"note":""},{"id":"WR-CGL-118","no":118,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.751,"v2":2.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":123,"note":""},{"id":"WR-CGL-119","no":119,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":124,"note":""},{"id":"WR-CGL-120","no":120,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"DA,DB,DC,DD","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":2.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":125,"note":""},{"id":"WR-CGL-121","no":121,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":126,"note":""},{"id":"WR-CGL-122","no":122,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":2.501},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":127,"note":""},{"id":"WR-CGL-123","no":123,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"IN","v1":"H35,H36,H39","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":3.01},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":128,"note":""},{"id":"WR-CGL-124","no":124,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":3.0,"status":"Y","srcRow":129,"note":""},{"id":"WR-CGL-125","no":125,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"L,4,9,W","v2":""},"matCd":{"op":"IN","v1":"AA,BA","v2":""},"rawCd":{"op":"IN","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":2.601},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":130,"note":""},{"id":"WR-CGL-126","no":126,"prio":1,"cond":{"procCd":{"op":"=","v1":"8O","v2":""},"prodCd":{"op":"IN","v1":"G,3,L,4","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.31,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":700.0,"v2":1250.0}},"res":4.0,"status":"Y","srcRow":131,"note":""},{"id":"WR-CGL-127","no":127,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"3","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":5.0,"status":"Y","srcRow":132,"note":""},{"id":"WR-CGL-128","no":128,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"3","v2":""},"matCd":{"op":"IN","v1":"4A,4B,4C","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":5.0,"status":"Y","srcRow":133,"note":""},{"id":"WR-CGL-129","no":129,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"4","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.35,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":550.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":134,"note":""},{"id":"WR-CGL-130","no":130,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"4","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.35},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":135,"note":""},{"id":"WR-CGL-131","no":131,"prio":1,"cond":{"procCd":{"op":"=","v1":"82","v2":""},"prodCd":{"op":"IN","v1":"V","v2":""},"matCd":{"op":"IN","v1":"EA","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"NOT_CHECK","v1":0.8,"v2":1.2},"prodWid":{"op":"BETWEEN2","v1":800.0,"v2":1251.0}},"res":2.0,"status":"Y","srcRow":136,"note":"","stray":[{"key":"pltcmThk","label":"PLTCM두께범위","v1":"0.8","v2":"1.2"}]},{"id":"WR-CGL-132","no":132,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,V,L","v2":""},"matCd":{"op":"IN","v1":"EC","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.8,"v2":3.0},"prodWid":{"op":"BETWEEN2","v1":800.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":137,"note":""},{"id":"WR-CGL-133","no":133,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,V","v2":""},"matCd":{"op":"IN","v1":"EC","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.8,"v2":3.0},"prodWid":{"op":"BETWEEN2","v1":300.0,"v2":1350.0}},"res":1.0,"status":"Y","srcRow":138,"note":""},{"id":"WR-CGL-134","no":134,"prio":1,"cond":{"procCd":{"op":"=","v1":"8O","v2":""},"prodCd":{"op":"IN","v1":"G,3","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.6,"v2":0.801},"prodWid":{"op":"BETWEEN1","v1":700.0,"v2":1250.0}},"res":3.0,"status":"Y","srcRow":139,"note":""},{"id":"WR-CGL-135","no":135,"prio":1,"cond":{"procCd":{"op":"=","v1":"85","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN2","v1":600.0,"v2":900.0}},"res":3.0,"status":"Y","srcRow":140,"note":""},{"id":"WR-CGL-136","no":136,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"3A,3B,3C,3D,3E","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.601,"v2":1.0},"prodWid":{"op":"BETWEEN2","v1":600.0,"v2":900.0}},"res":3.0,"status":"Y","srcRow":141,"note":""},{"id":"WR-CGL-137","no":137,"prio":1,"cond":{"procCd":{"op":"=","v1":"83","v2":""},"prodCd":{"op":"IN","v1":"G,3,J,6,K,V","v2":""},"matCd":{"op":"IN","v1":"1A","v2":""},"rawCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.601},"prodWid":{"op":"BETWEEN1","v1":900.0,"v2":1270.0}},"res":3.0,"status":"Y","srcRow":142,"note":""},{"id":"WR-CGL-138","no":138,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"=","v1":"H32","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.2,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":2.0,"status":"Y","srcRow":143,"note":""},{"id":"WR-CGL-139","no":139,"prio":1,"cond":{"procCd":{"op":"=","v1":"84","v2":""},"prodCd":{"op":"IN","v1":"L,W","v2":""},"matCd":{"op":"IN","v1":"CA,CB","v2":""},"rawCd":{"op":"=","v1":"H36","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.4,"v2":0.6},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1270.0}},"res":0.0,"status":"Y","srcRow":144,"note":""}]},{"ruleId":"C10B1076","name":"EGL폭감소량","version":"1.0","type":"1B0","status":"Y","startAt":"2012-06-12 19:04:39","kind":"reduction","proc":"EGL","procLabel":"EGL(전해도금)","result":"폭감소량","unit":"mm","fields":[{"key":"procCd","label":"공정","type":"text"},{"key":"prodCd","label":"품명","type":"text"},{"key":"matCd","label":"재질코드","type":"text"},{"key":"rawCd","label":"원자재코드","type":"text"},{"key":"pltcmThk","label":"PLTCM두께범위","type":"num"},{"key":"prodWid","label":"제품폭범위","type":"num"}],"rules":[{"id":"WR-EGL-001","no":1,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"2,8","v2":""},"matCd":{"op":"IN","v1":"5A","v2":""},"rawCd":{"op":"IN","v1":"H7J,H70,C70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.6,"v2":0.8},"prodWid":{"op":"BETWEEN1","v1":800.0,"v2":950.0}},"res":4.0,"status":"Y","srcRow":6,"note":""},{"id":"WR-EGL-002","no":2,"prio":1,"cond":{"procCd":{"op":"=","v1":"91","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,CB,8C","v2":""},"rawCd":{"op":"NOT_IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":7,"note":""},{"id":"WR-EGL-003","no":3,"prio":1,"cond":{"procCd":{"op":"=","v1":"91","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,CB,8C","v2":""},"rawCd":{"op":"NOT_IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.001,"v2":2.4},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":8,"note":""},{"id":"WR-EGL-004","no":4,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,CB,8C","v2":""},"rawCd":{"op":"NOT_IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":9,"note":""},{"id":"WR-EGL-005","no":5,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,CB,8C","v2":""},"rawCd":{"op":"NOT_IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.001,"v2":2.4},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":10,"note":""},{"id":"WR-EGL-006","no":6,"prio":1,"cond":{"procCd":{"op":"=","v1":"91","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,8C","v2":""},"rawCd":{"op":"IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":11,"note":""},{"id":"WR-EGL-007","no":7,"prio":1,"cond":{"procCd":{"op":"=","v1":"91","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,8C","v2":""},"rawCd":{"op":"IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.001,"v2":2.4},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":12,"note":""},{"id":"WR-EGL-008","no":8,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,8C","v2":""},"rawCd":{"op":"IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.25,"v2":1.0},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":13,"note":""},{"id":"WR-EGL-009","no":9,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"E,2,N,8","v2":""},"matCd":{"op":"IN","v1":"1A,1B,1C,3A,4A,5A,5B,5C,6A,8C","v2":""},"rawCd":{"op":"IN","v1":"N25,N32,N70","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":1.001,"v2":2.4},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":14,"note":""},{"id":"WR-EGL-010","no":10,"prio":1,"cond":{"procCd":{"op":"=","v1":"92","v2":""},"prodCd":{"op":"IN","v1":"E","v2":""},"matCd":{"op":"IN","v1":"8C","v2":""},"rawCd":{"op":"IN","v1":"C8C","v2":""},"pltcmThk":{"op":"BETWEEN2","v1":0.25,"v2":2.4},"prodWid":{"op":"BETWEEN1","v1":600.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":15,"note":""}]},{"ruleId":"C10B1077","name":"정전폭감소량","version":"1.0","type":"1B0","status":"Y","startAt":"2012-06-12 19:04:41","kind":"reduction","proc":"JZ","procLabel":"정전(정전처리)","result":"폭감소량","unit":"mm","fields":[{"key":"prodCd","label":"품명코드","type":"text"},{"key":"matCd","label":"재질코드","type":"text"},{"key":"pltcmThk","label":"PLTCM두께범위","type":"num"},{"key":"prodWid","label":"제품폭범위","type":"num"}],"rules":[{"id":"WR-JZ-001","no":1,"prio":1,"cond":{"prodCd":{"op":"IN","v1":"A,B,C","v2":""},"matCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.2,"v2":3.2},"prodWid":{"op":"BETWEEN1","v1":1.0,"v2":1600.0}},"res":2.0,"status":"Y","srcRow":6,"note":""},{"id":"WR-JZ-002","no":2,"prio":2,"cond":{"prodCd":{"op":"NOT_CHECK","v1":"","v2":""},"matCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.2,"v2":3.2},"prodWid":{"op":"BETWEEN1","v1":1.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":7,"note":""},{"id":"WR-JZ-003","no":3,"prio":3,"cond":{"prodCd":{"op":"NOT_CHECK","v1":"","v2":""},"matCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":3.201,"v2":5.0},"prodWid":{"op":"BETWEEN1","v1":1.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":8,"note":""}]},{"ruleId":"C10B1078","name":"CCL폭감소량","version":"1.0","type":"1B0","status":"Y","startAt":"2012-06-12 19:04:42","kind":"reduction","proc":"CCL","procLabel":"CCL(칼라코팅)","result":"폭감소량","unit":"mm","fields":[{"key":"prodCd","label":"품명코드","type":"text"},{"key":"matCd","label":"재질코드","type":"text"},{"key":"pltcmThk","label":"PLTCM두께범위","type":"num"},{"key":"prodWid","label":"제품폭범위","type":"num"}],"rules":[{"id":"WR-CCL-001","no":1,"prio":1,"cond":{"prodCd":{"op":"NOT_CHECK","v1":"","v2":""},"matCd":{"op":"NOT_CHECK","v1":"","v2":""},"pltcmThk":{"op":"BETWEEN1","v1":0.24,"v2":3.01},"prodWid":{"op":"BETWEEN1","v1":460.0,"v2":1600.0}},"res":0.0,"status":"Y","srcRow":6,"note":""},{"id":"WR-CCL-002","no":2,"prio":1,"cond":{"prodCd":{"op":"=","v1":"2","v2":""},"matCd":{"op":"=","v1":"5A","v2":""},"pltcmThk":{"op":"NOT_CHECK","v1":0.24,"v2":0.8},"prodWid":{"op":"BETWEEN2","v1":480.0,"v2":1600.0}},"res":1.0,"status":"Y","srcRow":7,"note":"","stray":[{"key":"pltcmThk","label":"PLTCM두께범위","v1":"0.24","v2":"0.8"}]}]}],"dict":{"procCodes":["82","83","84","85","8O","91","92"],"maps":{"prodCd":{"label":"품명코드 (PRD_NM_CD)","items":{"1":"CCI","2":"CCEI","3":"CCGI","4":"CCLI","5":"CCAI","6":"CCGX","7":"CCUS","8":"CCNI","9":"CCLX","A":"P/O Skin Pass","B":"P/O No Skin Pass","C":"CR","D":"F/H","E":"EGI","G":"GI","H":"Hot Coil","J":"G/A","K":"HGI","L":"G/L","M":"Mini Mill","N":"ZnNi","S":"SUS","U":"Aluminum","V":"GIX","W":"GLX","X":"HR SKELP","Y":"포장재","Z":"통판재"}},"procCd":{"label":"공정(라인) 코드","items":{}},"edge":{"label":"주문Edge지정구분","items":{"S":"지정","M":"미지정","C":"일괄"}},"prodForm":{"label":"제품형태","items":{"S":"S","C":"C"}},"coatWay":{"label":"코팅방식","items":{"X":"X","Y":"Y","Z":"Z","F":"F","G":"G","H":"H","J":"J"}},"resin":{"label":"수지타입","items":{"CC":"CC","HB":"HB"}}}}};
+/*__SEED_REDUCTION_END__*/
+</script>
+
+<script>
+(function(){
+'use strict';
+/* ── 헬퍼 ─────────────────────────────────────────────── */
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function now(){return Date.now();}
+function pad2(n){return (n<10?'0':'')+n;}
+function pad3(n){return ('00'+n).slice(-3);}
+function fmtDT(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function ymd(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function norm(s){return String(s==null?'':s).trim().toUpperCase();}
+function listOf(v){return String(v==null?'':v).split(',').map(norm).filter(Boolean);}
+function fmtNum(n){if(n==null||n==='')return '';return String(+(+n).toFixed(3));}
+function fmtRes(n){var v=+n;return (v>0?'+':'')+fmtNum(v);}
+function round3(n){return Math.round(n*1000)/1000;}
+var toastTimer=null;
+function toast(msg,type){var t=$('#toast');t.textContent=msg;t.className='toast on'+(type==='err'?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);}
+
+/* ── 상수 ─────────────────────────────────────────────── */
+var LS_KEY='wred-mock-v1';
+var CUR_USER='주인';
+var STATUS={Y:{l:'사용중',cls:'ok'},S:{l:'대기상태',cls:'hold'},F:{l:'미완료',cls:'warn'},N:{l:'사용종료',cls:'dim'}};
+var OP_LABEL={'NOT_CHECK':'체크 안함','=':'같다','!=':'다르다','>':'>','>=':'>=','<':'<','<=':'<=','BETWEEN1':'값1 ≤ x ≤ 값2','BETWEEN2':'값1 ≤ x < 값2','BETWEEN3':'값1 < x ≤ 값2','BETWEEN4':'값1 < x < 값2','LIKE1':'포함','LIKE2':'끝 일치','LIKE3':'시작 일치','IN':'목록 포함','NOT_IN':'목록 미포함','NOT_NULL':'값 있음','IS_NULL':'값 없음'};
+var TEXT_OPS=['NOT_CHECK','=','!=','IN','NOT_IN','LIKE1','LIKE2','LIKE3','NOT_NULL','IS_NULL'];
+var NUM_OPS=['NOT_CHECK','=','!=','>','>=','<','<=','BETWEEN1','BETWEEN2','BETWEEN3','BETWEEN4'];
+var DICT=(SEED_REDUCTION&&SEED_REDUCTION.dict)||{procCodes:[],maps:{}};
+function opNeedsValue(op){return op!=='NOT_CHECK'&&op!=='NOT_NULL'&&op!=='IS_NULL';}
+function isBetween(op){return op.indexOf('BETWEEN')===0;}
+
+/* 공정별 폭 조건 필드 키 — 공정 흐름(합산)에서 진입 폭을 대입할 대상 */
+var WIDTH_KEY={'PLTCM':'pltcmWid','CGL':'prodWid','EGL':'prodWid','JZ':'prodWid','CCL':'prodWid'};
+var THK_KEY={'PLTCM':'pltcmThk','CGL':'pltcmThk','EGL':'pltcmThk','JZ':'pltcmThk','CCL':'pltcmThk'};
+
+/* ── 시드 정리 ────────────────────────────────────────── */
+var PROCS=(SEED_REDUCTION&&SEED_REDUCTION.processes)||[];
+var PROC=[];
+PROCS.forEach(function(p){
+  var byKey={};p.fields.forEach(function(f){byKey[f.key]=f;});
+  PROC.push({key:p.proc,label:p.procLabel,name:p.name,ruleId:p.ruleId,result:p.result,unit:p.unit,
+             version:p.version,type:p.type,status:p.status,startAt:p.startAt,
+             fields:p.fields,byKey:byKey,rules:p.rules});
+});
+var PROC_BY={};PROC.forEach(function(p){PROC_BY[p.key]=p;});
+var cur='__LIST_ALL__';   /* '__LIST_ALL__' = 전체 보기, 그 외 = 공정 키 */
+
+/* ── 데이터 접근 계층 ──────────────────────────────────
+   화면은 repo.proc(key).rules / repo.log 를 통해서만 데이터를 읽고 쓴다.
+   지금은 localStorage 저장이며, 실제 DB 연동 시 이 객체의 내부 구현만
+   REST 호출(fetch)로 바꾸면 된다.
+   ────────────────────────────────────────────────────── */
+var repo=(function(){
+  function stamp(o,ts,by){o.createdAt=o.createdAt||ts;o.createdBy=o.createdBy||by;o.updatedAt=ts;o.updatedBy=by;return o;}
+  function emptyCond(fields){var c={};fields.forEach(function(f){c[f.key]={op:'NOT_CHECK',v1:f.type==='num'?null:'',v2:f.type==='num'?null:''};});return c;}
+  function blankCond(p){return emptyCond(p.fields);}
+  function seed(){
+    var st={v:LS_KEY,seq:1,ruleSeq:{},changelog:[],procs:{}};
+    var t0=now()-14*24*60*60*1000;
+    PROC.forEach(function(p){
+      var maxNo=0;
+      st.procs[p.key]={rules:[]};
+      p.rules.forEach(function(s){
+        var c=blankCond(p);
+        p.fields.forEach(function(f){
+          var sc=(s.cond&&s.cond[f.key])||{};
+          c[f.key]={op:sc.op||'NOT_CHECK',v1:sc.v1==null?(f.type==='num'?null:''):sc.v1,
+                               v2:sc.v2==null?(f.type==='num'?null:''):sc.v2};
+        });
+        var id=s.id||('WR-'+p.key+'-'+pad3(st.procs[p.key].rules.length+1));
+        var m=/^WR-.+-(\d+)$/.exec(id);
+        if(m){var k=parseInt(m[1],10);if(k>maxNo)maxNo=k;}
+        var r={id:id,no:s.no,prio:s.prio==null?1:s.prio,cond:c,res:+s.res,
+               status:s.status||'Y',note:s.note||'',srcRow:s.srcRow};
+        if(s.stray)r.stray=s.stray;
+        st.procs[p.key].rules.push(stamp(r,t0,'MASTDATA'));
+      });
+      st.ruleSeq[p.key]=maxNo+1;   /* 신규 룰 채번은 마지막 시드 번호 다음부터 */
+    });
+    st.changelog.push({id:'c'+(st.seq++),ts:t0,by:'MASTDATA',kind:'시드 적재',proc:'__ALL__',
+      item:'폭수축량 업무기준 ' + PROC.map(function(p){return p.ruleId;}).join('·'),
+      before:'',after:'AS-IS 룰 시트 '+PROC.reduce(function(a,p){return a+p.rules.length;},0)+'건 적재 ('+
+        PROC.map(function(p){return p.key+' '+p.rules.length;}).join(', ')+')'});
+    return st;
+  }
+  function nextId(p){return 'WR-'+p.key+'-'+pad3(st.ruleSeq[p.key]++);}
+  function read(){try{var raw=localStorage.getItem(LS_KEY);if(raw){var st=JSON.parse(raw);if(st&&st.v===LS_KEY)return st;}}catch(e){}return null;}
+  function write(){try{localStorage.setItem(LS_KEY,JSON.stringify(st));}catch(e){}}
+  var st=read()||seed();write();
+  function find(pkey,id){var f=null;(st.procs[pkey]&&st.procs[pkey].rules||[]).forEach(function(r){if(r.id===id)f=r;});return f;}
+  return {
+    emptyCond:emptyCond,
+    rules:{
+      list:function(pkey){return pkey?(st.procs[pkey]?st.procs[pkey].rules.slice():[]):allRules();},
+      get:find,
+      create:function(pkey,data,by){
+        var r={};Object.keys(data).forEach(function(k){r[k]=data[k];});
+        r.id='WR-'+pkey+'-'+pad3(st.ruleSeq[pkey]++);
+        stamp(r,now(),by||CUR_USER);
+        st.procs[pkey].rules.push(r);write();return r;
+      },
+      update:function(pkey,id,patch,by){
+        var r=find(pkey,id);if(!r)return null;
+        Object.keys(patch).forEach(function(k){r[k]=patch[k];});
+        stamp(r,now(),by||CUR_USER);write();return r;
+      },
+      remove:function(pkey,id){
+        var r=find(pkey,id);if(!r)return null;
+        st.procs[pkey].rules=st.procs[pkey].rules.filter(function(x){return x.id!==id;});
+        write();return r;
+      }
+    },
+    log:{
+      list:function(){return st.changelog.slice();},
+      append:function(kind,proc,item,before,after,by){
+        var e={id:'c'+(st.seq++),ts:now(),by:by||CUR_USER,kind:kind,proc:proc,item:item,before:before||'',after:after||''};
+        st.changelog.push(e);write();return e;
+      }
+    }
+  };
+  function allRules(){
+    var out=[];
+    PROC.forEach(function(p){repo.rules.list(p.key).forEach(function(r){out.push(r);});});
+    return out;
+  }
+})();
+
+/* ── 조건 평가 ────────────────────────────────────────── */
+function evalText(c,input){
+  var op=c.op,a=norm(c.v1),b=norm(input);
+  if(op==='NOT_CHECK')return true;
+  if(op==='NOT_NULL')return b!=='';
+  if(op==='IS_NULL')return b==='';
+  if(b==='')return false;
+  switch(op){
+    case '=':return a===b;
+    case '!=':return a!==b;
+    case 'IN':return listOf(c.v1).indexOf(b)>=0;
+    case 'NOT_IN':return listOf(c.v1).indexOf(b)<0;
+    case 'LIKE1':return a!==''&&b.indexOf(a)>=0;
+    case 'LIKE2':return a!==''&&b.slice(-a.length)===a;
+    case 'LIKE3':return a!==''&&b.indexOf(a)===0;
+  }
+  return false;
+}
+function evalNum(c,input){
+  var op=c.op;
+  if(op==='NOT_CHECK')return true;
+  var s=String(input==null?'':input).trim();
+  if(s==='')return false;
+  var x=parseFloat(s);if(isNaN(x))return false;
+  var a=parseFloat(c.v1),b=parseFloat(c.v2);
+  switch(op){
+    case '=':return x===a;case '!=':return x!==a;
+    case '>':return x>a;case '>=':return x>=a;case '<':return x<a;case '<=':return x<=a;
+    case 'BETWEEN1':return a<=x&&x<=b;case 'BETWEEN2':return a<=x&&x<b;
+    case 'BETWEEN3':return a<x&&x<=b;case 'BETWEEN4':return a<x&&x<b;
+  }
+  return false;
+}
+function ruleMatches(p,r,input){
+  for(var i=0;i<p.fields.length;i++){
+    var f=p.fields[i],c=r.cond[f.key];
+    if(!c)continue;
+    if(!(f.type==='num'?evalNum(c,input[f.key]):evalText(c,input[f.key])))return false;
+  }
+  return true;
+}
+/* 평가 순서: 우선순위 → 순번 → id */
+function sortRules(a,b){return (a.prio-b.prio)||(a.no-b.no)||a.id.localeCompare(b.id);}
+function pick(p,input){
+  return repo.rules.list(p.key).filter(function(r){return r.status==='Y'&&ruleMatches(p,r,input);}).sort(sortRules);
+}
+
+/* ── 표시 헬퍼 ────────────────────────────────────────── */
+function opHtml(op){return '<span class="op" title="'+esc(OP_LABEL[op]||op)+'">'+esc(op)+'</span>';}
+function condText(f,c){
+  var op=c.op;
+  if(op==='NOT_CHECK')return '';
+  if(op==='NOT_NULL')return '값 있음';if(op==='IS_NULL')return '값 없음';
+  if(f.type==='num'){
+    var a=fmtNum(c.v1),b=fmtNum(c.v2);
+    if(op==='BETWEEN1')return a+' ≤ x ≤ '+b;if(op==='BETWEEN2')return a+' ≤ x < '+b;
+    if(op==='BETWEEN3')return a+' < x ≤ '+b;if(op==='BETWEEN4')return a+' < x < '+b;
+    return (op==='='?'':op+' ')+a;
+  }
+  return (op==='='||op==='IN'?'':op+' ')+String(c.v1);
+}
+function condHtml(f,c){
+  if(c.op==='NOT_CHECK')return '<span class="nc">—</span>';
+  var t=condText(f,c);
+  var body='<span class="mono">'+esc(t)+'</span>';
+  if(c.op==='NOT_IN'||c.op==='!='||c.op.indexOf('LIKE')===0||(c.op==='IN'&&listOf(c.v1).length>1))
+    body='<span class="op">'+esc(c.op)+'</span><span class="mono">'+esc(c.v1)+'</span>';
+  return '<div class="cond-cell'+(c.op==='IN'&&listOf(c.v1).length>2?' long':'')+'" title="'+esc(c.op+' '+t)+'">'+body+'</div>';
+}
+function resHtml(v){var n=+v;return '<span class="adj '+(n>0?'pos':'zero')+'">'+esc(fmtRes(n))+'</span>';}
+function statusPill(s){var m=STATUS[s]||{l:s,cls:'dim'};return '<span class="pill '+m.cls+'">'+esc(s)+' '+esc(m.l)+'</span>';}
+function procChip(p){return '<span class="chip proc">'+esc(p.key)+'</span>';}
+function prioCell(r){return r.prio?esc(r.prio):'<span class="inherit">—</span>';}
+function userCell(r){return '<span class="mono">'+esc(fmtDT(r.updatedAt))+'</span> <span class="inherit">'+esc(r.updatedBy||'')+'</span>';}
+function noCell(r){return r.no===0?'<span class="chip exc">0 예외</span>':esc(r.no);}
+function ruleLabel(p,r){
+  var parts=[];
+  p.fields.forEach(function(f){var c=r.cond[f.key];if(c.op!=='NOT_CHECK')parts.push(f.label+' '+condText(f,c));});
+  return p.key+' · '+r.id+' · no.'+r.no+(parts.length?' · '+parts.slice(0,3).join(' / ')+(parts.length>3?' …':''):'');
+}
+function summary(p,r){return '폭감소량 '+fmtRes(r.res)+' '+p.unit+' · 상태 '+r.status+' · 우선순위 '+(r.prio||1)+' · 순번 '+r.no;}
+function condKey(p,cond){return p.fields.map(function(f){var c=cond[f.key];if(c.op==='NOT_CHECK')return 'NC';return c.op+':'+(f.type==='num'?fmtNum(c.v1)+'~'+fmtNum(c.v2):listOf(c.v1).sort().join(',')+'|'+norm(c.v2));}).join('§');}
+function distinctCodes(p,key){
+  var m={},o=[];
+  repo.rules.list(p.key).forEach(function(r){var c=r.cond[key];
+    if(!c||c.op==='NOT_CHECK'||c.op==='NOT_IN'||c.op.indexOf('LIKE')===0)return;
+    listOf(c.v1).forEach(function(v){if(!m[v]){m[v]=1;o.push(v);}});});
+  return o.sort();
+}
+function mapOf(key){return DICT.maps[key]?DICT.maps[key].items:null;}
+function fillSelect(id,codes,labelMap,curv){
+  var s=$('#'+id);
+  s.innerHTML='<option value="">전체</option>'+codes.map(function(c){
+    return '<option value="'+esc(c)+'">'+esc(c)+(labelMap&&labelMap[c]?' — '+esc(labelMap[c]):'')+'</option>';}).join('');
+  s.value=curv||'';
+}
+
+/* ── UI 상태 ──────────────────────────────────────────── */
+var ui={pcd:'',prod:'',mat:'',raw:'',size:'',st:'',q:'',histFrom:'',histTo:'',histProc:'',histKind:'',histQ:''};
+var sel=null,editing=null,pendingDelete=null,legendProc=null;
+
+/* ── 탭 ───────────────────────────────────────────────── */
+function setTab(name){
+  $$('.tab').forEach(function(t){
+    var on=t.getAttribute('data-tab')===name;
+    t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;
+  });
+  $$('.screen').forEach(function(s){s.classList.toggle('on',s.id==='sc-'+name);});
+  if(name==='hist')renderHist();
+  if(name==='list')renderList();
+  if(name==='flow')buildFlowInputs();
+  if(name==='judge')buildJudgeInputs();
+}
+$$('.tab').forEach(function(t){t.addEventListener('click',function(){setTab(t.getAttribute('data-tab'));});});
+
+/* ── 공정 바 ───────────────────────────────────────────── */
+function renderProcbar(){
+  var h='<span class="pb-lbl">공정</span>';
+  h+='<button class="proc'+(cur==='__LIST_ALL__'?' on':'')+'" data-proc="__LIST_ALL__">'
+    +'<span class="pc">전체</span><span class="pn">5개 업무기준</span>'
+    +'<span class="pr">'+PROC.reduce(function(a,p){return a+p.rules.length;},0)+' 룰</span></button>';
+  PROC.forEach(function(p){
+    h+='<button class="proc'+(cur===p.key?' on':'')+'" data-proc="'+esc(p.key)+'">'
+      +'<span class="pc">'+esc(p.key)+'</span>'
+      +'<span class="pn">'+esc(p.ruleId)+'</span>'
+      +'<span class="pr">'+p.rules.length+' 룰</span></button>';
+  });
+  h+='<span class="proc-sum">공정 5단계 · 룰 <b>'+PROC.reduce(function(a,p){return a+p.rules.length;},0)+'</b>건</span>';
+  $('#procbar').innerHTML=h;
+}
+$('#procbar').addEventListener('click',function(e){
+  var b=e.target.closest('[data-proc]');if(!b)return;
+  cur=b.getAttribute('data-proc');
+  ui.pcd='';ui.prod='';ui.mat='';ui.raw='';ui.size='';ui.q='';
+  renderProcbar();renderHead();renderList();
+});
+
+/* ── 헤드 ─────────────────────────────────────────────── */
+function renderHead(){
+  if(cur==='__LIST_ALL__'){
+    var hs=PROC.map(function(p){return p.ruleId;}).join(' · ');
+    var mn=PROC.map(function(p){return p.startAt?p.startAt.slice(0,10):'';}).filter(Boolean).sort()[0]||'';
+    $('#head-meta').innerHTML=['업무기준 <b>'+esc(hs)+'</b>','유형 <b>1B0 조건판단</b>','프로그램 <b>폭수축량 1본 · 공정 5단계</b>','시작일자 <b>'+esc(mn)+'</b>']
+      .map(function(x){return '<span>'+x+'</span>';}).join('');
+    return;
+  }
+  var p=PROC_BY[cur];
+  $('#head-meta').innerHTML=['업무기준 <b>'+esc(p.ruleId)+'</b>','기준명 <b>'+esc(p.name)+'</b>','공정 <b>'+esc(p.label)+'</b>',
+    '유형 <b>'+esc(p.type)+' 조건판단</b>','버전 <b>'+esc(p.version)+'</b>','상태 <b>'+esc(p.status)+'</b>','시작일자 <b>'+esc((p.startAt||'').slice(0,10))+'</b>','조건 <b>'+p.fields.length+'종</b>']
+    .map(function(x){return '<span>'+x+'</span>';}).join('');
+}
+
+/* ── 룰 목록 ──────────────────────────────────────────── */
+function activeProcs(){return cur==='__LIST_ALL__'?PROC:[PROC_BY[cur]];}
+function activeFields(){
+  /* 전체 보기일 때는 모든 공정의 조건 필드를 합집합으로(공정별로 비어 있는 값은 —) */
+  if(cur!=='__LIST_ALL__')return PROC_BY[cur].fields;
+  var seen={},out=[];
+  PROC.forEach(function(p){p.fields.forEach(function(f){
+    if(seen[f.key]){if(f.type==='text')return;return;}
+    seen[f.key]=1;out.push(f);
+  });});
+  return out;
+}
+function codeFilter(p,r,key,val){
+  if(!val)return true;
+  var c=r.cond[key];
+  if(!c||c.op==='NOT_CHECK')return true;
+  if(c.op==='IN'||c.op==='=')return listOf(c.v1).indexOf(norm(val))>=0;
+  if(c.op==='NOT_IN')return listOf(c.v1).indexOf(norm(val))<0;
+  return true;
+}
+function renderList(){
+  var procs=activeProcs();
+  var bar=$('#list-bar');
+  var hasPcd=procs.some(function(p){return p.byKey.procCd;});
+  $('#f-pcd').parentNode.style.display=hasPcd?'':'none';
+  if(hasPcd){
+    var pc=[];procs.forEach(function(p){if(p.byKey.procCd)distinctCodes(p,'procCd').forEach(function(c){if(pc.indexOf(c)<0)pc.push(c);});});
+    fillSelect('f-pcd',pc,null,ui.pcd);
+  }
+  var prodMap=mapOf('prodCd');
+  var pProd=procs.filter(function(p){return p.byKey.prodCd;});
+  fillSelect('f-prod',uniq(pProd.map(function(p){return distinctCodes(p,'prodCd');})),prodMap,ui.prod);
+  fillSelect('f-mat',uniq(procs.map(function(p){return p.byKey.matCd?distinctCodes(p,'matCd'):[];})),null,ui.mat);
+  fillSelect('f-raw',uniq(procs.map(function(p){return p.byKey.rawCd?distinctCodes(p,'rawCd'):[];})),null,ui.raw);
+  $('#f-q').value=ui.q;$('#f-size').value=ui.size;$('#f-st').value=ui.st;
+
+  var fields=activeFields();
+  var rows=[];
+  procs.forEach(function(p){
+    repo.rules.list(p.key).forEach(function(r){
+      if(!codeFilter(p,r,'procCd',ui.pcd))return;
+      if(!codeFilter(p,r,'prodCd',ui.prod))return;
+      if(!codeFilter(p,r,'matCd',ui.mat))return;
+      if(!codeFilter(p,r,'rawCd',ui.raw))return;
+      var s=+r.res;
+      if(ui.size==='0'&&s!==0)return;
+      if(ui.size!==''&&ui.size!=='0'&&!(ui.size==='5'?s>=5:s===+ui.size))return;
+      if(ui.st&&r.status!==ui.st)return;
+      if(ui.q){
+        var q=norm(ui.q);
+        var hay=norm(r.id+' '+r.note+' '+p.key+' '+p.ruleId+' '+p.fields.map(function(f){var c=r.cond[f.key];return c?(c.v1==null?'':c.v1):'';}).join(' '));
+        if(hay.indexOf(q)<0)return;
+      }
+      rows.push({p:p,r:r});
+    });
+  });
+  rows.sort(function(a,b){return (a.p.key===b.p.key?sortRules(a.r,b.r):PROC.indexOf(a.p)-PROC.indexOf(b.p));});
+  var total=procs.reduce(function(a,p){return a+p.rules.length;},0);
+  $('#list-meta').textContent=rows.length+'건 / 공정합계 '+total+'건';
+  $('#cnt-list').textContent=total;
+  $('#list-note').innerHTML='행을 클릭하면 상세를 열고 수정·삭제할 수 있습니다. 조건 셀의 <span class="nc">—</span> 는 체크 안함(NOT_CHECK)입니다. '
+    +'순번 <b>0</b> 은 예외 룰, <b>우선순위</b> 가 작은 룰이 먼저 평가됩니다. '
+    +'시드는 AS-IS 업무기준 <b>C10B1074·C10B1075·C10B1076·C10B1077·C10B1078</b> 룰 '
+    +PROC.reduce(function(a,p){return a+p.rules.length;},0)+'건을 공정별로 묶어 그대로 옮긴 목업 데이터입니다.';
+  if(!rows.length){$('#list-grid').innerHTML='<div class="empty">조건에 맞는 룰이 없습니다.</div>';return;}
+
+  var h='<table class="tbl"><thead>'
+    +'<tr class="grp">'+(cur==='__LIST_ALL__'?'<th class="g-etc" rowspan="2">공정</th>':'')
+    +'<th class="g-etc" colspan="3"></th><th class="g-cond" colspan="'+fields.length+'">조건</th><th class="g-res">결과</th><th class="g-etc" colspan="3"></th></tr>'
+    +'<tr><th>순번</th><th>우선순위</th><th>ID</th>'
+    +fields.map(function(f){return '<th>'+esc(f.label)+'</th>';}).join('')
+    +'<th>폭감소량</th><th>상태</th><th>비고</th><th>최종 수정</th></tr></thead><tbody>';
+  rows.forEach(function(x){
+    var p=x.p,r=x.r;
+    h+='<tr class="row'+(sel===r.id?' sel':'')+'" data-open="'+esc(r.id)+'" data-pkey="'+esc(p.key)+'" tabindex="0">'
+      +(cur==='__LIST_ALL__'?'<td class="nw">'+procChip(p)+' <span class="src-badge">'+esc(p.ruleId)+'</span></td>':'')
+      +'<td class="c dim">'+noCell(r)+'</td><td class="c">'+prioCell(r)+'</td><td class="mono nw">'+esc(r.id)+'</td>'
+      +fields.map(function(f){
+        var c=r.cond[f.key];
+        return '<td>'+(c?condHtml(f,c):'<span class="nc">—</span>')+'</td>';
+      }).join('')
+      +'<td class="res num">'+resHtml(r.res)+'</td><td>'+statusPill(r.status)+'</td>'
+      +'<td class="dim">'+(r.note?esc(r.note):(r.stray?'<span class="chip warnchip" title="원본 데이터 주의">원본주의</span>':'—'))+'</td>'
+      +'<td class="nw">'+userCell(r)+'</td></tr>';
+  });
+  $('#list-grid').innerHTML=h+'</tbody></table>';
+}
+function uniq(arrs){
+  var m={},o=[];arrs.forEach(function(a){a.forEach(function(v){if(!m[v]){m[v]=1;o.push(v);}});});
+  return o.sort();
+}
+['pcd','prod','mat','raw','size','st'].forEach(function(k){
+  $('#f-'+k).addEventListener('change',function(){ui[k]=this.value;renderList();});
+});
+$('#f-q').addEventListener('input',function(){ui.q=this.value;renderList();});
+
+/* ── 공정 흐름(합산) ──────────────────────────────────── */
+var flowInput={};
+function buildFlowInputs(){
+  /* 모든 공정이 공유하는 입력만 받는다 — 합집합 */
+  var keys=[],seen={};
+  PROC.forEach(function(p){
+    p.fields.forEach(function(f){
+      if(seen[f.key])return;seen[f.key]=1;keys.push(f);
+    });
+  });
+  var h='';
+  keys.forEach(function(f){
+    var id='fi-'+f.key;
+    h+='<div class="f-field"><label for="'+id+'">'+esc(f.label)+'</label>'
+      +'<input class="inp mono" id="'+id+'" '+(f.type==='num'?'type="number" step="0.001"':'')
+      +(f.key==='procCd'?' list="dl-proc"':(f.key==='prodCd'?' list="dl-prod"':(f.key==='rawCd'?' list="dl-raw"':(f.key==='matCd'?' list="dl-mat"':''))))
+      +' placeholder="'+(f.type==='num'?'예: 1.8':'예: '+(f.key==='prodCd'?'L':(f.key==='procCd'?'82':(f.key==='rawCd'?'H32':(f.key==='matCd'?'EA':'')))))+'"></div>';
+  });
+  h+='<div class="f-field"><label for="fi-inwid">원자재 폭 (mm)</label>'
+    +'<input class="inp mono" id="fi-inwid" type="number" step="1" min="0" value="1000" placeholder="예: 1000"></div>';
+  $('#flow-inputs').innerHTML=h;
+  flowInput={};
+  keys.forEach(function(f){flowInput[f.key]={type:f.type};});
+  flowInput.__inwid={type:'num'};
+  fillDatalists();
+}
+function flowInputValues(){
+  var o={};
+  Object.keys(flowInput).forEach(function(k){
+    var el=$('#fi-'+(k==='__inwid'?'inwid':k));
+    o[k]=el?el.value.trim():'';
+  });
+  return o;
+}
+function runFlow(){
+  var inp=flowInputValues();
+  var inWid=parseFloat(inp.__inwid);
+  var steps=[],curWid=isNaN(inWid)?null:inWid,total=0,matched=0;
+  PROC.forEach(function(p,i){
+    var i2={};Object.keys(inp).forEach(function(k){if(k!=='__inwid')i2[k]=inp[k];});
+    var wk=WIDTH_KEY[p.key];
+    if(wk&&i2[wk]!==''){i2[wk]=inp[wk];}
+    /* 각 단계의 폭 조건 = 진입 폭(직전 단계 출측폭). PLTCM 는 입력 폭을 그대로 쓴다 */
+    if(wk&&curWid!==null&&(i>0||p.key==='PLTCM'))i2[wk]=String(round3(curWid));
+    var hits=pick(p,i2);
+    var applied=hits[0]||null;
+    var amt=applied?+applied.res:0;
+    var outWid=(curWid===null)?null:round3(curWid-amt);
+    if(applied)matched++;
+    total=round3(total+amt);
+    steps.push({p:p,i:i,applied:applied,hits:hits,amt:amt,inWid:curWid,outWid:outWid});
+    curWid=outWid;
+  });
+  $('#flow-meta').textContent='매칭 '+matched+' / '+PROC.length+' 공정'+(isNaN(inWid)?' · 원자재 폭 미입력 — 폭 조건은 입력값 그대로 사용':'');
+  $('#flow-width-note').textContent=isNaN(inWid)?'':'원자재 폭 '+fmtNum(inWid)+' mm 기준';
+  var h='';
+  steps.forEach(function(s,i){
+    var cls=s.applied?(s.amt>0?'':' zero'):' miss';
+    h+='<button class="flow-step'+(cur===s.p.key?' on':'')+'" data-goto="'+esc(s.p.key)+'">'
+      +'<span class="fs-ord">'+(i+1)+'단계</span>'
+      +'<span class="fs-name">'+esc(s.p.key)+'</span>'
+      +'<span class="fs-rule">'+esc(s.p.ruleId)+' · '+esc(s.p.name)+'</span>'
+      +'<span class="fs-val'+cls+'">'+(s.applied?esc(fmtRes(s.amt))+' '+esc(s.p.unit)+(s.hits.length>1?' · 후보 '+(s.hits.length-1):''):'해당 룰 없음')+'</span>'
+      +'</button>';
+  });
+  h+='<div class="flow-total"><span class="ft-lbl">합산 폭수축량</span>'
+    +'<span class="ft-val">'+esc(fmtRes(total))+' mm</span>'
+    +'<span class="ft-sub">폭감소량 합계 · '+PROC.length+'개 공정</span>'
+    +(curWid===null?'':'<span class="ft-sub">최종 폭 '+esc(fmtNum(curWid))+' mm</span>')
+    +'</div>';
+  $('#flow-steps').innerHTML=h;
+
+  var g='<table class="tbl" style="min-width:1180px"><thead><tr>'
+    +'<th>단계</th><th>공정</th><th>업무기준</th><th>순번</th><th>ID</th>'
+    +'<th>진입 폭</th><th>출측 폭</th><th>폭감소량</th><th>산출 근거</th><th>후보</th></tr></thead><tbody>';
+  steps.forEach(function(s){
+    g+='<tr class="row"'+(s.applied?' data-open="'+esc(s.applied.id)+'" data-pkey="'+esc(s.p.key)+'" tabindex="0"':'')+'>'
+      +'<td class="c dim">'+(s.i+1)+'</td><td class="nw">'+procChip(s.p)+'</td><td class="mono nw">'+esc(s.p.ruleId)+'</td>'
+      +'<td class="c">'+(s.applied?noCell(s.applied):'—')+'</td><td class="mono nw">'+esc(s.applied?s.applied.id:'—')+'</td>'
+      +'<td class="num mono">'+(s.inWid===null?'—':esc(fmtNum(s.inWid)))+'</td>'
+      +'<td class="num mono">'+(s.outWid===null?'—':esc(fmtNum(s.outWid)))+'</td>'
+      +'<td class="res num">'+resHtml(s.amt)+'</td>'
+      +'<td class="dim">'+(s.applied?'<span class="chip apply">적용</span>':'<span class="chip cand">해당 없음</span>')+'</td>'
+      +'<td class="dim">'+(s.hits.length>1?s.hits.length-1+'건':(s.hits.length?'—':'—'))+'</td></tr>';
+  });
+  g+='<tr class="apply-row"><td colspan="7" class="num" style="text-align:right"><b>합산 폭수축량</b></td><td class="res num"><b>'+esc(fmtRes(total))+'</b></td><td colspan="2" class="dim">진입 폭 순차 적용</td></tr>';
+  $('#flow-grid').innerHTML=g+'</tbody></table>';
+}
+$('#flow-steps').addEventListener('click',function(e){
+  var b=e.target.closest('[data-goto]');if(!b)return;
+  cur=b.getAttribute('data-goto');sel=null;
+  renderProcbar();renderHead();renderList();
+  setTab('list');
+  toast(PROC_BY[cur].key+' · '+PROC_BY[cur].name+' 룰 목록으로 이동했습니다.');
+});
+$('#flow-grid').addEventListener('click',function(e){
+  var t=e.target.closest('tr[data-open]');if(!t)return;
+  openDetail(t.getAttribute('data-pkey'),t.getAttribute('data-open'));
+});
+
+/* ── 간편판정 ─────────────────────────────────────────── */
+var judgeInputs={};
+function judgeProc(){return cur==='__LIST_ALL__'?'JZ':cur;}
+function buildJudgeInputs(){
+  var p=PROC_BY[judgeProc()];
+  $('#judge-head').innerHTML=['공정 <b>'+esc(p.key)+'</b>','업무기준 <b>'+esc(p.ruleId)+'</b>','기준명 <b>'+esc(p.name)+'</b>','조건 <b>'+p.fields.length+'종</b>']
+    .map(function(x){return '<span>'+x+'</span>';}).join('');
+  var h='';
+  p.fields.forEach(function(f){
+    var id='ji-'+f.key,dl=f.key==='prodCd'?'dl-prod':(f.key==='rawCd'?'dl-raw':(f.key==='matCd'?'dl-mat':(f.key==='procCd'?'dl-proc':'')));
+    h+='<div class="f-field"><label for="'+id+'">'+esc(f.label)+'</label>'
+      +'<input class="inp mono" id="'+id+'" '+(f.type==='num'?'type="number" step="0.001"':'')
+      +' placeholder="'+(f.type==='num'?'예: 1.8':'비우면 체크 안 함')+'" '+(dl?'list="'+dl+'"':'')+'></div>';
+  });
+  $('#judge-inputs').innerHTML=h;
+  judgeInputs={};
+  p.fields.forEach(function(f){judgeInputs[f.key]=f;});
+  if(cur==='__LIST_ALL__'){
+    var n=document.createElement('div');
+    n.className='f-help';n.style.gridColumn='1 / -1';
+    n.textContent='전체 보기 상태라 기본 공정(정전)으로 판정합니다. 공정 바에서 공정을 고르면 그 공정의 조건 폼으로 바뀝니다.';
+    $('#judge-inputs').appendChild(n);
+  }
+  fillDatalists();
+}
+function judgeInputValues(){
+  var o={};
+  Object.keys(judgeInputs).forEach(function(k){var el=$('#ji-'+k);o[k]=el?el.value.trim():'';});
+  return o;
+}
+function runJudge(){
+  var p=PROC_BY[judgeProc()];
+  var input=judgeInputValues();
+  var hits=pick(p,input);
+  var applied=hits[0]||null;
+  var wk=WIDTH_KEY[p.key];
+  var inWid=wk?parseFloat(input[wk]):NaN;
+  var outWid=applied&&!isNaN(inWid)?round3(inWid-applied.res):null;
+  $('#judge-meta').innerHTML=procChip(p)+' 매칭 '+hits.length+'건'+(applied?' · 적용 <b class="mono">'+esc(applied.id)+'</b>':'');
+  var res='';
+  res+='<div class="jr-card"><div class="lbl">적용 룰</div><div class="val'+(applied?'':' miss')+'">'+(applied?esc(applied.id):'해당 없음')+'</div>'
+    +'<div class="sub">'+(applied?'우선순위 '+(applied.prio||1)+' · 순번 '+applied.no+(hits.length>1?' · 후보 '+(hits.length-1)+'건':''):'조건에 맞는 사용중(Y) 룰이 없습니다 — 폭감소량 0 으로 처리')+'</div></div>';
+  res+='<div class="jr-card"><div class="lbl">폭감소량</div><div class="val">'+(applied?esc(fmtRes(applied.res)):'0')+'</div>'
+    +'<div class="sub">'+(applied?esc(p.result)+' · '+esc(p.unit):'—')+'</div></div>';
+  res+='<div class="jr-card"><div class="lbl">진입 폭 (mm)</div><div class="val'+(isNaN(inWid)?' miss':'')+'">'+(isNaN(inWid)?'폭 입력 필요':esc(fmtNum(inWid)))+'</div>'
+    +'<div class="sub">'+(wk?esc(wkLabel(p)):'해당 공정 룰에 폭 조건이 없습니다')+'</div></div>';
+  res+='<div class="jr-card"><div class="lbl">출측 폭 (mm)</div><div class="val'+(outWid===null?' miss':'')+'">'+(outWid===null?'—':esc(fmtNum(outWid)))+'</div>'
+    +'<div class="sub">'+(outWid===null?'진입 폭을 입력하면 계산됩니다':'진입 폭 − 폭감소량')+'</div></div>';
+  $('#judge-result').innerHTML=res;
+  if(!hits.length){$('#judge-grid').innerHTML='<div class="empty">매칭되는 룰이 없습니다.</div>';return;}
+  var h='<table class="tbl"><thead><tr><th>구분</th><th>우선순위</th><th>순번</th><th>ID</th>'
+    +p.fields.map(function(f){return '<th>'+esc(f.label)+'</th>';}).join('')
+    +'<th>폭감소량</th><th>상태</th></tr></thead><tbody>';
+  hits.forEach(function(r,i){
+    h+='<tr class="row'+(i===0?' apply-row':'')+'" data-open="'+esc(r.id)+'" data-pkey="'+esc(p.key)+'">'
+      +'<td>'+(i===0?'<span class="chip apply">적용</span>':'<span class="chip cand">후보</span>')+'</td>'
+      +'<td class="c">'+prioCell(r)+'</td><td class="c">'+esc(r.no)+'</td><td class="mono nw">'+esc(r.id)+'</td>'
+      +p.fields.map(function(f){return '<td>'+condHtml(f,r.cond[f.key])+'</td>';}).join('')
+      +'<td class="res num">'+resHtml(r.res)+'</td><td>'+statusPill(r.status)+'</td></tr>';
+  });
+  $('#judge-grid').innerHTML=h+'</tbody></table>';
+}
+function wkLabel(p){var f=p.byKey[WIDTH_KEY[p.key]];return f?f.label:'폭';}
+function clearJudge(){
+  Object.keys(judgeInputs).forEach(function(k){var el=$('#ji-'+k);if(el)el.value='';});
+  $('#judge-result').innerHTML='';
+  $('#judge-grid').innerHTML='<div class="empty">조건을 입력하고 판정을 실행해 주세요.</div>';
+  $('#judge-meta').textContent='';
+}
+function fillDatalists(){
+  function dl(id,key){
+    if(!$('#'+id))return;
+    var v=uniq(PROC.map(function(p){return p.byKey[key]?distinctCodes(p,key):[];}));
+    $('#'+id).innerHTML=v.map(function(c){return '<option value="'+esc(c)+'">';}).join('');
+  }
+  dl('dl-prod','prodCd');dl('dl-mat','matCd');dl('dl-raw','rawCd');
+  if($('#dl-proc'))$('#dl-proc').innerHTML=(DICT.procCodes||[]).map(function(c){return '<option value="'+esc(c)+'">';}).join('');
+}
+
+/* ── 변경 이력 ────────────────────────────────────────── */
+function histDefaults(){
+  ui.histFrom=ymd(now()-30*24*60*60*1000);ui.histTo=ymd(now());ui.histProc='';ui.histKind='';ui.histQ='';
+  $('#h-from').value=ui.histFrom;$('#h-to').value=ui.histTo;$('#h-proc').value='';$('#h-kind').value='';$('#h-q').value='';
+}
+function renderHist(){
+  var sel=$('#h-proc');
+  if(sel&&!sel.dataset.done){
+    sel.innerHTML='<option value="">전체</option>'+PROC.map(function(p){return '<option value="'+esc(p.key)+'">'+esc(p.key)+' — '+esc(p.name)+'</option>';}).join('');
+    sel.dataset.done='1';
+  }
+  var rows=repo.log.list().filter(function(r){
+    var d=ymd(r.ts);
+    if(ui.histFrom&&d<ui.histFrom)return false;
+    if(ui.histTo&&d>ui.histTo)return false;
+    if(ui.histProc&&r.proc!==ui.histProc&&r.proc!=='__ALL__')return false;
+    if(ui.histKind&&r.kind!==ui.histKind)return false;
+    if(ui.histQ){var q=norm(ui.histQ);if(norm(r.item).indexOf(q)<0&&norm(r.by).indexOf(q)<0)return false;}
+    return true;
+  }).sort(function(a,b){return b.ts-a.ts;});
+  $('#h-meta').textContent=rows.length+'건';
+  $('#cnt-hist').textContent=repo.log.list().length;
+  if(!rows.length){$('#hist-grid').innerHTML='<div class="empty">조건에 맞는 이력이 없습니다.</div>';return;}
+  var h='<table class="tbl" style="min-width:900px"><thead><tr><th>일시</th><th>구분</th><th>공정</th><th>대상</th><th>변경 전</th><th>변경 후</th><th>작업자</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var pn=r.proc==='__ALL__'?'<span class="inherit">전체</span>':procChip(PROC_BY[r.proc]||{key:r.proc});
+    h+='<tr><td class="mono">'+esc(fmtDT(r.ts))+'</td><td><span class="chip rule">'+esc(r.kind)+'</span></td><td class="nw">'+pn+'</td><td>'+esc(r.item)+'</td>'
+      +'<td class="mono">'+esc(r.before||'—')+'</td><td class="mono"><b>'+esc(r.after||'—')+'</b></td><td>'+esc(r.by)+'</td></tr>';
+  });
+  $('#hist-grid').innerHTML=h+'</tbody></table>';
+}
+['h-from','h-to'].forEach(function(id){$('#'+id).addEventListener('change',function(){ui[id==='h-from'?'histFrom':'histTo']=this.value;renderHist();});});
+$('#h-proc').addEventListener('change',function(){ui.histProc=this.value;renderHist();});
+$('#h-kind').addEventListener('change',function(){ui.histKind=this.value;renderHist();});
+$('#h-q').addEventListener('input',function(){ui.histQ=this.value;renderHist();});
+
+/* ── 코드 범례 ────────────────────────────────────────── */
+function renderLegend(){
+  if(!legendProc)legendProc=PROC[0].key;
+  $('#legend-procbar').innerHTML=PROC.map(function(p){
+    return '<button class="'+(p.key===legendProc?'on':'')+'" data-lproc="'+esc(p.key)+'">'+esc(p.key)+' · '+esc(p.name)+'</button>';
+  }).join('');
+  var p=PROC_BY[legendProc];
+  var h='<dl class="kv">'
+    +'<dt>업무기준</dt><dd><b class="mono">'+esc(p.ruleId)+'</b> · '+esc(p.name)+' · 유형 <span class="mono">'+esc(p.type)+'</span> (조건판단) · 버전 <span class="mono">'+esc(p.version)+'</span> · 상태 <span class="mono">'+esc(p.status)+'</span> · 시작일자 <span class="mono">'+esc((p.startAt||'').slice(0,10))+'</span></dd>'
+    +'<dt>결과</dt><dd><b>'+esc(p.result)+'</b> ('+esc(p.unit)+') — '+p.rules.length+'건</dd>'
+    +'<dt>조건</dt><dd>'+p.fields.length+'종</dd></dl>';
+  h+='<div class="tbl-scroll" style="max-height:none;margin-top:10px"><table class="tbl" style="min-width:900px"><thead><tr><th>순번</th><th>우선순위</th><th>ID</th>'
+    +p.fields.map(function(f){return '<th>'+esc(f.label)+'</th>';}).join('')
+    +'<th>'+esc(p.result)+'</th></tr></thead><tbody>';
+  repo.rules.list(p.key).slice().sort(sortRules).forEach(function(r){
+    h+='<tr><td class="c">'+noCell(r)+'</td><td class="c">'+prioCell(r)+'</td><td class="mono nw">'+esc(r.id)+'</td>'
+      +p.fields.map(function(f){return '<td>'+condHtml(f,r.cond[f.key])+'</td>';}).join('')
+      +'<td class="res num">'+resHtml(r.res)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  $('#legend-procbody').innerHTML=h;
+
+  var cg=[],eg=[];
+  PROC.forEach(function(p){
+    if(!p.byKey.procCd)return;
+    var bucket=p.key==='CGL'?cg:eg;
+    distinctCodes(p,'procCd').forEach(function(c){if(bucket.indexOf(c)<0)bucket.push(c);});
+  });
+  $('#lg-cgl-proc').textContent=cg.join(', ')||'—';
+  $('#lg-egl-proc').textContent=eg.join(', ')||'—';
+  var dm='';
+  Object.keys(DICT.maps).forEach(function(k){
+    var m=DICT.maps[k];
+    dm+='<div style="grid-column:1/-1;margin-top:8px;font-weight:800;color:var(--ink-2)">'+esc(m.label)+'</div>';
+    var items=m.items||{};
+    var keys=Object.keys(items);
+    if(!keys.length){
+      dm+='<div><span class="mono">'+(k==='procCd'?(DICT.procCodes||[]).join(', '):'—')+'</span><span>원본에 코드 라벨 없음</span></div>';
+    }else{
+      keys.forEach(function(c){dm+='<div><span class="mono">'+esc(c)+'</span><span>'+esc(items[c])+'</span></div>';});
+    }
+  });
+  $('#legend-dict').innerHTML=dm;
+
+  var iss='';
+  var stray=[];
+  PROC.forEach(function(p){repo.rules.list(p.key).forEach(function(r){if(r.stray)stray.push({p:p,r:r});});});
+  iss+='<dt>총 룰</dt><dd>'+PROC.reduce(function(a,p){return a+p.rules.length;},0)+'건 — '+PROC.map(function(p){return p.ruleId+'('+p.key+') '+p.rules.length+'건';}).join(' · ')+'</dd>';
+  iss+='<dt>원본 유지</dt><dd>원본 RuleData 시트의 값·연산자·순번을 그대로 옮겼습니다. 룰을 걸러내거나 고치지 않았습니다.</dd>';
+  if(stray.length){
+    iss+='<dt>비교값 잔존</dt><dd>'+stray.length+'건은 원본에서 <span class="mono">NOT_CHECK</span> 인데 비교값이 남아 있습니다(판정에는 사용하지 않음). 룰을 열면 <span class="chip warnchip">원본주의</span> 로 표시됩니다. — '
+      +'<span class="mono">'+stray.map(function(x){return x.r.id;}).join(', ')+'</span></dd>';
+  }
+  $('#legend-issues').innerHTML=iss;
+}
+$('#legend-procbar').addEventListener('click',function(e){
+  var b=e.target.closest('[data-lproc]');if(!b)return;
+  legendProc=b.getAttribute('data-lproc');renderLegend();
+});
+
+/* ── 드로어: 상세 ─────────────────────────────────────── */
+function openDrawer(){$('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');sel=null;editing=null;renderList();}
+function kvRow(l,v){return '<dt>'+esc(l)+'</dt><dd>'+v+'</dd>';}
+function codeDesc(f,val){
+  var map=mapOf(f.key);if(!map)return '';
+  var names=listOf(val).map(function(c){return map[c]?c+' '+map[c]:null;}).filter(Boolean);
+  return names.length?' <span class="inherit">('+esc(names.join(', '))+')</span>':'';
+}
+function openDetail(pkey,id){
+  var p=PROC_BY[pkey];if(!p)return;
+  var r=repo.rules.get(pkey,id);if(!r)return;
+  sel=id;editing=null;renderList();
+  $('#d-title').textContent=p.key+' · '+p.name+' · '+r.id;
+  var h='<div class="d-sect"><h4 class="cond">조건</h4><dl class="kv detail">';
+  p.fields.forEach(function(f){var c=r.cond[f.key];
+    h+=kvRow(f.label,c.op==='NOT_CHECK'?'<span class="nc">체크 안함</span>':opHtml(c.op)+' <span class="mono"><b>'+esc(condText(f,c))+'</b></span>'+codeDesc(f,c.v1));
+  });
+  h+='</dl>';
+  if(r.stray){
+    h+='<div class="f-help err" style="margin-top:8px">원본 데이터 주의: '+r.stray.map(function(s){
+      return esc(s.label)+' — '+esc(s.op||'NOT_CHECK')+' 인데 비교값 '+esc(s.v1||'')+(s.v2?' ~ '+esc(s.v2):'')+' 이 남아 있습니다(판정 미사용)';
+    }).join(' / ')+'</div>';
+  }
+  h+='</div>';
+  h+='<div class="d-sect"><h4 class="res">결과</h4><dl class="kv detail">'
+    +kvRow(p.result,resHtml(r.res)+' <span class="inherit">'+esc(p.unit)+' · 진입 폭 − 폭감소량</span>')
+    +'</dl></div>';
+  h+='<div class="d-sect"><h4>관리</h4><dl class="kv detail">'
+    +kvRow('공정',procChip(p)+' <span class="inherit">'+esc(p.label)+'</span>')
+    +kvRow('업무기준','<span class="mono">'+esc(p.ruleId)+'</span> <span class="inherit">'+esc(p.name)+'</span>')
+    +kvRow('상태',statusPill(r.status))
+    +kvRow('우선순위',r.prio?esc(r.prio)+' <span class="inherit">작을수록 먼저 평가</span>':'—')
+    +kvRow('순번',r.no===0?'0 <span class="chip exc">예외 — 우선 평가</span>':esc(r.no)+' <span class="inherit">원본 '+r.srcRow+'행</span>')
+    +kvRow('비고',r.note?esc(r.note):'<span class="inherit">—</span>')
+    +kvRow('등록','<span class="mono">'+esc(fmtDT(r.createdAt))+'</span> <span class="inherit">'+esc(r.createdBy||'')+'</span>')
+    +kvRow('최종 수정','<span class="mono">'+esc(fmtDT(r.updatedAt))+'</span> <span class="inherit">'+esc(r.updatedBy||'')+'</span>')
+    +'</dl></div>';
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML='<button class="btn btn-danger" data-action="delete-rule" data-pkey="'+esc(pkey)+'" data-id="'+esc(r.id)+'">삭제</button><div class="f-spacer"></div>'
+    +'<button class="btn" data-action="drawer-close">닫기</button><button class="btn btn-pri" data-action="edit-rule" data-pkey="'+esc(pkey)+'" data-id="'+esc(r.id)+'">수정</button>';
+  openDrawer();
+}
+
+/* ── 드로어: 등록 · 수정 폼 ───────────────────────────── */
+function opSelect(f,curv){
+  var ops=f.type==='num'?NUM_OPS:TEXT_OPS;
+  return '<select class="inp" id="e-op-'+f.key+'" data-cond="'+f.key+'">'+ops.map(function(o){
+    return '<option value="'+o+'"'+(o===curv?' selected':'')+'>'+esc(o)+(OP_LABEL[o]&&OP_LABEL[o]!==o?' — '+esc(OP_LABEL[o]):'')+'</option>';}).join('')+'</select>';
+}
+function statusSelect(curv){return '<select class="inp" id="e-status">'+Object.keys(STATUS).map(function(s){
+  return '<option value="'+s+'"'+(s===curv?' selected':'')+'>'+s+' — '+esc(STATUS[s].l)+'</option>';}).join('')+'</select>';}
+function syncCondInputs(f){
+  var op=$('#e-op-'+f.key).value,v1=$('#e-v1-'+f.key),v2=$('#e-v2-'+f.key);
+  v1.disabled=!opNeedsValue(op);v2.disabled=!isBetween(op);
+  v1.placeholder=op==='IN'||op==='NOT_IN'?'쉼표로 구분 (예: L,G,3)':f.type==='num'?'값1':'값';
+  v2.placeholder=isBetween(op)?'값2':'';
+}
+function nextNo(p){
+  var m=0;repo.rules.list(p.key).forEach(function(r){if(r.no>m)m=r.no;});return m+1;
+}
+function openForm(pkey,id){
+  var p=PROC_BY[pkey];if(!p)return;
+  var r=id?repo.rules.get(pkey,id):null;
+  editing={pkey:pkey,id:id||null};
+  sel=id||null;
+  $('#d-title').textContent=id?(p.key+' 룰 수정 · '+r.id):(p.key+' 룰 등록');
+  var cond=r?r.cond:repo.emptyCond(p.fields);
+  var h='<div class="d-sect"><h4 class="cond">조건 — '+esc(p.name)+' ('+esc(p.ruleId)+')</h4><div class="cond-form">'
+    +'<div class="ch">항목</div><div class="ch">연산자</div><div class="ch">비교값1</div><div class="ch">비교값2</div>';
+  p.fields.forEach(function(f){var c=cond[f.key];
+    h+='<div class="cl">'+esc(f.label)+'</div>'+opSelect(f,c.op)
+      +'<input class="inp mono" id="e-v1-'+f.key+'"'+(f.type==='num'?' type="number" step="0.001"':'')+' value="'+esc(c.v1==null?'':c.v1)+'">'
+      +'<input class="inp mono" id="e-v2-'+f.key+'"'+(f.type==='num'?' type="number" step="0.001"':'')+' value="'+esc(c.v2==null?'':c.v2)+'">';
+  });
+  h+='</div><div class="f-help" style="margin-top:6px">IN / NOT_IN 은 쉼표로 여러 값을 적습니다. BETWEEN 은 비교값1·2 를 모두 입력합니다. 두께·폭은 mm 숫자입니다.</div></div>';
+  h+='<div class="d-sect"><h4 class="res">결과</h4><div class="form-grid">'
+    +'<div class="f-field"><label>'+esc(p.result)+' ('+esc(p.unit)+') <span class="req">*</span></label>'
+    +'<input class="inp mono" id="e-res" type="number" step="0.001" min="0" value="'+esc(r?r.res:0)+'"><div class="f-help">0 = 이 단계에서 폭을 줄이지 않음</div></div>'
+    +'</div></div>';
+  h+='<div class="d-sect"><h4>관리</h4><div class="form-grid">'
+    +'<div class="f-field"><label>우선순위 <span class="req">*</span></label><input class="inp mono" id="e-prio" type="number" step="1" min="1" value="'+esc(r?r.prio:1)+'"><div class="f-help">작을수록 먼저 평가</div></div>'
+    +'<div class="f-field"><label>순번 <span class="req">*</span></label><input class="inp mono" id="e-no" type="number" step="1" min="0" value="'+esc(r?r.no:nextNo(p))+'"><div class="f-help">0 = 예외(우선 평가)</div></div>'
+    +'<div class="f-field"><label>상태 <span class="req">*</span></label>'+statusSelect(r?r.status:'Y')+'</div>'
+    +'<div class="f-field wide"><label>비고</label><textarea class="inp" id="e-note" rows="2">'+esc(r?r.note:'')+'</textarea></div>'
+    +'</div></div>';
+  $('#d-body').innerHTML=h;
+  $('#d-foot').innerHTML='<button class="btn" data-action="form-cancel">취소</button><button class="btn btn-pri" data-action="form-save">'+(id?'저장':'등록')+'</button>';
+  p.fields.forEach(function(f){syncCondInputs(f);$('#e-op-'+f.key).addEventListener('change',function(){syncCondInputs(f);});});
+  openDrawer();
+  setTimeout(function(){var f=p.fields[0];var el=$('#e-v1-'+f.key);if(el)el.focus();},50);
+}
+function collectForm(p){
+  var cond={};
+  p.fields.forEach(function(f){
+    var op=$('#e-op-'+f.key).value,v1=$('#e-v1-'+f.key).value.trim(),v2=$('#e-v2-'+f.key).value.trim();
+    if(!opNeedsValue(op)){v1='';v2='';}
+    if(!isBetween(op))v2='';
+    if(f.type==='num')cond[f.key]={op:op,v1:v1===''?null:parseFloat(v1),v2:v2===''?null:parseFloat(v2)};
+    else cond[f.key]={op:op,v1:op==='IN'||op==='NOT_IN'?listOf(v1).join(','):v1.toUpperCase(),v2:v2.toUpperCase()};
+  });
+  return {cond:cond,res:$('#e-res').value.trim(),prio:$('#e-prio').value.trim(),no:$('#e-no').value.trim(),status:$('#e-status').value,note:$('#e-note').value.trim()};
+}
+function validateForm(p,f,editId){
+  for(var i=0;i<p.fields.length;i++){
+    var fl=p.fields[i],c=f.cond[fl.key];
+    if(opNeedsValue(c.op)){
+      if(fl.type==='num'){
+        if(c.v1==null||isNaN(c.v1))return fl.label+': 비교값1을 숫자로 입력해 주세요.';
+        if(isBetween(c.op)){if(c.v2==null||isNaN(c.v2))return fl.label+': BETWEEN 은 비교값2가 필요합니다.';if(c.v1>c.v2)return fl.label+': 비교값1이 비교값2보다 큽니다.';}
+      }else if(!c.v1)return fl.label+': 비교값1을 입력해 주세요.';
+    }
+  }
+  var anyChecked=p.fields.some(function(fl){return f.cond[fl.key].op!=='NOT_CHECK';});
+  if(!anyChecked)return '조건이 하나도 없습니다. 최소 한 항목은 체크해 주세요.';
+  if(f.res===''||isNaN(parseFloat(f.res))||parseFloat(f.res)<0)return p.result+'를 0 이상의 숫자로 입력해 주세요.';
+  if(f.no===''||isNaN(parseInt(f.no,10))||parseInt(f.no,10)<0)return '순번은 0 이상의 정수여야 합니다.';
+  if(f.prio===''||isNaN(parseInt(f.prio,10))||parseInt(f.prio,10)<1)return '우선순위는 1 이상의 정수여야 합니다.';
+  var key=condKey(p,f.cond),dup=null;
+  repo.rules.list(p.key).forEach(function(r){if(r.id!==editId&&condKey(p,r.cond)===key)dup=r;});
+  if(dup)return '동일한 조건 조합이 이미 등록되어 있습니다 ('+dup.id+' · 순번 '+dup.no+').';
+  return null;
+}
+function saveForm(){
+  if(!editing)return;
+  var p=PROC_BY[editing.pkey];
+  var f=collectForm(p);
+  var err=validateForm(p,f,editing.id);
+  if(err){toast(err,'err');return;}
+  var data={cond:f.cond,res:round3(parseFloat(f.res)),prio:parseInt(f.prio,10),no:parseInt(f.no,10),status:f.status,note:f.note};
+  var isNew=!editing.id,r,before='';
+  if(isNew)r=repo.rules.create(p.key,data);
+  else{var old=repo.rules.get(p.key,editing.id);if(!old)return;before=summary(p,old);r=repo.rules.update(p.key,editing.id,data);}
+  repo.log.append(isNew?'룰 등록':'룰 수정',p.key,ruleLabel(p,r),before,summary(p,r));
+  var pk=p.key,rid=r.id;
+  editing=null;
+  renderAll();
+  openDetail(pk,rid);
+  toast((isNew?'룰이 등록':'룰이 수정')+'되었습니다 · '+p.key+' · 이력에 기록되었습니다.');
+}
+
+/* ── 삭제 ─────────────────────────────────────────────── */
+function askDelete(pkey,id){
+  var p=PROC_BY[pkey];var r=repo.rules.get(pkey,id);if(!r)return;
+  pendingDelete={pkey:pkey,id:id};
+  $('#m-body').textContent=p.key+' '+r.id+' (순번 '+r.no+', 폭감소량 '+fmtRes(r.res)+') 룰을 삭제하시겠습니까? 삭제는 이력에 기록됩니다.';
+  $('#modal-back').classList.add('on');
+}
+function closeModal(){$('#modal-back').classList.remove('on');pendingDelete=null;}
+function doDelete(){
+  if(!pendingDelete)return;
+  var pk=pendingDelete.pkey,rid=pendingDelete.id;
+  var p=PROC_BY[pk],r=repo.rules.remove(pk,rid);
+  closeModal();
+  if(!r)return;
+  repo.log.append('룰 삭제',pk,ruleLabel(p,r),summary(p,r),'');
+  closeDrawer();renderAll();
+  toast('룰이 삭제되었습니다 · 이력에 기록되었습니다.');
+}
+
+/* ── 공통 렌더 · 이벤트 ───────────────────────────────── */
+function renderAll(){
+  renderProcbar();renderHead();renderList();
+  if($('#sc-hist').classList.contains('on'))renderHist();
+}
+document.addEventListener('click',function(e){
+  var openEl=e.target.closest('tr[data-open]');
+  if(openEl&&!e.target.closest('[data-action]')){openDetail(openEl.getAttribute('data-pkey'),openEl.getAttribute('data-open'));return;}
+  var el=e.target.closest('[data-action]');if(!el)return;
+  switch(el.getAttribute('data-action')){
+    case 'new-rule':{
+      var pk=cur==='__LIST_ALL__'?'JZ':cur;
+      if(cur==='__LIST_ALL__')toast('등록할 공정을 공정 바에서 먼저 고르세요. 기본(정전)으로 열었습니다.');
+      openForm(pk,null);break;
+    }
+    case 'flow-rule':{var fk=el.getAttribute('data-pkey'),fid=el.getAttribute('data-id');openDetail(fk,fid);break;}
+    case 'edit-rule':openForm(el.getAttribute('data-pkey'),el.getAttribute('data-id'));break;
+    case 'delete-rule':askDelete(el.getAttribute('data-pkey'),el.getAttribute('data-id'));break;
+    case 'form-save':saveForm();break;
+    case 'form-cancel':if(editing&&editing.id){var k={pkey:editing.pkey,id:editing.id};editing=null;openDetail(k.pkey,k.id);}else closeDrawer();break;
+    case 'drawer-close':closeDrawer();break;
+    case 'flow-run':runFlow();break;
+    case 'flow-clear':buildFlowInputs();$('#flow-meta').textContent='';$('#flow-grid').innerHTML='<div class="empty">조건을 입력하고 합산 계산을 실행해 주세요.</div>';$('#flow-steps').innerHTML='';break;
+    case 'judge-run':runJudge();break;
+    case 'judge-clear':clearJudge();break;
+    case 'h-reset':histDefaults();renderHist();break;
+    case 'modal-close':closeModal();break;
+    case 'modal-ok':doDelete();break;
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target.matches('tr.row[data-open]')){openDetail(e.target.getAttribute('data-pkey'),e.target.getAttribute('data-open'));return;}
+  if(e.key!=='Escape')return;
+  if($('#modal-back').classList.contains('on')){closeModal();return;}
+  if($('#drawer').classList.contains('on'))closeDrawer();
+});
+$('#scrim').addEventListener('click',closeDrawer);
+
+histDefaults();
+renderLegend();
+renderAll();
+buildJudgeInputs();
+renderHist();
+})();
+</script>
+</body>
+</html>
