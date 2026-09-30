@@ -12,10 +12,10 @@
 | `modules/raw-material-grade.html` | 원자재강종관리 모듈 (조건(품명·규격약호·주문용도·두께범위) → 결과(재질코드·적정/차선원료·메시지) 룰 관리 — 도금(G)↔칼라(3) 원판연계: 도금기준/칼라파생/칼라전용, 파생 룰 재질·적정원료 상속, 원판 변경 시 재검토 플래그, 간편판정·변경 이력·코드 범례) |
 | `modules/spec-code.html` | 규격약호관리 모듈 (규격코드 조건 → 결과 기준 2종: 규격코드→두께관리기준(BMT/TCT), 규격코드+강종코드→원판강종코드 — 목록·등록·수정·삭제, 간편조회, 변경 이력, 코드 범례. 데이터 접근은 `repo` 객체(localStorage)로 분리해 DB 연동 시 내부만 교체) |
 | `modules/process-routing.html` | 공정라우팅관리 모듈 (조건 8항목(제품군·재질코드·엠보스무늬·Spangle구분·도금량코드·표면처리코드·두께범위·폭범위) → 결과(냉연도금공정) 룰 관리 — 문자/숫자범위 연산자(NOT_CHECK·BETWEEN1~4 등), 등록·수정·삭제·간편판정·변경 이력·코드 범례. 시드는 공정라우팅모듈.xlsx 룰 2건) |
+| `modules/width-reduction.html` | 폭수축량관리 모듈 (압연 후공정 단계별 **폭감소량** — AS-IS 업무기준 5종 C10B1074·C10B1075·C10B1076·C10B1077·C10B1078 을 **공정(PLTCM·CGL·EGL·정전·CCL)으로 묶어 하나의 프로그램**으로 운영. 공정 바로 단계를 골라 조회·등록·수정하고, `공정 흐름` 탭에서 5단계를 순차 적용해 합산 폭수축량과 최종 폭을 구한다. 룰 186건. 시드는 `build/width_rule_seed.py`) |
+| `modules/width-margin.html` | 폭마진량관리 모듈 (공정별 **마진폭** — AS-IS 업무기준 2종 C10B1073(PLTCM폭마진량)·C10B1079(정전폭마진량) 을 **공정(PLTCM·정전)으로 묶어 하나의 프로그램**으로 운영. `공정별 마진` 탭에서 두 마진을 합산해 합산 마진폭과 제품 폭을 구한다. 룰 59건. 시드는 같은 스크립트) |
 | `modules/rolling-thickness-set.html` | 압연두께Set보정관리 모듈 (AS-IS 업무기준 C10B2060 룰 82건 — 조건 10종(품명·규격기관·규격약호·주문용도·고객사·주문두께구분·두께관리코드·도금량코드·두께/폭범위) → 두께보정치·단위. 목록·등록·수정·삭제, 간편판정(Set 두께 계산), 변경 이력, 코드 범례. 시드는 `build/rolling_thickness_set_seed.py`가 `/*__RTS_SEED_START__*/` 마커 구간에 주입) |
 | `modules/quality-design.html` | 품질설계 모듈 (좌: 의뢰현황 목록 · 우: 설계결과 — 구 탭 9종을 펼치기/접기 섹션으로 통합) |
-| `assets/shape/shape-model.js` · `shape-svg.js` · `shape-widget.js` · `shape.css` | 설계 형상 렌더러 (설계결과 → 장면 모델 → 코일 SVG·값 목록 → DOM). 전역 `MesShape`. `build/inject_shape.py`가 `quality-design.html` 마커 구간(`/*__SHAPE_CSS_START__*/`, `/*__SHAPE_JS_START__*/`)에 주입. 테스트 `node --test tests/shape/*.test.mjs`. 설계: `design/specs/2026-09-14-design-shape-visualization.md` |
-| `build/inject_shape.py` | 위 4파일을 `modules/quality-design.html`에 주입(멱등). `--check`는 최신 여부만 확인 |
 | `modules/order-weight-error.html` | 주문단중에러관리 모듈 (주문단중 × 분할 수 매트릭스 — Min/Max 허용범위 하이라이트·셀 수정·수정 이력) |
 | `modules/production-feasibility.html` | 생산가부관리 모듈 (B.D 생산범위(2CGL GI) 탭 — 참조 엑셀 시트 재현: 재질별 폭 × 두께 가부 매트릭스·가부 간편조회·셀 상태 수정·수정 이력) |
 | `modules/simulation.html` | 품질설계 시뮬레이션 모듈 (주문 1건을 ①입력검증 ②주문정합성 ③주문단중 ④생산가부 ⑤품질사양매칭 ⑥설계값산출 6단계에 태워 기준 반영을 추적 — 좌: 검증 케이스·주문 입력·변경 이력, 중: 파이프라인 단계 상세·기대값 대조, 우: 근거 추적 3층·이상징후. 기준 데이터는 다른 모듈의 localStorage를 먼저 읽고 없으면 내장 축약 시드 사용) |
@@ -33,7 +33,18 @@
 python3 build/build_single.py
 ```
 
-`build/template.html`에 CSS/JS를 인라인하고 `modules/` 아래 모든 모듈(품질사양·원자재강종·규격약호·압연두께Set보정·공정라우팅·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·품질보증서·검사증명서·Tag·마스터코드)을 iframe `srcdoc`으로 내장해
+### 계산 엔진 주입
+
+PLTCM 두께 계산 엔진의 원본은 `assets/pltcm-thickness-engine.js` 하나다. 시뮬레이션 모듈 안의
+`/*__PLTCM_ENGINE_START__*/ … /*__PLTCM_ENGINE_END__*/` 사본은 `build/inject_engine.py`가 만들며 손으로 고치지 않는다.
+
+```bash
+node --test tests/pltcm-thickness-engine.test.js   # 엔진 테스트 (Node 20 이상. 디렉토리·글롭 인자는 쓰지 않는다)
+python3 build/inject_engine.py                      # 사본 갱신 (멱등)
+python3 build/inject_engine.py --check              # 사본이 원본과 같은지 검사
+```
+
+`build/template.html`에 CSS/JS를 인라인하고 `modules/` 아래 모든 모듈(품질사양·원자재강종·규격약호·압연두께Set보정·공정라우팅·폭수축량·폭마진량·품질설계·주문단중에러·생산가부·주문정합성체크·시뮬레이션·품질판정·품질보증서·검사증명서·Tag·마스터코드)을 iframe `srcdoc`으로 내장해
 루트 `index.html` 하나로 만든다. GitHub Pages는 이 파일 하나로 동작한다.
 
 ## 룰 시드 파이프라인 (주문정합성체크 모듈 전용)
@@ -68,9 +79,69 @@ python3 build/clean_rules.py --check --emit --inject   # 어서션 → 시드 �
 있고 실명은 없어 마스킹 단계가 없다.
 
 ```bash
-python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 모듈 주입(멱등)
+python3 build/rolling_thickness_set_seed.py --check --emit --inject   # 어서션(82건) → 시드 생성 → 두 모듈 주입(멱등)
 python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없이 기존 JSON 재주입
+python3 build/rolling_thickness_set_seed.py --verify                  # xlsx 없이 두 사본이 JSON 과 같은지 검사
 ```
+
+시드는 압연두께Set보정관리(`/*__RTS_SEED_START__*/ var SEED=`)와 시뮬레이션(`/*__RTS_SEED_SIM_START__*/ var SEED_RTS=`)
+두 곳에 같은 내용으로 들어간다. 룰 `id`(`TS-001`~)는 JSON에 기록되며 두 모듈이 같은 ID를 쓴다.
+xlsx를 재적재하면 두 모듈이 함께 갱신되므로 압연두께Set보정관리의 `LS_KEY` 버전을 올리고 시뮬레이션 회귀 케이스의 핀을 재계산한다.
+
+## 룰 시드 파이프라인 (폭수축량관리 · 폭마진량관리 모듈 2본)
+
+원본은 **RuleData xlsx 7종**이다. 엑셀에는 업무기준(공정)마다 시트가 따로 있지만, 프로그램은
+**공정별로 묶어 2본**만 만든다 — AS-IS 설계를 그대로 옮기되 화면 한 곳에서 공정을 골라 다루게 하는 것이 목적이다.
+
+| 프로그램 | 모듈 | 업무기준 | 공정 | 룰 |
+|---|---|---|---|---|
+| 폭수축량(폭감소량) | `modules/width-reduction.html` | C10B1074 PLTCM폭수축량 | PLTCM | 32 |
+| | | C10B1075 CGL폭감소량 | CGL | 139 |
+| | | C10B1076 EGL폭감소량 | EGL | 10 |
+| | | C10B1077 정전폭감소량 | 정전(JZ) | 3 |
+| | | C10B1078 CCL폭감소량 | CCL | 2 |
+| 폭마진량(마진폭) | `modules/width-margin.html` | C10B1073 PLTCM폭마진량 | PLTCM | 33 |
+| | | C10B1079 정전폭마진량 | 정전(JZ) | 26 |
+
+원본은 사내 기준정보라 커밋하지 않는다. 기본 탐색 경로는 `sources/` 이고 `RULE_XLSX_DIR` 환경변수나
+`--dir` 로 다른 위치를 가리킬 수 있다. 파일명은 `RuleData(C10B1074).xlsx` 이나
+`RuleData(C10B1074)_<팀>_<n>_<일자>_<작성자>.xlsx` 형태 모두 받는다.
+
+```bash
+python3 build/width_rule_seed.py --dir <xlsx폴더> --check            # 파싱 + 어서션(245건)
+python3 build/width_rule_seed.py --dir <xlsx폴더> --emit --inject   # JSON 재생성 + 두 모듈 주입
+python3 build/width_rule_seed.py --verify                           # xlsx 없이 모듈 사본 == JSON 검사
+python3 build/width_rule_seed.py --reinject                         # xlsx 없이 기존 JSON 재주입
+```
+
+시드는 폭수축량(`/*__SEED_REDUCTION_START__*/ var SEED_REDUCTION=`)과 폭마진량
+(`/*__SEED_MARGIN_START__*/ var SEED_MARGIN=`) 마커 구간에 각각 주입된다. 룰 `id` 는
+`WR-<공정>-<nnn>` / `WM-<공정>-<nnn>` 형식이고 JSON 에 기록된다.
+
+### 원본 보존 원칙
+
+- **원본 값을 그대로 옮긴다.** 룰을 걸러내지·고치지·병합하지 않는다. 두 모듈은
+  설계 검토용 목업이라 원본이 곧 기준이다.
+- `우선순위` 열이 공란이면 **직전 값을 이어받는 것**으로 보고(테스트가 단조성을 검증한다),
+  평가 순서는 `우선순위 → 순번` 이다. 이 정렬은 `no.` 순서와 모순되지 않는다.
+- 원본에 **연산자는 `NOT_CHECK` 인데 비교값이 남아 있는 8건**이 있다
+  (`WR-PLTCM-029~032`, `WR-CGL-131`, `WR-CCL-002`, `WM-JZ-006~007`).
+  판정에는 쓰지 않고 `stray` 로 표시만 해 두며, 목록에는 `원본주의` 칩, 상세에는 경고를 보여 준다.
+- 공장(라인) 코드에 라벨이 없어 코드값만 노출한다. 추측해서 라벨을 붙이지 않는다.
+
+### 테스트
+
+```bash
+node --test tests/width-rule-seed.test.js    # 시드 정합성 + 룰 판정 (의존성 없음, 항상 실행)
+node --test tests/width-module-ui.test.js    # 화면 스모크 (jsdom 필요 — 없으면 skip)
+```
+
+`width-rule-seed.test.js` 는 모듈 HTML 에 **실제로 들어 있는** `evalText`·`evalNum`·`ruleMatches`·
+`sortRules` 를 시드 마커와 함께 잘라 내 평가한다. 사본을 따로 유지하지 않으므로 모듈을 고치면
+테스트가 함께 걸린다. 기대값은 원본 RuleData 시트를 손으로 읽어 옮긴 값이다.
+
+`width-module-ui.test.js` 는 두 모듈을 jsdom 에 올려 초기 렌더 → 공정 전환 → 탭 전환 → 판정·합산 →
+등록/수정/삭제 → 이력 기록까지 돌린다. jsdom 은 저장소 의존성이 아니다(목업이라 빌드에 필요 없다).
 
 ### 고객사 실명 마스킹 (공개 저장소 배포)
 
@@ -98,12 +169,14 @@ python3 build/rolling_thickness_set_seed.py --inject                  # xlsx 없
 
 ## 작업 순서
 
-0. (룰 데이터를 바꿀 때만) 원본 xlsx 2종 확보 → `python3 build/clean_rules.py --check --emit --inject`
+0. (룰 데이터를 바꿀 때만) 원본 xlsx 확보 → `python3 build/clean_rules.py --check --emit --inject` /
+   `python3 build/rolling_thickness_set_seed.py --check --emit --inject` /
+   `python3 build/width_rule_seed.py --dir <폴더> --check --emit --inject`
 1. 소스 수정 (모듈 화면·기능은 `modules/*.html`)
-1-1. (설계 형상 렌더러를 고쳤을 때만) `node --test tests/shape/*.test.mjs` → `python3 build/inject_shape.py`. 설계결과 산식(genDetail/refDetail)을 고쳤으면 `node tests/shape/fixtures/gen.mjs` 로 픽스처 재생성
 2. `python3 build/build_single.py` 로 `index.html` 재생성
 3. 브라우저에서 `index.html` 열어 확인
-4. `git add -A && git commit` → `git push` (푸시는 GitHub 토큰 필요)
+4. `node --test tests/` 로 검증
+5. `git add -A && git commit` → `git push` (푸시는 GitHub 토큰 필요)
 
 ## 주요 구현 메모
 
